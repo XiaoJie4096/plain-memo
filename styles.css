@@ -241,6 +241,50 @@ body.is-mobile .workspace-leaf-content[data-type="plain-memo-view"] .view-action
 	background: var(--background-modifier-hover);
 }
 
+body.is-mobile .workspace-leaf-content[data-type="plain-memo-view"] .view-actions:has(.knomo-mobile-search-action) {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 52px;
+	min-width: 52px;
+	height: 40px;
+	min-height: 40px;
+	margin-block: 2px;
+	padding: 0;
+	border: 0;
+	border-radius: 10px;
+	background: transparent;
+	box-shadow: none;
+}
+
+body.is-mobile .workspace-leaf-content[data-type="plain-memo-view"] .view-actions .knomo-mobile-search-action {
+	width: 52px;
+	min-width: 52px;
+	height: 40px;
+	min-height: 40px;
+	margin: 0;
+	padding: 0;
+	border: 1px solid var(--knomo-soft-border);
+	border-radius: 10px;
+	appearance: none;
+	background: var(--knomo-surface);
+	box-shadow: var(--knomo-card-shadow);
+	overflow: hidden;
+}
+
+body.is-mobile .workspace-leaf-content[data-type="plain-memo-view"] .view-actions:has(.knomo-mobile-search-action)::before,
+body.is-mobile .workspace-leaf-content[data-type="plain-memo-view"] .view-actions:has(.knomo-mobile-search-action)::after,
+body.is-mobile .workspace-leaf-content[data-type="plain-memo-view"] .view-actions .knomo-mobile-search-action::before,
+body.is-mobile .workspace-leaf-content[data-type="plain-memo-view"] .view-actions .knomo-mobile-search-action::after {
+	display: none;
+	content: none;
+}
+
+body.is-mobile .workspace-leaf-content[data-type="plain-memo-view"] .view-actions .knomo-mobile-search-action svg {
+	width: 22px;
+	height: 22px;
+}
+
 body.is-mobile .workspace-leaf-content[data-type="plain-memo-view"] .view-header.knomo-record-stats-header {
 	border-inline-end: 0;
 }
@@ -1251,7 +1295,6 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .knomo-plugin.is-resiz
 .knomo-plugin .knomo-search-icon {
 	display: inline-flex;
 	color: var(--text-muted);
-	transform: rotate(-15deg);
 }
 
 .knomo-plugin .knomo-search-input {
@@ -2703,12 +2746,17 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .knomo-plugin.is-resiz
 	cursor: pointer;
 }
 
-.knomo-plugin .knomo-feed-quick-action:hover,
-.knomo-plugin .knomo-feed-quick-action:focus-visible,
+.knomo-plugin .knomo-feed-quick-action:not(:disabled):hover,
+.knomo-plugin .knomo-feed-quick-action:not(:disabled):focus-visible,
 .knomo-plugin .knomo-feed-quick-action.is-active {
 	border-color: color-mix(in srgb, var(--knomo-accent) 38%, var(--knomo-soft-border));
 	color: var(--knomo-accent-text);
 	background: var(--knomo-accent-soft);
+}
+
+.knomo-plugin .knomo-feed-quick-action:disabled {
+	cursor: default;
+	color: var(--text-faint);
 }
 
 .knomo-plugin .knomo-feed-quick-action .knomo-button-icon {

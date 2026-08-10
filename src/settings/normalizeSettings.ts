@@ -7,6 +7,11 @@ import { DEFAULT_KNOMO_SETTINGS } from "./defaults";
 
 export { DEFAULT_KNOMO_SETTINGS } from "./defaults";
 
+const LEGACY_DEFAULT_SIDEBAR_SUBTITLES = new Set([
+	String.fromCodePoint(0x5f53, 0x4e0b, 0x5ff5, 0x60f3, 0xff0c, 0x6f7a, 0x6f7a, 0x5149, 0x9634),
+	"Fleeting thoughts, steady days",
+]);
+
 function isMobileCompactMode(value: unknown): value is MobileCompactMode {
 	return value === "auto" || value === "on" || value === "off";
 }
@@ -23,6 +28,7 @@ function booleanOrDefault(value: unknown, fallback: boolean): boolean {
 function subtitleOrDefault(value: unknown, fallback: string): string {
 	if (typeof value !== "string") return fallback;
 	const normalized = value.replace(/\s+/g, " ").trim();
+	if (LEGACY_DEFAULT_SIDEBAR_SUBTITLES.has(normalized)) return fallback;
 	return normalized.length > 0 ? normalized.slice(0, 80) : fallback;
 }
 

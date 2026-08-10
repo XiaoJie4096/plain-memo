@@ -949,7 +949,7 @@ export class KnomoView extends ItemView {
 			retryTimeBuoy: () => this.timeBuoyViewController.retry(),
 			setTimeBuoyTab: (tab) => this.setTimeBuoyTabFromAction(tab),
 			loadMoreTimeBuoyCards: () => this.renderNextTimeBuoyBatch(this.renderGeneration),
-			openTimeBuoy: () => this.setSidebarNav("time-buoy"),
+			openTimeBuoy: () => this.setSidebarNav(this.activeNav === "time-buoy" ? "all" : "time-buoy"),
 			openRandomReunion: () => this.openRandomReunion(),
 			togglePinnedSection: () => this.togglePinnedSection(),
 			renderAllMemosLoadingState: () => this.renderAllMemosLoadingState(),
@@ -2039,7 +2039,7 @@ export class KnomoView extends ItemView {
 		if (this.mobileSearchHeaderActionEl === null || !this.mobileSearchHeaderActionEl.isConnected) {
 			this.mobileSearchHeaderActionEl?.remove();
 			this.mobileSearchHeaderActionEl = this.addAction("search", t("search.knomo"), () => this.openMobileHeaderSearch());
-			this.mobileSearchHeaderActionEl.addClass("knomo-mobile-header-action");
+			this.mobileSearchHeaderActionEl.addClass("knomo-mobile-header-action", "knomo-mobile-search-action");
 			this.mobileSearchHeaderActionEl.setAttr("aria-label", t("search.knomo"));
 		}
 	}
@@ -6193,7 +6193,9 @@ export class KnomoView extends ItemView {
 			return;
 		}
 		const snapshot = this.pinnedMemos.getSnapshot();
+		const pinnedCount = this.getPinnedMemos().length;
 		const actions = renderKnomoFeedQuickActions(container, {
+			pinnedCount,
 			pinsCollapsed: snapshot.collapsed,
 			randomActive: this.activeNav === "random",
 			timeBuoyActive: this.activeNav === "time-buoy",
@@ -6205,14 +6207,17 @@ export class KnomoView extends ItemView {
 	/** Toggles the device-local pinned section visibility. */
 	private async togglePinnedSection(): Promise<void> {
 		const snapshot = this.pinnedMemos.getSnapshot();
+		if (this.getPinnedMemos().length === 0) {
+			return;
+		}
 		await this.pinnedMemos.setCollapsed(!snapshot.collapsed);
-		this.forceRebuildCardFlow();
+		this.renderCardFlow();
 	}
 
-	/** Opens random reunion or refreshes it when it is already active. */
+	/** Opens random reunion or returns to all notes when it is already active. */
 	private openRandomReunion(): void {
 		if (this.activeNav === "random") {
-			void this.randomReunionController.refresh();
+			this.setSidebarNav("all");
 			return;
 		}
 		this.setSidebarNav("random");
