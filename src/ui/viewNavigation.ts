@@ -85,6 +85,12 @@ export function isSidebarNav(value: string | null): value is SidebarNav {
 }
 
 export function getSidebarNavLabel(value: SidebarNav): string {
+	if (value === "random") {
+		return t("nav.random");
+	}
+	if (value === "time-buoy") {
+		return t("nav.timeBuoy");
+	}
 	return getAllSidebarNavItems().find((item) => item.nav === value)?.label ?? t("nav.allNotes");
 }
 

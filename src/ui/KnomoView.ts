@@ -62,7 +62,6 @@ import {
 import { getPreferredComposerSourcePath } from "./ComposerSourcePath";
 import { ComposerListEnterState } from "./ComposerListEnterState";
 import type { PendingListEnterCorrection } from "./ComposerListEnterState";
-import { ComposerMarkdownPreview } from "./ComposerMarkdownPreview";
 import { ComposerSaveShortcutController } from "./ComposerSaveShortcutController";
 import { getTextareaCharacterRect } from "./composerSuggestPosition";
 import { ImagePreviewScrollLock } from "./ImagePreviewScrollLock";
@@ -327,7 +326,6 @@ export class KnomoView extends ItemView {
 	private cardFlowEl: HTMLElement | null = null;
 	private trashCountEls: HTMLElement[] = [];
 	private inputEl: HTMLTextAreaElement | null = null;
-	private composerMarkdownPreviewEl: HTMLElement | null = null;
 	private tagChipListEl: HTMLElement | null = null;
 	private timeBuoyButtonEl: HTMLButtonElement | null = null;
 	private timeBuoyMonthStatusEl: HTMLElement | null = null;
@@ -386,7 +384,6 @@ export class KnomoView extends ItemView {
 	private readonly desktopSidebarStateController = new DesktopSidebarStateController();
 	private readonly composerListEnterState: ComposerListEnterState;
 	private readonly composerSaveShortcutController = new ComposerSaveShortcutController();
-	private readonly composerMarkdownPreview: ComposerMarkdownPreview;
 	private readonly imagePreviewScrollLock = new ImagePreviewScrollLock();
 	private readonly mobileHandledToolPointer: MobileHandledToolPointer;
 	private readonly mobileHeaderTitleController: MobileHeaderTitleController;
@@ -577,10 +574,6 @@ export class KnomoView extends ItemView {
 		private readonly onManualRefresh: () => Promise<void>,
 	) {
 		super(leaf);
-		this.composerMarkdownPreview = new ComposerMarkdownPreview({
-			app: this.app,
-			getWindow: () => this.containerEl.win,
-		});
 		this.floatingCollapseControlScheduler = new AnimationFrameTaskScheduler(
 			() => this.containerEl.win,
 			() => this.syncFloatingCollapseControls(),
@@ -1096,7 +1089,6 @@ export class KnomoView extends ItemView {
 		this.mobileSearchRenderGeneration += 1;
 		this.memoMarkdownRenderer.clear();
 		this.memoMarkdownRenderer.clear("mobile-search");
-		this.composerMarkdownPreview.dispose();
 		this.contentEl.removeClass("knomo-view-host");
 	}
 
@@ -1438,8 +1430,6 @@ export class KnomoView extends ItemView {
 		});
 		this.composerEl = composer.composerEl;
 		this.inputEl = composer.inputEl;
-		this.composerMarkdownPreviewEl = composer.markdownPreviewEl;
-		this.composerMarkdownPreview.attach(composer.markdownPreviewEl);
 		this.tagChipListEl = composer.tagChipListEl;
 		this.timeBuoyButtonEl = composer.timeBuoyButtonEl;
 		this.timeBuoyMonthStatusEl = composer.timeBuoyMonthStatusEl;
@@ -1836,18 +1826,6 @@ export class KnomoView extends ItemView {
 			this.updateMobileComposerMeasurements();
 			this.resizeInput();
 		}
-		this.syncComposerMarkdownPreview();
-	}
-
-	/** Synchronizes the rendered Markdown surface without replacing the source textarea. */
-	private syncComposerMarkdownPreview(): void {
-		const memo = this.editingMemo;
-		this.composerMarkdownPreview.update(
-			this.inputEl?.value ?? "",
-			memo?.dailyRef.path ?? "",
-			memo !== null,
-		);
-		this.composerMarkdownPreviewEl?.toggleClass("is-editing-preview", memo !== null);
 	}
 
 	private syncRootState(): void {
@@ -1999,8 +1977,15 @@ export class KnomoView extends ItemView {
 		}
 		const rect = anchor.getBoundingClientRect();
 		if (this.currentLayout === "mobile") {
+			const dropdownWidth = 168;
+			const popoverPadding = 12;
+			const maxLeft = Math.max(
+				popoverPadding,
+				Math.round(this.containerEl.win.innerWidth - dropdownWidth - popoverPadding),
+			);
+			const left = Math.min(maxLeft, Math.max(popoverPadding, Math.round(rect.left)));
 			root.setCssProps({
-				"--knomo-title-popover-left": TITLE_POPOVER_LEFT_DEFAULT,
+				"--knomo-title-popover-left": `${left}px`,
 				"--knomo-title-popover-top": `${Math.round(rect.bottom + 6)}px`,
 			});
 			return;
@@ -5259,7 +5244,6 @@ export class KnomoView extends ItemView {
 
 	private syncInputState(): void {
 		this.draftContent = this.inputEl?.value ?? "";
-		this.syncComposerMarkdownPreview();
 		this.syncRecognizedTagChips();
 		this.updateSendButtonState();
 		if (this.currentLayout === "mobile") {

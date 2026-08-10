@@ -95,6 +95,7 @@ export const zhCN = {
 	"feed.pins.none": "无置顶",
 	"feed.random": "随机重逢",
 	"feed.timeBuoy": "时光浮标",
+	"feed.backHome": "回到首页",
 	"recordStats.back": "返回上一页",
 	"recordStats.overview.notes": "全部笔记",
 	"recordStats.overview.words": "全部字数",

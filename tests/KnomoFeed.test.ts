@@ -4,6 +4,7 @@ import { ensureObsidianStub } from "./helpers/obsidianStub";
 
 test("renders feed summary, toolbar, load more buttons, and empty states", async () => {
 	await ensureObsidianStub();
+	const { KNOMO_ALL_NOTES_ICON, KNOMO_RANDOM_REUNION_ICON } = await import("../src/icons");
 	const {
 		 renderKnomoCardFlowHeaders,
 		 renderKnomoEmptyState,
@@ -30,7 +31,8 @@ test("renders feed summary, toolbar, load more buttons, and empty states", async
 	assert.equal(quickActions.find("[data-action='toggle-pinned-section']")?.getText(), "Show pins");
 	assert.equal(quickActions.find("[data-action='toggle-pinned-section']")?.findAll(".knomo-button-icon").length, 1);
 	assert.equal(quickActions.find("[data-action='open-time-buoy']")?.getAttr("aria-pressed"), "true");
-	assert.equal(quickActions.find("[data-action='open-time-buoy']")?.getText(), "All notes");
+	assert.equal(quickActions.find("[data-action='open-time-buoy']")?.getText(), "Back home");
+	assert.equal(quickActions.find("[data-action='open-time-buoy']")?.find(".knomo-button-icon")?.getAttr("data-icon"), KNOMO_ALL_NOTES_ICON);
 
 	const noPinsActions = renderKnomoFeedQuickActions(root.asHtml(), {
 		pinnedCount: 0,
@@ -43,7 +45,9 @@ test("renders feed summary, toolbar, load more buttons, and empty states", async
 	assert.equal(noPinsButton?.getText(), "No pins");
 	assert.equal(noPinsButton?.getAttr("disabled"), "");
 	assert.equal(noPinsButton?.findAll(".knomo-button-icon").length, 0);
-	assert.equal(noPinsActions.find("[data-action='open-random-reunion']")?.getText(), "All notes");
+	assert.equal(noPinsActions.find("[data-action='open-random-reunion']")?.getText(), "Back home");
+	assert.equal(noPinsActions.find("[data-action='open-random-reunion']")?.find(".knomo-button-icon")?.getAttr("data-icon"), KNOMO_ALL_NOTES_ICON);
+	assert.equal(quickActions.find("[data-action='open-random-reunion']")?.find(".knomo-button-icon")?.getAttr("data-icon"), KNOMO_RANDOM_REUNION_ICON);
 
 	const summary = renderKnomoListSummary(root.asHtml(), "Filtered 3 memos");
 	assert.equal(summary.hasClass("knomo-list-summary"), true);

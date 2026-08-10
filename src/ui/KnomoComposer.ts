@@ -6,7 +6,6 @@ import { t } from "../i18n";
 export interface KnomoComposerElements {
 	composerEl: HTMLElement;
 	inputEl: HTMLTextAreaElement;
-	markdownPreviewEl: HTMLElement;
 	tagChipListEl: HTMLElement;
 	referencePreviewEl: HTMLElement;
 	composerBarEl: HTMLElement;
@@ -51,10 +50,6 @@ export function renderKnomoComposer(container: HTMLElement, options: RenderKnomo
 	});
 	inputEl.disabled = !options.dailyEnabled;
 	inputEl.value = options.draftContent;
-	const markdownPreviewEl = inputArea.createDiv({
-		cls: "knomo-composer-markdown-preview markdown-rendered",
-		attr: { "aria-hidden": "true" },
-	});
 
 	const referencePreviewEl = inputArea.createDiv({ cls: "knomo-reference-preview" });
 	const tagChipListEl = inputArea.createDiv({
@@ -116,7 +111,6 @@ export function renderKnomoComposer(container: HTMLElement, options: RenderKnomo
 	return {
 		composerEl,
 		inputEl,
-		markdownPreviewEl,
 		tagChipListEl,
 		referencePreviewEl,
 		composerBarEl,

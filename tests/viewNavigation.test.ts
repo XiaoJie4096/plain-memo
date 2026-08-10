@@ -54,6 +54,25 @@ test("mobile title label stays anchored to available list states", () => {
 		activeTag: "Project",
 		activeTagKey: "project",
 	}), "#Project");
+	assert.equal(getMobileTitleLabel({
+		...baseTitleState,
+		activeNav: "random",
+	}), "Random revisit");
+	assert.equal(getMobileTitleLabel({
+		...baseTitleState,
+		activeNav: "time-buoy",
+	}), "Time buoy");
+});
+
+test("desktop title label names shortcut pages", () => {
+	assert.equal(getDesktopTitleLabel({
+		...baseTitleState,
+		activeNav: "random",
+	}), "Random revisit");
+	assert.equal(getDesktopTitleLabel({
+		...baseTitleState,
+		activeNav: "time-buoy",
+	}), "Time buoy");
 });
 
 test("current title mode follows nav and scope state", () => {

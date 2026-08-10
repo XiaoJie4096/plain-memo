@@ -1444,16 +1444,16 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .knomo-plugin.is-resiz
 .knomo-plugin.is-layout-mobile .knomo-mobile-scope-popover {
 	position: fixed;
 	top: var(--knomo-title-popover-top);
-	left: 50%;
+	left: var(--knomo-title-popover-left);
 	width: var(--knomo-dropdown-width);
 	min-width: var(--knomo-dropdown-width);
-	transform: translate(-50%, -4px) scale(0.98);
-	transform-origin: top center;
+	transform: translateY(-4px) scale(0.98);
+	transform-origin: top left;
 }
 
 .knomo-plugin.is-layout-mobile.is-scope-open .knomo-mobile-scope-popover {
 	opacity: 1;
-	transform: translate(-50%, 0) scale(1);
+	transform: translateY(0) scale(1);
 	visibility: visible;
 	pointer-events: auto;
 }
@@ -1913,55 +1913,6 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .knomo-plugin.is-resiz
 .knomo-plugin .knomo-composer-input:disabled {
 	color: var(--text-muted);
 	background: transparent;
-}
-
-.knomo-plugin .knomo-composer-markdown-preview,
-.knomo-mobile-composer-layer .knomo-composer-markdown-preview {
-	position: relative;
-	display: none;
-	order: -1;
-	flex: 0 0 auto;
-	max-height: 200px;
-	margin: 0 0 10px;
-	padding: 2px 0 10px;
-	overflow: hidden;
-	color: var(--text-normal);
-	font-size: 15px;
-	line-height: 1.65;
-	pointer-events: none;
-	-webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent);
-	mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent);
-}
-
-.knomo-plugin .knomo-composer-markdown-preview.is-visible,
-.knomo-mobile-composer-layer .knomo-composer-markdown-preview.is-visible {
-	display: block;
-}
-
-.knomo-plugin .knomo-composer-markdown-preview > :first-child,
-.knomo-mobile-composer-layer .knomo-composer-markdown-preview > :first-child {
-	margin-top: 0;
-}
-
-.knomo-plugin .knomo-composer-markdown-preview > :last-child,
-.knomo-mobile-composer-layer .knomo-composer-markdown-preview > :last-child {
-	margin-bottom: 0;
-}
-
-.knomo-plugin .knomo-composer-markdown-preview img,
-.knomo-mobile-composer-layer .knomo-composer-markdown-preview img {
-	max-width: 100%;
-	max-height: 140px;
-	object-fit: contain;
-	object-position: left center;
-}
-
-.knomo-plugin.is-layout-mobile .knomo-composer-markdown-preview,
-.knomo-mobile-composer-layer .knomo-composer-markdown-preview {
-	max-height: 112px;
-	margin-bottom: 6px;
-	padding-bottom: 7px;
-	font-size: 14px;
 }
 
 .knomo-plugin .knomo-composer-tag-chips {

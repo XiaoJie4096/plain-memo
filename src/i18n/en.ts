@@ -97,6 +97,7 @@ export const en: Record<TranslationKey, string> = {
 	"feed.pins.none": "No pins",
 	"feed.random": "Random revisit",
 	"feed.timeBuoy": "Time buoy",
+	"feed.backHome": "Back home",
 	"recordStats.back": "Back",
 	"recordStats.overview.notes": "All notes",
 	"recordStats.overview.words": "All words",

@@ -32,7 +32,7 @@ export function renderKnomoFeedQuickActions(
 	renderFeedQuickAction(
 		actions,
 		options.randomActive ? KNOMO_ALL_NOTES_ICON : KNOMO_RANDOM_REUNION_ICON,
-		options.randomActive ? t("nav.allNotes") : t("feed.random"),
+		options.randomActive ? t("feed.backHome") : t("feed.random"),
 		"open-random-reunion",
 		options.randomActive,
 	);
@@ -40,7 +40,7 @@ export function renderKnomoFeedQuickActions(
 		renderFeedQuickAction(
 			actions,
 			options.timeBuoyActive ? KNOMO_ALL_NOTES_ICON : KNOMO_TIME_BUOY_ICON,
-			options.timeBuoyActive ? t("nav.allNotes") : t("feed.timeBuoy"),
+			options.timeBuoyActive ? t("feed.backHome") : t("feed.timeBuoy"),
 			"open-time-buoy",
 			options.timeBuoyActive,
 		);
