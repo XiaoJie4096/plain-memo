@@ -5,14 +5,28 @@ import { ensureObsidianStub } from "./helpers/obsidianStub";
 test("renders feed summary, toolbar, load more buttons, and empty states", async () => {
 	await ensureObsidianStub();
 	const {
-		renderKnomoCardFlowHeaders,
-		renderKnomoEmptyState,
+		 renderKnomoCardFlowHeaders,
+		 renderKnomoEmptyState,
+		renderKnomoFeedQuickActions,
 		renderKnomoListSummary,
 		renderKnomoLoadMoreButton,
 		renderKnomoRandomReunionToolbar,
 		renderKnomoShuffleDayHeader,
 	} = await import("../src/ui/KnomoFeed");
 	const root = new TestElement("div");
+	const quickActions = renderKnomoFeedQuickActions(root.asHtml(), {
+		pinsCollapsed: true,
+		randomActive: false,
+		timeBuoyActive: true,
+		timeBuoyEnabled: true,
+	});
+	assert.deepEqual(quickActions.findAll("[data-action]").map((item) => item.getAttr("data-action")), [
+		"toggle-pinned-section",
+		"open-random-reunion",
+		"open-time-buoy",
+	]);
+	assert.equal(quickActions.find("[data-action='toggle-pinned-section']")?.getAttr("aria-pressed"), "false");
+	assert.equal(quickActions.find("[data-action='open-time-buoy']")?.getAttr("aria-pressed"), "true");
 
 	const summary = renderKnomoListSummary(root.asHtml(), "Filtered 3 memos");
 	assert.equal(summary.hasClass("knomo-list-summary"), true);
@@ -100,6 +114,10 @@ class TestElement {
 
 	createDiv(options: CreateElementOptions = {}): TestElement {
 		return this.createEl("div", options);
+	}
+
+	createSpan(options: CreateElementOptions = {}): TestElement {
+		return this.createEl("span", options);
 	}
 
 	createEl(tagName: string, options: CreateElementOptions = {}): TestElement {

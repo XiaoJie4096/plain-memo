@@ -1,4 +1,5 @@
 import { SETTINGS_VERSION } from "../constants";
+import { t } from "../i18n";
 import type { KnomoSettings, MobileCompactMode } from "../types/settings";
 import { isRecord } from "../utils/object";
 import { normalizeVaultPath } from "../utils/path";
@@ -18,6 +19,13 @@ function booleanOrDefault(value: unknown, fallback: boolean): boolean {
 	return typeof value === "boolean" ? value : fallback;
 }
 
+/** Normalizes the editable sidebar subtitle to one bounded line. */
+function subtitleOrDefault(value: unknown, fallback: string): string {
+	if (typeof value !== "string") return fallback;
+	const normalized = value.replace(/\s+/g, " ").trim();
+	return normalized.length > 0 ? normalized.slice(0, 80) : fallback;
+}
+
 export function normalizeSettings(value: unknown): KnomoSettings {
 	const saved = isRecord(value) ? value : {};
 	const defaultMemoFolder = normalizeVaultPath(
@@ -31,6 +39,10 @@ export function normalizeSettings(value: unknown): KnomoSettings {
 	]);
 	return {
 		settingsVersion: SETTINGS_VERSION,
+		sidebarSubtitle: subtitleOrDefault(
+			saved.sidebarSubtitle,
+			DEFAULT_KNOMO_SETTINGS.sidebarSubtitle ?? t("sidebar.subtitle"),
+		),
 		memoFolders,
 		defaultMemoFolder,
 		memoCollapseLineThreshold: Math.max(6, Math.floor(numberOrDefault(

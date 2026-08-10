@@ -244,6 +244,9 @@ test("handleAction dispatches every simple action to the expected view callbacks
 		"collapse-sidebar": {
 			expected: ["collapse-sidebar", "sync-chrome", "sync-card-menu"],
 		},
+		"open-settings": {
+			expected: ["open-settings"],
+		},
 		refresh: {
 			expected: ["refresh"],
 		},
@@ -279,6 +282,12 @@ test("handleAction dispatches every simple action to the expected view callbacks
 		},
 		"open-time-buoy": {
 			expected: ["time-buoy-open"],
+		},
+		"open-random-reunion": {
+			expected: ["open-random-reunion"],
+		},
+		"toggle-pinned-section": {
+			expected: ["toggle-pinned-section"],
 		},
 		"retry-all-memos": {
 			overrides: { deferAllMemos: true },
@@ -478,6 +487,7 @@ function createHarness(overrides: Partial<HarnessState> = {}): {
 			toggleScopeMenu: () => calls.push("toggle-scope"),
 			toggleSidebar: () => calls.push("toggle-sidebar"),
 			collapseSidebar: () => calls.push("collapse-sidebar"),
+			openSettings: () => calls.push("open-settings"),
 			handleManualRefresh: async () => {
 				calls.push("refresh");
 			},
@@ -494,6 +504,10 @@ function createHarness(overrides: Partial<HarnessState> = {}): {
 			setTimeBuoyTab: (tab) => calls.push(`time-buoy-tab:${tab}`),
 			loadMoreTimeBuoyCards: () => calls.push("time-buoy-more-cards"),
 			openTimeBuoy: () => calls.push("time-buoy-open"),
+			openRandomReunion: () => calls.push("open-random-reunion"),
+			togglePinnedSection: async () => {
+				calls.push("toggle-pinned-section");
+			},
 			renderAllMemosLoadingState: () => calls.push("all-memos-loading"),
 			ensureAllMemosLoaded: async () => {
 				calls.push("ensure-all-memos");

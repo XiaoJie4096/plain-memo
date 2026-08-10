@@ -57,7 +57,8 @@ const NATIVE_HIDDEN_CLASS = "knomo-mobile-navbar-hidden";
 const SIDEBAR_ACTION_CLASS = "knomo-mobile-navbar-sidebar-action";
 const CREATE_BUTTON_CLASS = "knomo-mobile-create-fab";
 const CREATE_BUTTON_HIDDEN_CLASS = "is-hidden";
-const CREATE_BUTTON_SIZE = 60;
+const CREATE_BUTTON_WIDTH = 64;
+const CREATE_BUTTON_HEIGHT = 52;
 const CREATE_BUTTON_GAP = 8;
 const MIN_COLLISION_GAP = 8;
 const CHROME_EDGE_FALLBACK_INSET = 8;
@@ -67,7 +68,7 @@ const SYNC_THROTTLE_MS = 300;
 const NAVBAR_EDGE_LEFT_VAR = "--knomo-mobile-navbar-edge-left";
 const NAVBAR_RESERVED_RIGHT_VAR = "--knomo-mobile-navbar-reserved-right";
 const NAVBAR_EDGE_LEFT_DEFAULT = `${CHROME_EDGE_FALLBACK_INSET}px`;
-const NAVBAR_RESERVED_RIGHT_DEFAULT = `${CHROME_EDGE_FALLBACK_INSET + CREATE_BUTTON_SIZE + MIN_COLLISION_GAP}px`;
+const NAVBAR_RESERVED_RIGHT_DEFAULT = `${CHROME_EDGE_FALLBACK_INSET + CREATE_BUTTON_WIDTH + MIN_COLLISION_GAP}px`;
 const CREATE_BUTTON_RIGHT_VAR = "--knomo-mobile-create-fab-right";
 const CREATE_BUTTON_BOTTOM_VAR = "--knomo-mobile-create-fab-bottom";
 
@@ -89,8 +90,8 @@ export class MobileNavbarCompactController {
 		left: CHROME_EDGE_FALLBACK_INSET,
 		right: CHROME_EDGE_FALLBACK_INSET,
 	};
-	private stableFloatingCreateButtonBottom = CREATE_BUTTON_SIZE + CREATE_BUTTON_GAP;
-	private stableFixedCreateButtonBottom = CREATE_BUTTON_SIZE + CREATE_BUTTON_GAP;
+	private stableFloatingCreateButtonBottom = CREATE_BUTTON_HEIGHT + CREATE_BUTTON_GAP;
+	private stableFixedCreateButtonBottom = CREATE_BUTTON_HEIGHT + CREATE_BUTTON_GAP;
 	private readonly stylePropsByElement = new WeakMap<HTMLElement, Map<string, string>>();
 
 	constructor(
@@ -503,7 +504,7 @@ export class MobileNavbarCompactController {
 		const rect = navbarEl.getBoundingClientRect();
 		if (this.isBottomNavbarRect(rect)) {
 			const centerY = rect.top + rect.height / 2;
-			const bottom = Math.round(this.win.innerHeight - centerY - CREATE_BUTTON_SIZE / 2);
+			const bottom = Math.round(this.win.innerHeight - centerY - CREATE_BUTTON_HEIGHT / 2);
 			if (this.isUsableCreateButtonBottom(bottom)) {
 				this.stableFloatingCreateButtonBottom = bottom;
 			}
@@ -546,7 +547,7 @@ export class MobileNavbarCompactController {
 		this.setStyleProperty(
 			navbarEl,
 			NAVBAR_RESERVED_RIGHT_VAR,
-			`${edgeInsets.right + CREATE_BUTTON_SIZE + MIN_COLLISION_GAP}px`,
+			`${edgeInsets.right + CREATE_BUTTON_WIDTH + MIN_COLLISION_GAP}px`,
 		);
 	}
 

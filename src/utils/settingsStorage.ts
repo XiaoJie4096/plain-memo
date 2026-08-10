@@ -1,8 +1,9 @@
+import { t } from "../i18n";
 import type { KnomoSettings } from "../types/settings";
 import { isRecord } from "./object";
 
 export type SharedKnomoSettings = Pick<KnomoSettings,
-	"settingsVersion" | "memoFolders" | "defaultMemoFolder" | "memoCollapseLineThreshold" | "pinnedMemoLimit" | "trashRetentionDays" | "timeBuoyEnabled"
+	"settingsVersion" | "sidebarSubtitle" | "memoFolders" | "defaultMemoFolder" | "memoCollapseLineThreshold" | "pinnedMemoLimit" | "trashRetentionDays" | "timeBuoyEnabled"
 >;
 
 export type LocalKnomoSettings = Pick<KnomoSettings,
@@ -11,6 +12,7 @@ export type LocalKnomoSettings = Pick<KnomoSettings,
 
 const SHARED_SETTING_KEYS: readonly (keyof SharedKnomoSettings)[] = [
 	"settingsVersion",
+	"sidebarSubtitle",
 	"memoFolders",
 	"defaultMemoFolder",
 	"memoCollapseLineThreshold",
@@ -29,6 +31,7 @@ const LOCAL_SETTING_KEYS: readonly (keyof LocalKnomoSettings)[] = [
 export function selectSharedSettings(settings: KnomoSettings): SharedKnomoSettings {
 	return {
 		settingsVersion: settings.settingsVersion,
+		sidebarSubtitle: settings.sidebarSubtitle ?? t("sidebar.subtitle"),
 		memoFolders: [...(settings.memoFolders ?? [])],
 		defaultMemoFolder: settings.defaultMemoFolder ?? "",
 		memoCollapseLineThreshold: settings.memoCollapseLineThreshold ?? 8,

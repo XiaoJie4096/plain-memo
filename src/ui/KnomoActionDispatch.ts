@@ -14,6 +14,7 @@ export type KnomoSimpleAction =
 	| "toggle-scope-menu"
 	| "toggle-sidebar"
 	| "collapse-sidebar"
+	| "open-settings"
 	| "refresh"
 	| "focus-stats"
 	| "record-stats-back"
@@ -27,6 +28,8 @@ export type KnomoSimpleAction =
 	| "time-buoy-tab-past"
 	| "load-more-time-buoy-cards"
 	| "open-time-buoy"
+	| "open-random-reunion"
+	| "toggle-pinned-section"
 	| "record-stats-view-week"
 	| "record-stats-view-month"
 	| "record-stats-view-year"
@@ -78,6 +81,7 @@ export function getKnomoActionDispatch(action: string | null): KnomoActionDispat
 		action === "toggle-scope-menu" ||
 		action === "toggle-sidebar" ||
 		action === "collapse-sidebar" ||
+		action === "open-settings" ||
 		action === "refresh" ||
 		action === "focus-stats" ||
 		action === "record-stats-back" ||
@@ -91,6 +95,8 @@ export function getKnomoActionDispatch(action: string | null): KnomoActionDispat
 		action === "time-buoy-tab-past" ||
 		action === "load-more-time-buoy-cards" ||
 		action === "open-time-buoy" ||
+		action === "open-random-reunion" ||
+		action === "toggle-pinned-section" ||
 		action === "record-stats-view-week" ||
 		action === "record-stats-view-month" ||
 		action === "record-stats-view-year" ||

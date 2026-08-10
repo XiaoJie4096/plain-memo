@@ -1,3 +1,6 @@
+import { setIcon } from "obsidian";
+
+import { KNOMO_RANDOM_REUNION_ICON, KNOMO_TIME_BUOY_ICON } from "../icons";
 import { getKnomoLocale, t } from "../i18n";
 import type { CardFlowHeader } from "./KnomoCardFlowPresenter";
 import type { ShuffleDayStats } from "../utils/shuffleDay";
@@ -9,6 +12,45 @@ interface RenderLoadMoreButtonOptions {
 	action: LoadMoreAction;
 	extraClass?: string;
 	sentinel?: boolean;
+}
+
+export interface FeedQuickActionsOptions {
+	pinsCollapsed: boolean;
+	randomActive: boolean;
+	timeBuoyActive: boolean;
+	timeBuoyEnabled: boolean;
+}
+
+/** Renders the persistent feed controls shared by desktop and mobile layouts. */
+export function renderKnomoFeedQuickActions(
+	container: HTMLElement,
+	options: FeedQuickActionsOptions,
+): HTMLElement {
+	const actions = container.createDiv({ cls: "knomo-feed-quick-actions" });
+	renderFeedQuickAction(
+		actions,
+		options.pinsCollapsed ? "chevrons-down" : "chevrons-up",
+		options.pinsCollapsed ? t("feed.pins.expand") : t("feed.pins.collapse"),
+		"toggle-pinned-section",
+		!options.pinsCollapsed,
+	);
+	renderFeedQuickAction(
+		actions,
+		KNOMO_RANDOM_REUNION_ICON,
+		t("feed.random"),
+		"open-random-reunion",
+		options.randomActive,
+	);
+	if (options.timeBuoyEnabled) {
+		renderFeedQuickAction(
+			actions,
+			KNOMO_TIME_BUOY_ICON,
+			t("feed.timeBuoy"),
+			"open-time-buoy",
+			options.timeBuoyActive,
+		);
+	}
+	return actions;
 }
 
 export function renderKnomoListSummary(container: HTMLElement, text: string): HTMLElement {
@@ -83,6 +125,27 @@ export function renderKnomoEmptyState(container: HTMLElement, title = t("empty.g
 		emptyState.createDiv({ cls: "knomo-empty-description", text: description });
 	}
 	return emptyState;
+}
+
+/** Renders one stateful action in the persistent feed control row. */
+function renderFeedQuickAction(
+	container: HTMLElement,
+	icon: string,
+	label: string,
+	action: string,
+	active: boolean,
+): HTMLButtonElement {
+	const button = container.createEl("button", {
+		cls: active ? "knomo-feed-quick-action is-active" : "knomo-feed-quick-action",
+		attr: {
+			type: "button",
+			"data-action": action,
+			"aria-pressed": active ? "true" : "false",
+		},
+	});
+	setIcon(button.createSpan({ cls: "knomo-button-icon" }), icon);
+	button.createSpan({ cls: "knomo-button-label", text: label });
+	return button;
 }
 
 function formatShuffleDayDateTitle(selectedDate: string): string {

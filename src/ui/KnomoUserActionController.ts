@@ -66,6 +66,7 @@ interface KnomoUserActionControllerOptions {
 	toggleScopeMenu: () => void;
 	toggleSidebar: () => void;
 	collapseSidebar: () => void;
+	openSettings: () => void;
 	handleManualRefresh: () => Promise<void>;
 	focusStats: () => void;
 	returnFromRecordStats: () => void;
@@ -76,6 +77,8 @@ interface KnomoUserActionControllerOptions {
 	setTimeBuoyTab?: (tab: TimeBuoyTab) => void;
 	loadMoreTimeBuoyCards?: () => void;
 	openTimeBuoy?: () => void;
+	openRandomReunion: () => void;
+	togglePinnedSection: () => Promise<void>;
 	renderAllMemosLoadingState: () => void;
 	ensureAllMemosLoaded: () => Promise<void>;
 	setRecordStatsView: (view: "week" | "month" | "year") => void;
@@ -299,6 +302,9 @@ export class KnomoUserActionController {
 			case "collapse-sidebar":
 				this.options.collapseSidebar();
 				break;
+			case "open-settings":
+				this.options.openSettings();
+				return;
 			case "refresh":
 				await this.options.handleManualRefresh();
 				return;
@@ -334,6 +340,12 @@ export class KnomoUserActionController {
 				return;
 			case "open-time-buoy":
 				this.options.openTimeBuoy?.();
+				return;
+			case "open-random-reunion":
+				this.options.openRandomReunion();
+				return;
+			case "toggle-pinned-section":
+				await this.options.togglePinnedSection();
 				return;
 			case "retry-all-memos":
 				if (!this.options.shouldDeferCardFlowForAllMemos()) {

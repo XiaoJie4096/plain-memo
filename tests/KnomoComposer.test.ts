@@ -36,6 +36,9 @@ test("renders composer input, tools, actions, and reference preview", async () =
 	assert.equal(elements.inputEl.value, "draft memo");
 	assert.equal(elements.inputEl.disabled, true);
 	assert.equal(elements.inputEl.getAttr("aria-labelledby"), "composer-input-label");
+	assert.equal(elements.markdownPreviewEl.hasClass("knomo-composer-markdown-preview"), true);
+	assert.equal(elements.markdownPreviewEl.hasClass("markdown-rendered"), true);
+	assert.equal(elements.markdownPreviewEl.getAttr("aria-hidden"), "true");
 	assert.deepEqual(elements.toolsEl.findAll("[data-action]").map((item) => item.getAttr("data-action")), [
 		"insert-tag",
 		"insert-wiki-link",

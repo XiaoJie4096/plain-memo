@@ -44,8 +44,6 @@ export function renderKnomoDesktopTopbar(container: HTMLElement, options: Header
 	const searchWrap = topbar.createDiv({ cls: "knomo-search-wrap" });
 	const searchInputEl = renderKnomoSearchInput(searchWrap, "desktop-search-label", options.createHiddenText);
 	renderKnomoSearchPopover(searchWrap);
-	options.createIconButton(topbar, "arrow-left", t("recordStats.back"), "knomo-record-stats-back", "record-stats-back");
-
 	return {
 		titleHostEl,
 		searchInputEl,
@@ -72,8 +70,7 @@ export function renderKnomoCompactHeader(container: HTMLElement, options: Header
 	const inlineSearchInputEl = renderKnomoSearchInput(inlineSearchWrap, "compact-inline-search-label", options.createHiddenText);
 	renderKnomoSearchPopover(inlineSearchWrap);
 
-	options.createIconButton(header, KNOMO_SEARCH_ICON, t("search.label"), "knomo-compact-search-btn", "toggle-compact-search");
-	options.createIconButton(header, "arrow-left", t("recordStats.back"), "knomo-record-stats-back", "record-stats-back");
+	options.createIconButton(header, "search", t("search.label"), "knomo-compact-search-btn", "toggle-compact-search");
 	return {
 		titleHostEl,
 		inlineSearchInputEl,

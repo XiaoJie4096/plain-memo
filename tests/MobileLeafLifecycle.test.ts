@@ -57,7 +57,7 @@ test("mobile navbar compact cleanup removes injected chrome and resets CSS varia
 	assert.equal(createButton.removed, true);
 	assert.equal(compactNavbar.hasClass("knomo-mobile-navbar-compact"), false);
 	assert.equal(compactNavbar.cssProps.get("--knomo-mobile-navbar-edge-left"), "8px");
-	assert.equal(compactNavbar.cssProps.get("--knomo-mobile-navbar-reserved-right"), "76px");
+	assert.equal(compactNavbar.cssProps.get("--knomo-mobile-navbar-reserved-right"), "80px");
 	assert.equal(nativeAction.hasClass("knomo-mobile-navbar-hidden"), false);
 });
 

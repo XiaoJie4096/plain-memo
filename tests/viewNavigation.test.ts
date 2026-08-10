@@ -42,13 +42,13 @@ test("desktop title label prioritizes transient filters before list state", () =
 	}), "With images");
 });
 
-test("mobile title label stays anchored to the list state", () => {
+test("mobile title label stays anchored to available list states", () => {
 	assert.equal(getMobileTitleLabel({
 		...baseTitleState,
 		searchQuery: "knomo",
 		searchDateFilter: "week",
 		activeNav: "review",
-	}), "Beyond today");
+	}), "All notes");
 	assert.equal(getMobileTitleLabel({
 		...baseTitleState,
 		activeTag: "Project",

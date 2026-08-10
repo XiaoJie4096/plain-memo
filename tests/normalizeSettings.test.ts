@@ -5,6 +5,7 @@ import { DEFAULT_KNOMO_SETTINGS, normalizeSettings } from "../src/settings/norma
 
 test("normalizes the current standalone memo settings", () => {
 	const settings = normalizeSettings({
+		sidebarSubtitle: "  Notes\nfor   today  ",
 		memoFolders: [" Cards ", "Cards/child", "Archive", "Archive"],
 		defaultMemoFolder: "Cards",
 		memoCollapseLineThreshold: 3,
@@ -16,6 +17,7 @@ test("normalizes the current standalone memo settings", () => {
 		desktopSidebarCollapsed: true,
 	});
 
+	assert.equal(settings.sidebarSubtitle, "Notes for today");
 	assert.deepEqual(settings.memoFolders, ["Archive", "Cards"]);
 	assert.equal(settings.defaultMemoFolder, "Cards");
 	assert.equal(settings.memoCollapseLineThreshold, 6);
@@ -35,12 +37,18 @@ test("uses current defaults for invalid or missing values", () => {
 	});
 
 	assert.deepEqual(settings.memoFolders, DEFAULT_KNOMO_SETTINGS.memoFolders);
+	assert.equal(settings.sidebarSubtitle, DEFAULT_KNOMO_SETTINGS.sidebarSubtitle);
 	assert.equal(settings.defaultMemoFolder, DEFAULT_KNOMO_SETTINGS.defaultMemoFolder);
 	assert.equal(settings.memoCollapseLineThreshold, DEFAULT_KNOMO_SETTINGS.memoCollapseLineThreshold);
 	assert.equal(settings.pinnedMemoLimit, DEFAULT_KNOMO_SETTINGS.pinnedMemoLimit);
 	assert.equal(settings.trashRetentionDays, DEFAULT_KNOMO_SETTINGS.trashRetentionDays);
 	assert.equal(settings.timeBuoyEnabled, true);
 	assert.equal(settings.mobileCompactMode, "auto");
+});
+
+test("uses the default subtitle for blank values and limits custom text", () => {
+	assert.equal(normalizeSettings({ sidebarSubtitle: " \n " }).sidebarSubtitle, DEFAULT_KNOMO_SETTINGS.sidebarSubtitle);
+	assert.equal(normalizeSettings({ sidebarSubtitle: "x".repeat(100) }).sidebarSubtitle?.length, 80);
 });
 
 test("defaults the pinned memo limit to five", () => {
