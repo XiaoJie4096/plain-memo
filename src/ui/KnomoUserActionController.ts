@@ -216,6 +216,13 @@ export class KnomoUserActionController {
 			return;
 		}
 
+		if (route.type === "memo-card-expand") {
+			event.preventDefault();
+			event.stopPropagation();
+			this.options.toggleMemoCollapse?.(route.memoId, route.element);
+			return;
+		}
+
 		if (sidebarLayerTarget) {
 			return;
 		}

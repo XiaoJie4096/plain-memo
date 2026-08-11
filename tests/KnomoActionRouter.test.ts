@@ -64,6 +64,7 @@ test("routes generic actions, random cards, composer tools, and outside clicks",
 	try {
 		const {
 			getComposerToolButtonRoute,
+			getMemoCardEditRoute,
 			getMemoCardOpenRoute,
 			getRootClickRoute,
 		} = await import("../src/ui/KnomoActionRouter");
@@ -104,7 +105,26 @@ test("routes generic actions, random cards, composer tools, and outside clicks",
 			randomReunion: false,
 		});
 
+		const collapsedCard = new TestElement("article", {
+			cls: "knomo-card has-collapsed-memo",
+			attr: { "data-memo-id": "memo-collapsed" },
+		});
+		const collapsedBody = collapsedCard.createChild("div", { cls: "knomo-card-body" });
+		assert.deepEqual(pickRoute(getRootClickRoute(collapsedBody.asElement(), false)), {
+			type: "memo-card-expand",
+			memoId: "memo-collapsed",
+		});
+		const expandedCard = new TestElement("article", {
+			cls: "knomo-card has-expanded-memo",
+			attr: { "data-memo-id": "memo-expanded" },
+		});
+		assert.equal(
+			getRootClickRoute(expandedCard.createChild("div", { cls: "knomo-card-body" }).asElement(), false).type,
+			"outside",
+		);
+
 		const randomCard = new TestElement("article", {
+			cls: "knomo-card",
 			attr: { "data-memo-id": "memo-5" },
 		});
 		const randomContent = randomCard.createChild("div");
@@ -125,6 +145,19 @@ test("routes generic actions, random cards, composer tools, and outside clicks",
 
 		const linkInRandomCard = randomCard.createChild("a");
 		assert.equal(getMemoCardOpenRoute(linkInRandomCard.asElement()), null);
+		const imageBlank = randomCard
+			.createChild("div", { cls: "knomo-card-body" })
+			.createChild("div", { cls: "knomo-card-images" });
+		assert.deepEqual(getMemoCardEditRoute(imageBlank.asElement()), {
+			element: randomCard.asElement(),
+			memoId: "memo-5",
+		});
+		assert.equal(
+			getMemoCardEditRoute(imageBlank.createChild("button", {
+				attr: { "data-knomo-card-image": "true" },
+			}).asElement()),
+			null,
+		);
 
 		const legacyCard = new TestElement("article", {
 			attr: { "data-memo-card-open": "daily", "data-memo-id": "legacy-memo" },
@@ -226,6 +259,7 @@ function pickRoute(route: ReturnType<typeof import("../src/ui/KnomoActionRouter"
 	if (route.type === "memo-action") return { type: route.type, action: route.action, memoId: route.memoId };
 	if (route.type === "action") return { type: route.type, action: route.action, memoId: route.memoId };
 	if (route.type === "memo-card-open") return { type: route.type, memoId: route.memoId, randomReunion: route.randomReunion };
+	if (route.type === "memo-card-expand") return { type: route.type, memoId: route.memoId };
 	return {
 		type: route.type,
 		closeCardMenu: route.closeCardMenu,
@@ -286,6 +320,10 @@ class TestElement {
 
 	getAttr(key: string): string | null {
 		return this.attrs.get(key) ?? null;
+	}
+
+	hasClass(cls: string): boolean {
+		return this.classes.has(cls);
 	}
 
 	setAttr(key: string, value: string): void {

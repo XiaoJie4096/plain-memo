@@ -101,6 +101,17 @@ test("memo cards over the line threshold are collapsed by default", async () => 
 	assert.equal(collapseToggle?.getAttr("data-memo-id"), "memo-1");
 });
 
+test("memo cards collapse long unbroken text using the configured line capacity", async () => {
+	const { body, collapseToggle } = await renderMemoCard(
+		"一二三四五六七",
+		undefined,
+		{ collapseLineThreshold: 3, collapseLineCapacity: 4 },
+	);
+
+	assert.equal(body?.hasClass("is-collapsed"), true);
+	assert.notEqual(collapseToggle, null);
+});
+
 test("expanded long memo cards render a collapse control", async () => {
 	const { body, collapseToggle } = await renderMemoCard(
 		["one", "two", "three", "four", "five", "six", "seven"].join("\n"),
@@ -255,7 +266,7 @@ test("trash memo cards do not get daily note card-open attributes", async () => 
 async function renderMemoCard(
 	contentSnapshot: string,
 	preview?: MemoCardPreview,
-	collapseOptions: { collapseLineThreshold?: number; expanded?: boolean } = {},
+	collapseOptions: { collapseLineThreshold?: number; collapseLineCapacity?: number; expanded?: boolean } = {},
 ): Promise<{
 	card: TestElement;
 	body: TestElement | null;

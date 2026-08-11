@@ -71,6 +71,7 @@ import { getTextareaCharacterRect } from "./composerSuggestPosition";
 import { ImagePreviewScrollLock } from "./ImagePreviewScrollLock";
 import { ImageResourceCache } from "./ImageResourceCache";
 import { getDestructiveConfirmReturnFocus, showKnomoConfirmModal } from "./KnomoConfirmModal";
+import { getMemoCardEditRoute } from "./KnomoActionRouter";
 import { KnomoImagePreviewModal } from "./KnomoImagePreviewModal";
 import { showKnomoTagRenameModal } from "./KnomoTagRenameModal";
 import { filterVisibleMemos, memoMatchesSearch } from "./KnomoMemoFilter";
@@ -3024,6 +3025,7 @@ export class KnomoView extends ItemView {
 				this.memoMarkdownRenderer.queueSourceReferenceMarkdown(content, text, sourcePath, renderGeneration, surface);
 			},
 			collapseLineThreshold: this.settingsService.getSettings().memoCollapseLineThreshold ?? 8,
+			collapseLineCapacity: this.currentLayout === "mobile" ? 23 : 50,
 			pinned: this.pinnedMemos.isPinned(memo.id),
 			expanded: this.expandedMemoIds.has(memo.id),
 			reusedBodyEl,
@@ -3062,7 +3064,10 @@ export class KnomoView extends ItemView {
 		}
 		card?.toggleClass("has-collapsed-memo", !expanded);
 		card?.toggleClass("has-expanded-memo", expanded);
-		const controls = [sourceEl, card?.querySelector<HTMLElement>(".knomo-card-collapse-toggle") ?? null];
+		const controls = [
+			sourceEl.matches(".knomo-card-collapse-toggle, .knomo-floating-collapse-proxy") ? sourceEl : null,
+			card?.querySelector<HTMLElement>(".knomo-card-collapse-toggle") ?? null,
+		];
 		for (const control of new Set(controls.filter((item): item is HTMLElement => item !== null))) {
 			control.setText(expanded ? t("card.collapse") : t("card.expand"));
 			control.setAttr("aria-expanded", expanded ? "true" : "false");
@@ -4647,12 +4652,7 @@ export class KnomoView extends ItemView {
 		if (target === null || !target.instanceOf(Element) || this.isSaving) {
 			return;
 		}
-		if (target.closest("button, a, input, textarea, .tag, [data-knomo-card-image]") !== null) {
-			return;
-		}
-		const content = target.closest<HTMLElement>(".knomo-card-content");
-		const card = content?.closest<HTMLElement>(".knomo-card") ?? null;
-		const memoId = card?.getAttr("data-memo-id") ?? null;
+		const memoId = getMemoCardEditRoute(target)?.memoId ?? null;
 		if (memoId === null) {
 			return;
 		}

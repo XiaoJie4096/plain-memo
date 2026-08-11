@@ -95,10 +95,16 @@ test("root click routes memo, trash, and generic actions", async () => {
 		await actions.controller.handleRootClick(createMouseEvent(new TestElement("button", {
 			attr: { "data-action": "record-stats-filter-tag" },
 		})));
+		const collapsedCard = new TestElement("article", {
+			cls: "knomo-card has-collapsed-memo",
+			attr: { "data-memo-id": "memo-collapsed" },
+		});
+		await actions.controller.handleRootClick(createMouseEvent(collapsedCard.createChild("div", { cls: "knomo-card-body" })));
 		assert.deepEqual(actions.calls, [
 			"memo:edit:memo-1",
 			"trash:restore:memo-2",
 			"record-tag",
+			"toggle-collapse:memo-collapsed",
 		]);
 	} finally {
 		cleanup();
@@ -637,6 +643,10 @@ class TestElement {
 
 	getAttr(key: string): string | null {
 		return this.attrs.get(key) ?? null;
+	}
+
+	hasClass(cls: string): boolean {
+		return this.classes.has(cls);
 	}
 
 	setAttr(key: string, value: string): void {

@@ -24,7 +24,8 @@ export function restoreMemoFrontmatter(originalContent: string, editedBody: stri
 	return `${splitLeadingMemoFrontmatter(originalContent).frontmatter}${editedBody}`;
 }
 
-export function getMemoCollapseLineWeight(content: string): number {
+/** Estimates wrapped source lines without measuring rendered card layout. */
+export function getMemoCollapseLineWeight(content: string, lineCapacity = 50): number {
 	const lines = getMemoVisibleContent(content)
 		.replace(/\r\n?/g, "\n")
 		.split("\n");
@@ -36,8 +37,16 @@ export function getMemoCollapseLineWeight(content: string): number {
 			inBlankRun = true;
 			continue;
 		}
-		weight += 1;
+		weight += Math.ceil(getMemoLineCharacterWidth(line) / lineCapacity);
 		inBlankRun = false;
 	}
 	return weight;
+}
+
+function getMemoLineCharacterWidth(line: string): number {
+	let width = 0;
+	for (const character of line) {
+		width += /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/.test(character) ? 2 : 1;
+	}
+	return width;
 }
