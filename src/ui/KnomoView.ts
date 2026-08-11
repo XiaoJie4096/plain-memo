@@ -132,7 +132,6 @@ import { MobileComposerController } from "./MobileComposerController";
 import { MobileMemoHydrator } from "./MobileMemoHydrator";
 import type { MobileMemoHydrationRenderState } from "./MobileMemoHydrator";
 import { MobileNavbarCompactController } from "./MobileNavbarCompactController";
-import { popMobileTagHistory, pushMobileTagHistory } from "./MobileTagHistory";
 import { NativeImagePickerController } from "./NativeImagePickerController";
 import { KnomoPopupState } from "./KnomoPopupState";
 import { RandomReunionController } from "./RandomReunionController";
@@ -332,16 +331,6 @@ interface ApplyMemoMutationOptions {
 	preserveCardMemoId?: string;
 }
 
-interface MobileTagReturnState {
-	activeNav: SidebarNav;
-	scopeFilter: ScopeFilter;
-	searchQuery: string;
-	searchDateFilter: SearchDateFilter | null;
-	recordStatsSearchFilter: RecordStatsSearchFilter | null;
-	activeTag: string | null;
-	activeTagKey: string | null;
-}
-
 type TimeBuoyPickerFocusTarget = "default" | "input";
 
 interface OpenTimeBuoyPickerState {
@@ -408,8 +397,6 @@ export class KnomoView extends ItemView {
 	private mobileComposerBackGuardModal: MobileComposerBackGuardModal | null = null;
 	private mobileSidebarBackGuardModal: MobileSidebarBackGuardModal | null = null;
 	private mobileTagBackGuardModal: MobileSidebarBackGuardModal | null = null;
-	private mobileTagReturnStates: MobileTagReturnState[] = [];
-	private mobileTagBackEnabled = false;
 	private editingMemo: MemoRecord | null = null;
 	private quoteSourceMemoId: string | null = null;
 	private quoteReferenceText: string | null = null;
@@ -3341,22 +3328,6 @@ export class KnomoView extends ItemView {
 	private applySidebarTagFilter(tag: string, tagKey: string): void {
 		const previousViewStateKey = this.getCardFlowViewStateKey();
 		const clearingActiveTag = this.activeTagKey === tagKey;
-		if (this.currentLayout === "mobile" && !clearingActiveTag) {
-			const returnState: MobileTagReturnState = {
-				activeNav: this.activeNav,
-				scopeFilter: this.scopeFilter,
-				searchQuery: this.searchQuery,
-				searchDateFilter: this.searchDateFilter,
-				recordStatsSearchFilter: this.recordStatsSearchFilter,
-				activeTag: this.activeTag,
-				activeTagKey: this.activeTagKey,
-			};
-			this.mobileTagReturnStates = pushMobileTagHistory(this.mobileTagReturnStates, returnState);
-			this.mobileTagBackEnabled = true;
-		} else if (clearingActiveTag) {
-			this.mobileTagReturnStates = [];
-			this.mobileTagBackEnabled = false;
-		}
 		this.clearSearchDebounce();
 		this.viewStateController.clearDesktopSearchState();
 		if (clearingActiveTag) {
@@ -4130,9 +4101,9 @@ export class KnomoView extends ItemView {
 		this.syncRootState();
 	}
 
-	/** Keeps a mobile tag result on the native Back stack with its previous list state. */
+	/** Keeps a mobile tag result on the native Back stack until returning home. */
 	private syncMobileTagBackGuard(): void {
-		if (this.currentLayout === "mobile" && this.activeTagKey !== null && this.mobileTagBackEnabled) {
+		if (this.currentLayout === "mobile" && this.activeTagKey !== null) {
 			if (this.mobileTagBackGuardModal !== null) {
 				return;
 			}
@@ -4143,8 +4114,6 @@ export class KnomoView extends ItemView {
 			guard.open();
 			return;
 		}
-		this.mobileTagReturnStates = [];
-		this.mobileTagBackEnabled = false;
 		this.closeMobileTagBackGuard();
 	}
 
@@ -4162,38 +4131,17 @@ export class KnomoView extends ItemView {
 			return;
 		}
 		this.mobileTagBackGuardModal = null;
-		const historyPop = popMobileTagHistory(this.mobileTagReturnStates);
-		this.mobileTagReturnStates = historyPop.entries;
-		const returnState = historyPop.value;
 		if (this.currentLayout !== "mobile") {
 			return;
 		}
-		if (returnState === null) {
-			this.mobileTagBackEnabled = false;
-			this.activeTag = null;
-			this.activeTagKey = null;
-			this.activeNav = "all";
-			this.scopeFilter = "all";
-			this.searchQuery = "";
-			this.searchDateFilter = null;
-			this.recordStatsSearchFilter = null;
-			this.mobileDrawerOpen = false;
-			this.desktopSearchOpen = false;
-			this.compactSearchOpen = false;
-			this.scopeMenuOpen = false;
-			this.activeMenuMemoId = null;
-			this.renderUiState({ cardFlowChangeIntent: "view-scope-change" });
-			return;
-		}
 		const previousViewStateKey = this.getCardFlowViewStateKey();
-		this.activeNav = returnState.activeNav;
-		this.scopeFilter = returnState.scopeFilter;
-		this.searchQuery = returnState.searchQuery;
-		this.searchDateFilter = returnState.searchDateFilter;
-		this.recordStatsSearchFilter = returnState.recordStatsSearchFilter;
-		this.activeTag = returnState.activeTag;
-		this.activeTagKey = returnState.activeTagKey;
-		this.mobileTagBackEnabled = returnState.activeTagKey !== null;
+		this.activeTag = null;
+		this.activeTagKey = null;
+		this.activeNav = "all";
+		this.scopeFilter = "all";
+		this.searchQuery = "";
+		this.searchDateFilter = null;
+		this.recordStatsSearchFilter = null;
 		this.mobileDrawerOpen = false;
 		this.desktopSearchOpen = false;
 		this.compactSearchOpen = false;
