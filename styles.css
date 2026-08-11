@@ -264,11 +264,11 @@ body.is-mobile .workspace-leaf-content[data-type="plain-memo-view"] .view-action
 	min-height: 40px;
 	margin: 0;
 	padding: 0;
-	border: 1px solid var(--knomo-soft-border);
-	border-radius: 10px;
+	border: 1px solid var(--background-modifier-border) !important;
+	border-radius: 8px;
 	appearance: none;
-	background: var(--knomo-surface);
-	box-shadow: var(--knomo-card-shadow);
+	background: var(--background-primary) !important;
+	box-shadow: none;
 	overflow: hidden;
 }
 

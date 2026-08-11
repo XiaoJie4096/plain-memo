@@ -331,6 +331,16 @@ interface ApplyMemoMutationOptions {
 	preserveCardMemoId?: string;
 }
 
+interface MobileTagReturnState {
+	activeNav: SidebarNav;
+	scopeFilter: ScopeFilter;
+	searchQuery: string;
+	searchDateFilter: SearchDateFilter | null;
+	recordStatsSearchFilter: RecordStatsSearchFilter | null;
+	activeTag: string | null;
+	activeTagKey: string | null;
+}
+
 type TimeBuoyPickerFocusTarget = "default" | "input";
 
 interface OpenTimeBuoyPickerState {
@@ -396,6 +406,8 @@ export class KnomoView extends ItemView {
 	private pendingMobileEditCancel = false;
 	private mobileComposerBackGuardModal: MobileComposerBackGuardModal | null = null;
 	private mobileSidebarBackGuardModal: MobileSidebarBackGuardModal | null = null;
+	private mobileTagBackGuardModal: MobileSidebarBackGuardModal | null = null;
+	private mobileTagReturnState: MobileTagReturnState | null = null;
 	private editingMemo: MemoRecord | null = null;
 	private quoteSourceMemoId: string | null = null;
 	private quoteReferenceText: string | null = null;
@@ -1086,6 +1098,7 @@ export class KnomoView extends ItemView {
 		this.mobileNavbarCompactController = null;
 		this.containerEl.doc.body.removeClass("knomo-mobile-drawer-open");
 		this.closeMobileSidebarBackGuard();
+		this.closeMobileTagBackGuard();
 		this.closeMobileComposerBackGuard();
 		this.tagSuggest?.close();
 		this.tagSuggest = null;
@@ -1889,6 +1902,7 @@ export class KnomoView extends ItemView {
 			this.currentLayout === "mobile" && this.mobileDrawerOpen,
 		);
 		this.syncMobileSidebarBackGuard();
+		this.syncMobileTagBackGuard();
 		root.setCssProps({ "--knomo-sidebar-width": `${sidebarState.width}px` });
 		this.syncTooltipState(root);
 		this.syncManualRefreshButtonState();
@@ -3324,9 +3338,23 @@ export class KnomoView extends ItemView {
 
 	private applySidebarTagFilter(tag: string, tagKey: string): void {
 		const previousViewStateKey = this.getCardFlowViewStateKey();
+		const clearingActiveTag = this.activeTagKey === tagKey;
+		if (this.currentLayout === "mobile" && !clearingActiveTag) {
+			this.mobileTagReturnState = {
+				activeNav: this.activeNav,
+				scopeFilter: this.scopeFilter,
+				searchQuery: this.searchQuery,
+				searchDateFilter: this.searchDateFilter,
+				recordStatsSearchFilter: this.recordStatsSearchFilter,
+				activeTag: this.activeTag,
+				activeTagKey: this.activeTagKey,
+			};
+		} else if (clearingActiveTag) {
+			this.mobileTagReturnState = null;
+		}
 		this.clearSearchDebounce();
 		this.viewStateController.clearDesktopSearchState();
-		if (this.activeTagKey === tagKey) {
+		if (clearingActiveTag) {
 			this.viewStateController.clearActiveTag();
 		} else {
 			this.activeTag = tag;
@@ -4095,6 +4123,60 @@ export class KnomoView extends ItemView {
 		}
 		this.mobileDrawerOpen = false;
 		this.syncRootState();
+	}
+
+	/** Keeps a mobile tag result on the native Back stack with its previous list state. */
+	private syncMobileTagBackGuard(): void {
+		if (this.currentLayout === "mobile" && this.activeTagKey !== null && this.mobileTagReturnState !== null) {
+			if (this.mobileTagBackGuardModal !== null) {
+				return;
+			}
+			const guard = new MobileSidebarBackGuardModal(this.app, () =>
+				this.handleMobileTagBackGuardClosed(guard),
+			);
+			this.mobileTagBackGuardModal = guard;
+			guard.open();
+			return;
+		}
+		this.mobileTagReturnState = null;
+		this.closeMobileTagBackGuard();
+	}
+
+	private closeMobileTagBackGuard(): void {
+		const guard = this.mobileTagBackGuardModal;
+		if (guard === null) {
+			return;
+		}
+		this.mobileTagBackGuardModal = null;
+		guard.closeFromOwner();
+	}
+
+	private handleMobileTagBackGuardClosed(guard: MobileSidebarBackGuardModal): void {
+		if (this.mobileTagBackGuardModal !== guard) {
+			return;
+		}
+		this.mobileTagBackGuardModal = null;
+		const returnState = this.mobileTagReturnState;
+		this.mobileTagReturnState = null;
+		if (this.currentLayout !== "mobile" || returnState === null) {
+			return;
+		}
+		const previousViewStateKey = this.getCardFlowViewStateKey();
+		this.activeNav = returnState.activeNav;
+		this.scopeFilter = returnState.scopeFilter;
+		this.searchQuery = returnState.searchQuery;
+		this.searchDateFilter = returnState.searchDateFilter;
+		this.recordStatsSearchFilter = returnState.recordStatsSearchFilter;
+		this.activeTag = returnState.activeTag;
+		this.activeTagKey = returnState.activeTagKey;
+		this.mobileDrawerOpen = false;
+		this.desktopSearchOpen = false;
+		this.compactSearchOpen = false;
+		this.scopeMenuOpen = false;
+		this.activeMenuMemoId = null;
+		this.renderUiState({
+			cardFlowChangeIntent: this.getCardFlowChangeIntent(previousViewStateKey),
+		});
 	}
 
 	/** Registers the composer in Obsidian's native mobile Back stack without rendering another visible modal. */
