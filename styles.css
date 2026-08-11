@@ -1010,7 +1010,7 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .knomo-plugin.is-resiz
 	top: var(--knomo-mobile-drawer-top);
 	left: 0;
 	bottom: 0;
-	z-index: 120;
+	z-index: 220;
 	flex-basis: var(--knomo-mobile-drawer-width);
 	width: var(--knomo-mobile-drawer-width);
 	min-width: var(--knomo-mobile-drawer-width);
@@ -1050,7 +1050,7 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .knomo-plugin.is-resiz
 .knomo-plugin.is-layout-mobile .knomo-drawer-backdrop {
 	position: fixed;
 	inset: var(--knomo-mobile-drawer-top) 0 0;
-	z-index: 110;
+	z-index: 210;
 	background: var(--background-modifier-cover);
 	opacity: 0;
 	visibility: hidden;
@@ -3620,13 +3620,14 @@ body.knomo-mobile-navbar-compact-active .mobile-navbar .mobile-navbar-actions::a
 }
 
 body.knomo-mobile-navbar-compact-active .mobile-navbar .knomo-mobile-navbar-sidebar-action {
+	box-sizing: border-box;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 60px;
-	min-width: 60px;
-	height: 48px;
-	min-height: 48px;
+	width: 56px;
+	min-width: 56px;
+	height: 52px;
+	min-height: 52px;
 	padding: 0;
 	border: 1px solid var(--background-modifier-border);
 	border-left: 0;
@@ -3640,10 +3641,11 @@ body.knomo-mobile-navbar-compact-active .mobile-navbar .knomo-mobile-navbar-side
 
 /* Render the three retained native actions inside one capsule. */
 body.knomo-mobile-navbar-compact-active .mobile-navbar .knomo-mobile-navbar-native-group {
+	box-sizing: border-box;
 	display: inline-flex;
 	align-items: stretch;
-	height: 48px;
-	min-height: 48px;
+	height: 52px;
+	min-height: 52px;
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 12px;
 	background: var(--background-primary);
@@ -3652,13 +3654,14 @@ body.knomo-mobile-navbar-compact-active .mobile-navbar .knomo-mobile-navbar-nati
 }
 
 body.knomo-mobile-navbar-compact-active .mobile-navbar .knomo-mobile-navbar-native-group .mobile-navbar-action {
+	box-sizing: border-box;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	width: 52px;
 	min-width: 52px;
-	height: 46px;
-	min-height: 46px;
+	height: 50px;
+	min-height: 50px;
 	margin: 0;
 	padding: 0;
 	border: 0;
@@ -3706,6 +3709,12 @@ body.knomo-mobile-navbar-compact-active .mobile-navbar.knomo-mobile-navbar-compa
 body.knomo-mobile-navbar-compact-active .mobile-navbar .mobile-navbar-actions {
 	background: transparent;
 	box-shadow: none;
+}
+
+body.knomo-mobile-drawer-open .mobile-navbar {
+	opacity: 0 !important;
+	visibility: hidden !important;
+	pointer-events: none !important;
 }
 
 body .knomo-mobile-create-fab {
@@ -3783,7 +3792,7 @@ body .knomo-mobile-create-fab.is-hidden {
 		bottom: 0;
 		left: 0;
 		z-index: 30;
-		height: 28px;
+		height: 84px;
 		pointer-events: none;
 		background: linear-gradient(to bottom, transparent, var(--knomo-page-background));
 	}
@@ -3908,6 +3917,16 @@ body .knomo-mobile-create-fab.is-hidden {
 
 .modal-container.knomo-mobile-composer-back-guard > .modal-bg,
 .modal-container.knomo-mobile-composer-back-guard > .modal {
+	display: none !important;
+}
+
+.modal-container.knomo-mobile-sidebar-back-guard {
+	pointer-events: none;
+	background: transparent;
+}
+
+.modal-container.knomo-mobile-sidebar-back-guard > .modal-bg,
+.modal-container.knomo-mobile-sidebar-back-guard > .modal {
 	display: none !important;
 }
 

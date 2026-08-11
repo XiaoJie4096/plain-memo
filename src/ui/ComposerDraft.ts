@@ -58,6 +58,11 @@ export function getComposerContentAfterSave(
 	return saveType === "update" ? createDraft : "";
 }
 
+/** Allows mobile Back to dismiss only a blank new-memo composer. */
+export function shouldDismissBlankCreateComposer(content: string, editingMemo: object | null): boolean {
+	return editingMemo === null && content.trim() === "";
+}
+
 /** Finds pending attachments no longer used by the current or preserved draft. */
 export function getDiscardedComposerAttachmentPaths(
 	pendingPaths: Iterable<string>,

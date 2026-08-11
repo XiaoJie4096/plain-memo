@@ -10,6 +10,7 @@ import {
 	getDraftForComposerClose,
 	prepareComposerCreateInput,
 	prepareComposerSaveInput,
+	shouldDismissBlankCreateComposer,
 } from "../src/ui/ComposerDraft";
 
 test("composer restores a create draft after temporarily editing another memo", () => {
@@ -26,6 +27,12 @@ test("composer keeps pending images still referenced by a preserved create draft
 		new Set(["PlainMemo/picture/edit.png"]),
 		new Set(["PlainMemo/picture/draft.png"]),
 	), ["PlainMemo/picture/orphan.png"]);
+});
+
+test("mobile Back dismisses only a blank create composer", () => {
+	assert.equal(shouldDismissBlankCreateComposer("   ", null), true);
+	assert.equal(shouldDismissBlankCreateComposer("draft", null), false);
+	assert.equal(shouldDismissBlankCreateComposer("   ", { id: "memo-1" }), false);
 });
 
 test("composer draft resolves mode from editing and quote state", () => {

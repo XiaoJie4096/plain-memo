@@ -551,8 +551,16 @@ export class MobileNavbarCompactController {
 		this.setStyleProperty(this.createButtonEl, CREATE_BUTTON_BOTTOM_VAR, `${bottom}px`);
 	}
 
+	/** Aligns the create button with the visible compact controls instead of the native navbar shell. */
+	private getCompactControlsRect(navbarEl: HTMLElement): DOMRect {
+		const groupRect = this.nativeGroupEl?.getBoundingClientRect();
+		return groupRect !== undefined && this.isBottomNavbarRect(groupRect)
+			? groupRect
+			: navbarEl.getBoundingClientRect();
+	}
+
 	private getFloatingCreateButtonBottom(navbarEl: HTMLElement): number {
-		const rect = navbarEl.getBoundingClientRect();
+		const rect = this.getCompactControlsRect(navbarEl);
 		if (this.isBottomNavbarRect(rect)) {
 			const centerY = rect.top + rect.height / 2;
 			const bottom = Math.round(this.win.innerHeight - centerY - CREATE_BUTTON_HEIGHT / 2);
@@ -564,9 +572,10 @@ export class MobileNavbarCompactController {
 	}
 
 	private getFixedCreateButtonBottom(navbarEl: HTMLElement): number {
-		const rect = navbarEl.getBoundingClientRect();
+		const rect = this.getCompactControlsRect(navbarEl);
 		if (this.isBottomNavbarRect(rect)) {
-			const bottom = Math.round(this.win.innerHeight - rect.top + CREATE_BUTTON_GAP);
+			const centerY = rect.top + rect.height / 2;
+			const bottom = Math.round(this.win.innerHeight - centerY - CREATE_BUTTON_HEIGHT / 2);
 			if (this.isUsableCreateButtonBottom(bottom)) {
 				this.stableFixedCreateButtonBottom = bottom;
 			}

@@ -61,6 +61,7 @@ import {
 	getDiscardedComposerAttachmentPaths,
 	getDraftForComposerClose,
 	prepareComposerSaveInput,
+	shouldDismissBlankCreateComposer,
 } from "./ComposerDraft";
 import { getPreferredComposerSourcePath } from "./ComposerSourcePath";
 import { ComposerListEnterState } from "./ComposerListEnterState";
@@ -284,6 +285,34 @@ class MobileComposerBackGuardModal extends Modal {
 	}
 }
 
+class MobileSidebarBackGuardModal extends Modal {
+	private ownerClosing = false;
+	private closed = false;
+
+	constructor(app: App, private readonly handleBack: () => void) {
+		super(app);
+		this.shouldRestoreSelection = false;
+		this.containerEl.addClass("knomo-mobile-sidebar-back-guard");
+	}
+
+	closeFromOwner(): void {
+		this.ownerClosing = true;
+		this.close();
+	}
+
+	override close(): void {
+		if (this.closed) {
+			return;
+		}
+		this.closed = true;
+		const shouldHandleBack = !this.ownerClosing;
+		super.close();
+		if (shouldHandleBack) {
+			this.handleBack();
+		}
+	}
+}
+
 function compareText(left: string, right: string): number {
 	return left < right ? -1 : left > right ? 1 : 0;
 }
@@ -366,6 +395,7 @@ export class KnomoView extends ItemView {
 	private composerOpen = false;
 	private pendingMobileEditCancel = false;
 	private mobileComposerBackGuardModal: MobileComposerBackGuardModal | null = null;
+	private mobileSidebarBackGuardModal: MobileSidebarBackGuardModal | null = null;
 	private editingMemo: MemoRecord | null = null;
 	private quoteSourceMemoId: string | null = null;
 	private quoteReferenceText: string | null = null;
@@ -1054,6 +1084,8 @@ export class KnomoView extends ItemView {
 	async onClose(): Promise<void> {
 		this.mobileNavbarCompactController?.stop();
 		this.mobileNavbarCompactController = null;
+		this.containerEl.doc.body.removeClass("knomo-mobile-drawer-open");
+		this.closeMobileSidebarBackGuard();
 		this.closeMobileComposerBackGuard();
 		this.tagSuggest?.close();
 		this.tagSuggest = null;
@@ -1852,6 +1884,11 @@ export class KnomoView extends ItemView {
 		root.toggleClass("is-mobile-compact", this.settingsService.getSettings().mobileCompactMode !== "off");
 		root.toggleClass("is-record-stats", this.activeNav === "record-stats");
 		root.toggleClass("is-shuffle-day", this.activeNav === "shuffleDay");
+		this.containerEl.doc.body.toggleClass(
+			"knomo-mobile-drawer-open",
+			this.currentLayout === "mobile" && this.mobileDrawerOpen,
+		);
+		this.syncMobileSidebarBackGuard();
 		root.setCssProps({ "--knomo-sidebar-width": `${sidebarState.width}px` });
 		this.syncTooltipState(root);
 		this.syncManualRefreshButtonState();
@@ -4023,6 +4060,43 @@ export class KnomoView extends ItemView {
 		this.mobileComposerBackGuardModal?.attachComposerLayer(this.mobileComposerController.getLayerEl());
 	}
 
+	/** Keeps the mobile sidebar on Obsidian's native Back stack while the drawer is open. */
+	private syncMobileSidebarBackGuard(): void {
+		if (this.currentLayout === "mobile" && this.mobileDrawerOpen) {
+			if (this.mobileSidebarBackGuardModal !== null) {
+				return;
+			}
+			const guard = new MobileSidebarBackGuardModal(this.app, () =>
+				this.handleMobileSidebarBackGuardClosed(guard),
+			);
+			this.mobileSidebarBackGuardModal = guard;
+			guard.open();
+			return;
+		}
+		this.closeMobileSidebarBackGuard();
+	}
+
+	private closeMobileSidebarBackGuard(): void {
+		const guard = this.mobileSidebarBackGuardModal;
+		if (guard === null) {
+			return;
+		}
+		this.mobileSidebarBackGuardModal = null;
+		guard.closeFromOwner();
+	}
+
+	private handleMobileSidebarBackGuardClosed(guard: MobileSidebarBackGuardModal): void {
+		if (this.mobileSidebarBackGuardModal !== guard) {
+			return;
+		}
+		this.mobileSidebarBackGuardModal = null;
+		if (this.currentLayout !== "mobile" || !this.mobileDrawerOpen) {
+			return;
+		}
+		this.mobileDrawerOpen = false;
+		this.syncRootState();
+	}
+
 	/** Registers the composer in Obsidian's native mobile Back stack without rendering another visible modal. */
 	private openMobileComposerBackGuard(): void {
 		if (this.currentLayout !== "mobile" || this.mobileComposerBackGuardModal !== null) {
@@ -4058,6 +4132,10 @@ export class KnomoView extends ItemView {
 		}
 		if (this.mobileComposerController.dismissVisibleKeyboard()) {
 			this.openMobileComposerBackGuard();
+			return;
+		}
+		if (shouldDismissBlankCreateComposer(this.inputEl?.value ?? "", this.editingMemo)) {
+			this.closeComposerKeepingDraft();
 			return;
 		}
 		void this.saveInput();
