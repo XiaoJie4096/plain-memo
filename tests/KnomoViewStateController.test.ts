@@ -183,3 +183,14 @@ test("reset to all notes reports whether only chrome sync is needed", () => {
 	assert.equal(filteredState.scopeFilter, "all");
 	assert.equal(filteredState.compactSearchOpen, false);
 });
+
+test("reset to all notes returns from trash", () => {
+	const state = new KnomoViewStateController();
+	state.setSidebarNav("trash");
+
+	const result = state.resetToAllNotes();
+
+	assert.equal(result.type, "changed");
+	assert.equal(state.activeNav, "all");
+	assert.equal(state.mobileDrawerOpen, false);
+});

@@ -397,7 +397,7 @@ export class KnomoView extends ItemView {
 	private pendingMobileEditCancel = false;
 	private mobileComposerBackGuardModal: MobileComposerBackGuardModal | null = null;
 	private mobileSidebarBackGuardModal: MobileSidebarBackGuardModal | null = null;
-	private mobileTagBackGuardModal: MobileSidebarBackGuardModal | null = null;
+	private mobileListBackGuardModal: MobileSidebarBackGuardModal | null = null;
 	private editingMemo: MemoRecord | null = null;
 	private quoteSourceMemoId: string | null = null;
 	private quoteReferenceText: string | null = null;
@@ -1088,7 +1088,7 @@ export class KnomoView extends ItemView {
 		this.mobileNavbarCompactController = null;
 		this.containerEl.doc.body.removeClass("knomo-mobile-drawer-open");
 		this.closeMobileSidebarBackGuard();
-		this.closeMobileTagBackGuard();
+		this.closeMobileListBackGuard();
 		this.closeMobileComposerBackGuard();
 		this.tagSuggest?.close();
 		this.tagSuggest = null;
@@ -1892,7 +1892,7 @@ export class KnomoView extends ItemView {
 			this.currentLayout === "mobile" && this.mobileDrawerOpen,
 		);
 		this.syncMobileSidebarBackGuard();
-		this.syncMobileTagBackGuard();
+		this.syncMobileListBackGuard();
 		root.setCssProps({ "--knomo-sidebar-width": `${sidebarState.width}px` });
 		this.syncTooltipState(root);
 		this.syncManualRefreshButtonState();
@@ -4106,37 +4106,37 @@ export class KnomoView extends ItemView {
 		this.syncRootState();
 	}
 
-	/** Keeps a mobile tag result on the native Back stack until returning home. */
-	private syncMobileTagBackGuard(): void {
-		if (this.currentLayout === "mobile" && this.activeTagKey !== null) {
-			if (this.mobileTagBackGuardModal !== null) {
+	/** Keeps mobile secondary list pages on the native Back stack until returning home. */
+	private syncMobileListBackGuard(): void {
+		if (this.currentLayout === "mobile" && (this.activeTagKey !== null || this.activeNav === "trash")) {
+			if (this.mobileListBackGuardModal !== null) {
 				return;
 			}
 			const guard = new MobileSidebarBackGuardModal(this.app, () =>
-				this.handleMobileTagBackGuardClosed(guard),
+				this.handleMobileListBackGuardClosed(guard),
 			);
-			this.mobileTagBackGuardModal = guard;
+			this.mobileListBackGuardModal = guard;
 			guard.open();
 			return;
 		}
-		this.closeMobileTagBackGuard();
+		this.closeMobileListBackGuard();
 	}
 
-	private closeMobileTagBackGuard(): void {
-		const guard = this.mobileTagBackGuardModal;
+	private closeMobileListBackGuard(): void {
+		const guard = this.mobileListBackGuardModal;
 		if (guard === null) {
 			return;
 		}
-		this.mobileTagBackGuardModal = null;
+		this.mobileListBackGuardModal = null;
 		guard.closeFromOwner();
 	}
 
-	private handleMobileTagBackGuardClosed(guard: MobileSidebarBackGuardModal): void {
-		if (this.mobileTagBackGuardModal !== guard) {
+	private handleMobileListBackGuardClosed(guard: MobileSidebarBackGuardModal): void {
+		if (this.mobileListBackGuardModal !== guard) {
 			return;
 		}
-		this.mobileTagBackGuardModal = null;
-		if (this.currentLayout !== "mobile") {
+		this.mobileListBackGuardModal = null;
+		if (this.currentLayout !== "mobile" || (this.activeTagKey === null && this.activeNav !== "trash")) {
 			return;
 		}
 		const previousViewStateKey = this.getCardFlowViewStateKey();
