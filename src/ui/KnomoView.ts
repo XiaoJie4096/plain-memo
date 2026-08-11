@@ -54,8 +54,11 @@ import {
 	type TimeBuoyPickerSource,
 } from "./TimeBuoyDatePicker";
 import {
+	captureCreateDraft,
 	formatMarkdownQuoteDraft,
 	getComposerMode,
+	getComposerContentAfterSave,
+	getDiscardedComposerAttachmentPaths,
 	getDraftForComposerClose,
 	prepareComposerSaveInput,
 } from "./ComposerDraft";
@@ -368,6 +371,7 @@ export class KnomoView extends ItemView {
 	private quoteReferenceText: string | null = null;
 	private quoteMarkdownText: string | null = null;
 	private draftContent = "";
+	private createDraftContent = "";
 	private readonly pendingComposerAttachmentPaths = new Set<string>();
 	private isSaving = false;
 	private isManualRefreshing = false;
@@ -3646,11 +3650,15 @@ export class KnomoView extends ItemView {
 				timeBuoyOutcome = created.timeBuoy;
 				mutation = { type: "create", memo };
 			}
-			await this.cleanupPendingComposerAttachments(preparedInput.content, true);
-			this.draftContent = "";
+			const retainedDraft = preparedInput.type === "update" ? this.createDraftContent : "";
+			await this.cleanupPendingComposerAttachments(preparedInput.content, true, retainedDraft);
+			this.draftContent = getComposerContentAfterSave(preparedInput.type, this.createDraftContent);
+			if (preparedInput.type === "create") {
+				this.createDraftContent = "";
+			}
 			this.clearComposerContext();
 			if (this.inputEl !== null) {
-				this.inputEl.value = "";
+				this.inputEl.value = this.draftContent;
 				this.syncRecognizedTagChips();
 			}
 			if (isMobileSave) {
@@ -4086,7 +4094,8 @@ export class KnomoView extends ItemView {
 	private closeComposerKeepingDraft(): void {
 		this.closeTimeBuoyPicker(false);
 		const currentContent = this.inputEl?.value ?? this.draftContent;
-		void this.cleanupPendingComposerAttachments(currentContent);
+		const retainedDraft = this.editingMemo !== null ? this.createDraftContent : "";
+		void this.cleanupPendingComposerAttachments(currentContent, false, retainedDraft);
 		if (this.currentLayout === "mobile") {
 			this.closeMobileComposerKeepingDraft();
 			return;
@@ -4096,6 +4105,11 @@ export class KnomoView extends ItemView {
 				this.inputEl.value,
 				getComposerMode(this.editingMemo, this.quoteSourceMemoId),
 				this.quoteMarkdownText,
+			);
+			this.createDraftContent = captureCreateDraft(
+				this.createDraftContent,
+				this.draftContent,
+				getComposerMode(this.editingMemo, this.quoteSourceMemoId),
 			);
 			this.inputEl.value = this.draftContent;
 		}
@@ -4114,6 +4128,11 @@ export class KnomoView extends ItemView {
 				this.inputEl.value,
 				getComposerMode(this.editingMemo, this.quoteSourceMemoId),
 				this.quoteMarkdownText,
+			);
+			this.createDraftContent = captureCreateDraft(
+				this.createDraftContent,
+				this.draftContent,
+				getComposerMode(this.editingMemo, this.quoteSourceMemoId),
 			);
 			this.inputEl.value = this.draftContent;
 		}
@@ -4241,11 +4260,12 @@ export class KnomoView extends ItemView {
 	}
 
 	private clearComposerMode(): void {
-		void this.cleanupPendingComposerAttachments("", true);
+		const restoreCreateDraft = this.editingMemo !== null;
+		void this.cleanupPendingComposerAttachments("", true, restoreCreateDraft ? this.createDraftContent : "");
 		this.clearComposerContext();
-		this.draftContent = "";
+		this.draftContent = restoreCreateDraft ? this.createDraftContent : "";
 		if (this.inputEl !== null) {
-			this.inputEl.value = "";
+			this.inputEl.value = this.draftContent;
 		}
 		this.syncRecognizedTagChips();
 		this.resizeInput();
@@ -4264,6 +4284,11 @@ export class KnomoView extends ItemView {
 
 	private startEditing(memo: MemoRecord): void {
 		this.tagSuggest?.reset();
+		this.createDraftContent = captureCreateDraft(
+			this.createDraftContent,
+			this.inputEl?.value ?? this.draftContent,
+			getComposerMode(this.editingMemo, this.quoteSourceMemoId),
+		);
 		this.editingMemo = memo;
 		this.quoteSourceMemoId = null;
 		this.quoteReferenceText = null;
@@ -5244,6 +5269,11 @@ export class KnomoView extends ItemView {
 
 	private syncInputState(): void {
 		this.draftContent = this.inputEl?.value ?? "";
+		this.createDraftContent = captureCreateDraft(
+			this.createDraftContent,
+			this.draftContent,
+			getComposerMode(this.editingMemo, this.quoteSourceMemoId),
+		);
 		this.syncRecognizedTagChips();
 		this.updateSendButtonState();
 		if (this.currentLayout === "mobile") {
@@ -6207,10 +6237,19 @@ export class KnomoView extends ItemView {
 		this.setSidebarNav("random");
 	}
 
-	private async cleanupPendingComposerAttachments(content: string, finalize = false): Promise<void> {
+	private async cleanupPendingComposerAttachments(
+		content: string,
+		finalize = false,
+		retainedContent = "",
+	): Promise<void> {
 		if (this.pendingComposerAttachmentPaths.size === 0) return;
 		const referenced = new Set(parseMemoImages(content).map((image) => image.path));
-		const candidates = [...this.pendingComposerAttachmentPaths].filter((path) => !referenced.has(path));
+		const retained = new Set(parseMemoImages(retainedContent).map((image) => image.path));
+		const candidates = getDiscardedComposerAttachmentPaths(
+			this.pendingComposerAttachmentPaths,
+			referenced,
+			retained,
+		);
 		try {
 			await this.attachmentService.cleanupUnreferenced(candidates);
 			for (const path of candidates) this.pendingComposerAttachmentPaths.delete(path);

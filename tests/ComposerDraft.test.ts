@@ -2,12 +2,31 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+	captureCreateDraft,
 	formatMarkdownQuoteDraft,
 	getComposerMode,
+	getComposerContentAfterSave,
+	getDiscardedComposerAttachmentPaths,
 	getDraftForComposerClose,
 	prepareComposerCreateInput,
 	prepareComposerSaveInput,
 } from "../src/ui/ComposerDraft";
+
+test("composer restores a create draft after temporarily editing another memo", () => {
+	const createDraft = captureCreateDraft("", "unfinished new memo", "create");
+
+	assert.equal(captureCreateDraft(createDraft, "existing memo edit", "edit"), createDraft);
+	assert.equal(getComposerContentAfterSave("update", createDraft), "unfinished new memo");
+	assert.equal(getComposerContentAfterSave("create", createDraft), "");
+});
+
+test("composer keeps pending images still referenced by a preserved create draft", () => {
+	assert.deepEqual(getDiscardedComposerAttachmentPaths(
+		["PlainMemo/picture/draft.png", "PlainMemo/picture/edit.png", "PlainMemo/picture/orphan.png"],
+		new Set(["PlainMemo/picture/edit.png"]),
+		new Set(["PlainMemo/picture/draft.png"]),
+	), ["PlainMemo/picture/orphan.png"]);
+});
 
 test("composer draft resolves mode from editing and quote state", () => {
 	assert.equal(getComposerMode(null, null), "create");

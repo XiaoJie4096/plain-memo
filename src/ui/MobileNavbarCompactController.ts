@@ -55,6 +55,7 @@ const BODY_FIXED_CLASS = "knomo-mobile-navbar-fixed";
 const NAVBAR_COMPACT_CLASS = "knomo-mobile-navbar-compact";
 const NATIVE_HIDDEN_CLASS = "knomo-mobile-navbar-hidden";
 const SIDEBAR_ACTION_CLASS = "knomo-mobile-navbar-sidebar-action";
+const NATIVE_GROUP_CLASS = "knomo-mobile-navbar-native-group";
 const CREATE_BUTTON_CLASS = "knomo-mobile-create-fab";
 const CREATE_BUTTON_HIDDEN_CLASS = "is-hidden";
 const CREATE_BUTTON_WIDTH = 64;
@@ -82,6 +83,7 @@ export class MobileNavbarCompactController {
 	private pendingTrailingSync = false;
 	private suppressMutations = false;
 	private sidebarButtonEl: HTMLButtonElement | null = null;
+	private nativeGroupEl: HTMLDivElement | null = null;
 	private createButtonEl: HTMLButtonElement | null = null;
 	private readonly eventRefs: EventRef[] = [];
 	private readonly delayedSyncTimerIds = new Map<number, number>();
@@ -166,6 +168,7 @@ export class MobileNavbarCompactController {
 
 			this.hideNativeActions(navbarEl);
 			this.syncSidebarButton(navbarEl);
+			this.syncNativeActionGroup(navbarEl);
 			this.syncCreateButton(navbarEl, floating, edgeInsets);
 		} finally {
 			this.endMutationSuppressionSoon();
@@ -436,8 +439,38 @@ export class MobileNavbarCompactController {
 		this.moveSidebarButtonToFirstVisiblePosition(actionsEl, navbarEl);
 	}
 
+	/** Groups retained native actions so they can share one visual container. */
+	private syncNativeActionGroup(navbarEl: HTMLElement): void {
+		const actionsEl = this.findActionsContainer(navbarEl);
+		if (actionsEl === null) {
+			return;
+		}
+		if (this.nativeGroupEl === null || !this.nativeGroupEl.isConnected) {
+			this.nativeGroupEl?.remove();
+			this.nativeGroupEl = actionsEl.ownerDocument.createElement("div");
+			this.nativeGroupEl.className = NATIVE_GROUP_CLASS;
+		}
+		if (this.nativeGroupEl.parentElement !== actionsEl) {
+			actionsEl.appendChild(this.nativeGroupEl);
+		}
+		const retainedActions = RETAINED_NATIVE_ACTIONS
+			.map((key) => this.findAction(navbarEl, key))
+			.filter((element): element is HTMLElement => element !== null);
+		for (const action of retainedActions) {
+			if (action.parentElement !== this.nativeGroupEl) {
+				this.nativeGroupEl.appendChild(action);
+			}
+		}
+	}
+
 	private moveSidebarButtonToFirstVisiblePosition(actionsEl: HTMLElement, navbarEl: HTMLElement): void {
 		if (this.sidebarButtonEl === null) {
+			return;
+		}
+		if (this.nativeGroupEl?.parentElement === actionsEl) {
+			if (this.sidebarButtonEl.nextSibling !== this.nativeGroupEl) {
+				actionsEl.insertBefore(this.sidebarButtonEl, this.nativeGroupEl);
+			}
 			return;
 		}
 		const firstRetainedAction = RETAINED_NATIVE_ACTIONS
@@ -461,6 +494,24 @@ export class MobileNavbarCompactController {
 		for (const element of this.doc.body.findAll(`.${SIDEBAR_ACTION_CLASS}`)) {
 			element.remove();
 		}
+		this.unwrapNativeGroup(this.nativeGroupEl);
+		this.nativeGroupEl = null;
+		for (const element of this.doc.body.findAll(`.${NATIVE_GROUP_CLASS}`)) {
+			this.unwrapNativeGroup(element);
+		}
+	}
+
+	/** Restores retained native actions before removing the temporary group. */
+	private unwrapNativeGroup(groupEl: HTMLElement | null): void {
+		const parentEl = groupEl?.parentElement;
+		if (groupEl === null || parentEl === null || parentEl === undefined) {
+			groupEl?.remove();
+			return;
+		}
+		while (groupEl.firstChild !== null) {
+			parentEl.insertBefore(groupEl.firstChild, groupEl);
+		}
+		groupEl.remove();
 	}
 
 	private syncCreateButton(navbarEl: HTMLElement, floating: boolean, edgeInsets: ChromeEdgeInsets): void {
@@ -684,6 +735,15 @@ export class MobileNavbarCompactController {
 		body.removeClass(BODY_FIXED_CLASS);
 		for (const element of body.findAll(`.${SIDEBAR_ACTION_CLASS}, .${CREATE_BUTTON_CLASS}`)) {
 			element.remove();
+		}
+		for (const groupEl of body.findAll(`.${NATIVE_GROUP_CLASS}`)) {
+			const parentEl = groupEl.parentElement;
+			if (parentEl !== null) {
+				while (groupEl.firstChild !== null) {
+					parentEl.insertBefore(groupEl.firstChild, groupEl);
+				}
+			}
+			groupEl.remove();
 		}
 		for (const element of body.findAll(`.${NAVBAR_COMPACT_CLASS}`)) {
 			element.setCssProps({

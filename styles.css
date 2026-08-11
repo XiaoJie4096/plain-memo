@@ -3596,18 +3596,80 @@ body.knomo-mobile-search-active .knomo-mobile-create-fab {
 	display: none;
 }
 
+body.knomo-mobile-navbar-compact-active .mobile-navbar,
+body.knomo-mobile-navbar-compact-active .mobile-navbar .mobile-navbar-actions {
+	background: transparent !important;
+	border: 0 !important;
+	box-shadow: none !important;
+	-webkit-backdrop-filter: none !important;
+	backdrop-filter: none !important;
+}
+
+body.knomo-mobile-navbar-compact-active .mobile-navbar .mobile-navbar-actions {
+	gap: 0 !important;
+	margin: 0 !important;
+	padding: 0 !important;
+}
+
+body.knomo-mobile-navbar-compact-active .mobile-navbar::before,
+body.knomo-mobile-navbar-compact-active .mobile-navbar::after,
+body.knomo-mobile-navbar-compact-active .mobile-navbar .mobile-navbar-actions::before,
+body.knomo-mobile-navbar-compact-active .mobile-navbar .mobile-navbar-actions::after {
+	display: none !important;
+	content: none !important;
+}
+
 body.knomo-mobile-navbar-compact-active .mobile-navbar .knomo-mobile-navbar-sidebar-action {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	min-width: var(--mobile-navbar-action-size, 44px);
-	min-height: var(--mobile-navbar-action-size, 44px);
+	width: 60px;
+	min-width: 60px;
+	height: 48px;
+	min-height: 48px;
+	padding: 0;
+	border: 1px solid var(--background-modifier-border);
+	border-left: 0;
+	border-radius: 0 12px 12px 0;
+	margin: 0 8px 0 0;
+	color: var(--icon-color);
+	background: var(--background-primary);
+	box-shadow: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* Render the three retained native actions inside one capsule. */
+body.knomo-mobile-navbar-compact-active .mobile-navbar .knomo-mobile-navbar-native-group {
+	display: inline-flex;
+	align-items: stretch;
+	height: 48px;
+	min-height: 48px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 12px;
+	background: var(--background-primary);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+	overflow: hidden;
+}
+
+body.knomo-mobile-navbar-compact-active .mobile-navbar .knomo-mobile-navbar-native-group .mobile-navbar-action {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 52px;
+	min-width: 52px;
+	height: 46px;
+	min-height: 46px;
+	margin: 0;
 	padding: 0;
 	border: 0;
+	border-radius: 0;
 	color: var(--icon-color);
 	background: transparent;
 	box-shadow: none;
-	-webkit-tap-highlight-color: transparent;
+}
+
+body.knomo-mobile-navbar-compact-active .mobile-navbar .knomo-mobile-navbar-native-group .mobile-navbar-action:active {
+	background: var(--background-modifier-hover);
 }
 
 body.knomo-mobile-navbar-compact-active .mobile-navbar .knomo-mobile-navbar-sidebar-action:active {
@@ -3622,13 +3684,28 @@ body .knomo-mobile-create-fab:focus-visible {
 }
 
 body.knomo-mobile-navbar-compact-active.knomo-mobile-navbar-floating .mobile-navbar.knomo-mobile-navbar-compact {
-	left: max(var(--knomo-mobile-navbar-edge-left, 8px), env(safe-area-inset-left));
+	left: 0 !important;
 	right: auto;
 	max-width: calc(
-		100vw - max(var(--knomo-mobile-navbar-edge-left, 8px), env(safe-area-inset-left)) -
+		100vw - env(safe-area-inset-left) -
 			var(--knomo-mobile-navbar-reserved-right, 76px)
 	);
 	transform: none;
+	background: transparent;
+	box-shadow: none;
+}
+
+body.knomo-mobile-navbar-compact-active .mobile-navbar.knomo-mobile-navbar-compact {
+	left: 0 !important;
+	inset-inline-start: 0 !important;
+	margin-left: 0 !important;
+	padding-left: 0 !important;
+	transform: none !important;
+}
+
+body.knomo-mobile-navbar-compact-active .mobile-navbar .mobile-navbar-actions {
+	background: transparent;
+	box-shadow: none;
 }
 
 body .knomo-mobile-create-fab {
