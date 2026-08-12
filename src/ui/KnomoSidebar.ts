@@ -12,6 +12,7 @@ export const SIDEBAR_MAX_WIDTH = 300;
 interface KnomoSidebarOptions {
 	sidebarMinWidth: number;
 	sidebarMaxWidth: number;
+	subtitle: string;
 	timeBuoyEnabled?: boolean;
 	createHiddenText: (container: HTMLElement, id: string, text: string) => string;
 	createIconButton: (
@@ -25,6 +26,7 @@ interface KnomoSidebarOptions {
 }
 
 export interface KnomoSidebarElements {
+	subtitleEl: HTMLElement;
 	statsEl: HTMLElement;
 	allTagsEl: HTMLElement;
 	trashCountEl: HTMLElement;
@@ -48,22 +50,32 @@ export function renderKnomoSidebar(sidebar: HTMLElement, options: KnomoSidebarOp
 	const header = sidebar.createDiv({ cls: "knomo-sidebar-header" });
 	const brand = header.createDiv({ cls: "knomo-brand" });
 	brand.createDiv({ cls: "knomo-brand-title", text: "PlainMemo" });
-	brand.createDiv({ cls: "knomo-brand-subtitle", text: t("sidebar.subtitle") });
+	const subtitleEl = brand.createDiv({
+		cls: "knomo-brand-subtitle",
+		text: options.subtitle,
+		attr: {
+			contenteditable: "plaintext-only",
+			role: "textbox",
+			spellcheck: "false",
+			"aria-label": t("sidebar.subtitle"),
+		},
+	});
 	const actions = header.createDiv({ cls: "knomo-sidebar-actions" });
-	options.createIconButton(actions, "bar-chart-3", t("sidebar.stats"), "knomo-sidebar-action", "focus-stats");
+	options.createIconButton(actions, "settings-2", t("sidebar.settings"), "knomo-sidebar-action", "open-settings");
 	options.createIconButton(actions, "refresh-cw", t("sidebar.refresh"), "knomo-sidebar-action", "refresh");
 	options.createIconButton(actions, "panel-left-close", t("sidebar.hide"), "knomo-sidebar-action knomo-desktop-only", "collapse-sidebar");
 
 	const statsLabelId = options.createHiddenText(sidebar, "stats-label", t("sidebar.stats"));
 	const statsEl = sidebar.createDiv({ cls: "knomo-sidebar-stats", attr: { "aria-labelledby": statsLabelId, tabindex: "-1" } });
 
-	const navLabelId = options.createHiddenText(sidebar, "nav-label", t("sidebar.scope"));
-	const nav = sidebar.createEl("nav", {
-		cls: "knomo-nav",
-		attr: { "aria-labelledby": navLabelId },
-	});
-	for (const item of getSidebarNavItems(options.timeBuoyEnabled === true)) {
-		renderSidebarNavButton(nav, item);
+	const navItems = getSidebarNavItems(options.timeBuoyEnabled === true);
+	if (navItems.length > 0) {
+		const navLabelId = options.createHiddenText(sidebar, "nav-label", t("sidebar.scope"));
+		const nav = sidebar.createEl("nav", {
+			cls: "knomo-nav",
+			attr: { "aria-labelledby": navLabelId },
+		});
+		for (const item of navItems) renderSidebarNavButton(nav, item);
 	}
 
 	const allTagSection = sidebar.createDiv({ cls: "knomo-tag-section" });
@@ -89,6 +101,7 @@ export function renderKnomoSidebar(sidebar: HTMLElement, options: KnomoSidebarOp
 	});
 
 	return {
+		subtitleEl,
 		statsEl,
 		allTagsEl,
 		trashCountEl,

@@ -26,8 +26,14 @@ test("restores existing frontmatter unchanged after editing the body", () => {
 	assert.equal(restoreMemoFrontmatter("plain memo", "updated body"), "updated body");
 });
 
-test("counts visible text as one line and each blank run as 0.33 lines", () => {
+test("counts visible text by estimated wrapped lines and each blank run as 0.33 lines", () => {
 	assert.equal(getMemoCollapseLineWeight(legacyMemo), 2.33);
 	assert.equal(getMemoCollapseLineWeight("one\n\n\ntwo"), 2.33);
 	assert.equal(getMemoCollapseLineWeight("one\n\ntwo\n\nthree"), 3.66);
+});
+
+test("estimates Chinese characters as twice the width of English letters and digits", () => {
+	assert.equal(getMemoCollapseLineWeight("一二三四五", 4), 3);
+	assert.equal(getMemoCollapseLineWeight("abcd12", 4), 2);
+	assert.equal(getMemoCollapseLineWeight("一二ab三", 4), 2);
 });

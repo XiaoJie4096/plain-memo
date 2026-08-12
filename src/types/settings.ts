@@ -4,6 +4,8 @@ export type MobileCompactMode = "auto" | "on" | "off";
 
 export interface KnomoSettings {
 	settingsVersion: number;
+	/** User-editable subtitle shown below the PlainMemo brand. */
+	sidebarSubtitle?: string;
 	/** Vault-relative folders scanned recursively for standalone memo files. */
 	memoFolders?: string[];
 	/** The folder used when the composer creates a new memo. */

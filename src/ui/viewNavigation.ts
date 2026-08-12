@@ -1,4 +1,4 @@
-import { KNOMO_ALL_NOTES_ICON, KNOMO_RANDOM_REUNION_ICON, KNOMO_TIME_BUOY_ICON } from "../icons";
+import { KNOMO_ALL_NOTES_ICON } from "../icons";
 import { t } from "../i18n";
 import {
 	getRecordStatsSearchFilterLabel,
@@ -41,14 +41,7 @@ export interface ViewTitleState {
 	recordStatsSearchFilter: RecordStatsSearchFilter | null;
 }
 
-const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
-	{ nav: "all", label: t("nav.allNotes"), icon: KNOMO_ALL_NOTES_ICON },
-	{ nav: "review", label: t("nav.review"), icon: "calendar-check" },
-	{ nav: "random", label: t("nav.random"), icon: KNOMO_RANDOM_REUNION_ICON },
-	{ nav: "shuffleDay", label: t("nav.shuffleDay"), icon: "calendar-days" },
-	{ nav: "time-buoy", label: t("nav.timeBuoy"), icon: KNOMO_TIME_BUOY_ICON },
-	{ nav: "record-stats", label: t("nav.recordStats"), icon: "chart-column-increasing" },
-];
+const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [];
 
 export const TRASH_NAV_ITEM: SidebarNavItem = { nav: "trash", label: t("nav.trash"), icon: "trash-2" };
 
@@ -58,9 +51,6 @@ export const TITLE_MODE_OPTIONS: TitleModeOption[] = [
 	{ mode: "with-link", label: t("filter.withLink"), icon: "link", scope: "with-link" },
 	{ mode: "with-image", label: t("filter.withImage"), icon: "image", scope: "with-image" },
 	{ mode: "anniversary", label: t("filter.anniversary"), icon: "history", scope: "anniversary" },
-	{ mode: "review", label: t("nav.review"), icon: "calendar-check", nav: "review" },
-	{ mode: "random", label: t("nav.random"), icon: KNOMO_RANDOM_REUNION_ICON, nav: "random" },
-	{ mode: "shuffleDay", label: t("nav.shuffleDay"), icon: "calendar-days", nav: "shuffleDay" },
 ];
 
 export const SEARCH_DATE_OPTIONS: SearchDateOption[] = [
@@ -95,6 +85,12 @@ export function isSidebarNav(value: string | null): value is SidebarNav {
 }
 
 export function getSidebarNavLabel(value: SidebarNav): string {
+	if (value === "random") {
+		return t("nav.random");
+	}
+	if (value === "time-buoy") {
+		return t("nav.timeBuoy");
+	}
 	return getAllSidebarNavItems().find((item) => item.nav === value)?.label ?? t("nav.allNotes");
 }
 

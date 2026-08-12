@@ -42,18 +42,37 @@ test("desktop title label prioritizes transient filters before list state", () =
 	}), "With images");
 });
 
-test("mobile title label stays anchored to the list state", () => {
+test("mobile title label stays anchored to available list states", () => {
 	assert.equal(getMobileTitleLabel({
 		...baseTitleState,
 		searchQuery: "knomo",
 		searchDateFilter: "week",
 		activeNav: "review",
-	}), "Beyond today");
+	}), "All notes");
 	assert.equal(getMobileTitleLabel({
 		...baseTitleState,
 		activeTag: "Project",
 		activeTagKey: "project",
 	}), "#Project");
+	assert.equal(getMobileTitleLabel({
+		...baseTitleState,
+		activeNav: "random",
+	}), "Random revisit");
+	assert.equal(getMobileTitleLabel({
+		...baseTitleState,
+		activeNav: "time-buoy",
+	}), "Time buoy");
+});
+
+test("desktop title label names shortcut pages", () => {
+	assert.equal(getDesktopTitleLabel({
+		...baseTitleState,
+		activeNav: "random",
+	}), "Random revisit");
+	assert.equal(getDesktopTitleLabel({
+		...baseTitleState,
+		activeNav: "time-buoy",
+	}), "Time buoy");
 });
 
 test("current title mode follows nav and scope state", () => {

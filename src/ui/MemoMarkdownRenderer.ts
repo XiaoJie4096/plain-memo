@@ -11,6 +11,7 @@ import { normalizeTagKey } from "../utils/tags";
 import { MarkdownRenderQueue } from "./MarkdownRenderQueue";
 import type { MarkdownRenderPriority } from "./MarkdownRenderQueue";
 import { prepareMemoCardMarkdown } from "./MemoCardMarkdown";
+import { renderRecognizedNumericTags } from "./NumericTagRendering";
 
 export type MemoMarkdownSurface = "card-flow" | "mobile-search";
 
@@ -321,6 +322,7 @@ export function prepareRenderedMemoMarkdown(container: HTMLElement, memo: MemoRe
 		imageEl.setAttr("loading", "lazy");
 	}
 	prepareInternalLinks(container, memo.dailyRef.path);
+	renderRecognizedNumericTags(container, memo.tags);
 	for (const tagEl of container.findAll(".tag")) {
 		const tag = tagEl.getText().replace(/^#/, "");
 		const tagKey = normalizeTagKey(tag);

@@ -3,10 +3,12 @@ import {
 	DEFAULT_MEMO_FOLDER,
 	SETTINGS_VERSION,
 } from "../constants";
+import { t } from "../i18n";
 import type { KnomoSettings } from "../types/settings";
 
 export const DEFAULT_KNOMO_SETTINGS: KnomoSettings = {
 	settingsVersion: SETTINGS_VERSION,
+	sidebarSubtitle: t("sidebar.subtitle"),
 	memoFolders: [DEFAULT_MEMO_FOLDER],
 	defaultMemoFolder: DEFAULT_MEMO_FOLDER,
 	memoCollapseLineThreshold: 8,

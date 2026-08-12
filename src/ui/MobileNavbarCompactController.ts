@@ -55,9 +55,11 @@ const BODY_FIXED_CLASS = "knomo-mobile-navbar-fixed";
 const NAVBAR_COMPACT_CLASS = "knomo-mobile-navbar-compact";
 const NATIVE_HIDDEN_CLASS = "knomo-mobile-navbar-hidden";
 const SIDEBAR_ACTION_CLASS = "knomo-mobile-navbar-sidebar-action";
+const NATIVE_GROUP_CLASS = "knomo-mobile-navbar-native-group";
 const CREATE_BUTTON_CLASS = "knomo-mobile-create-fab";
 const CREATE_BUTTON_HIDDEN_CLASS = "is-hidden";
-const CREATE_BUTTON_SIZE = 60;
+const CREATE_BUTTON_WIDTH = 64;
+const CREATE_BUTTON_HEIGHT = 52;
 const CREATE_BUTTON_GAP = 8;
 const MIN_COLLISION_GAP = 8;
 const CHROME_EDGE_FALLBACK_INSET = 8;
@@ -67,7 +69,7 @@ const SYNC_THROTTLE_MS = 300;
 const NAVBAR_EDGE_LEFT_VAR = "--knomo-mobile-navbar-edge-left";
 const NAVBAR_RESERVED_RIGHT_VAR = "--knomo-mobile-navbar-reserved-right";
 const NAVBAR_EDGE_LEFT_DEFAULT = `${CHROME_EDGE_FALLBACK_INSET}px`;
-const NAVBAR_RESERVED_RIGHT_DEFAULT = `${CHROME_EDGE_FALLBACK_INSET + CREATE_BUTTON_SIZE + MIN_COLLISION_GAP}px`;
+const NAVBAR_RESERVED_RIGHT_DEFAULT = `${CHROME_EDGE_FALLBACK_INSET + CREATE_BUTTON_WIDTH + MIN_COLLISION_GAP}px`;
 const CREATE_BUTTON_RIGHT_VAR = "--knomo-mobile-create-fab-right";
 const CREATE_BUTTON_BOTTOM_VAR = "--knomo-mobile-create-fab-bottom";
 
@@ -81,6 +83,7 @@ export class MobileNavbarCompactController {
 	private pendingTrailingSync = false;
 	private suppressMutations = false;
 	private sidebarButtonEl: HTMLButtonElement | null = null;
+	private nativeGroupEl: HTMLDivElement | null = null;
 	private createButtonEl: HTMLButtonElement | null = null;
 	private readonly eventRefs: EventRef[] = [];
 	private readonly delayedSyncTimerIds = new Map<number, number>();
@@ -89,8 +92,8 @@ export class MobileNavbarCompactController {
 		left: CHROME_EDGE_FALLBACK_INSET,
 		right: CHROME_EDGE_FALLBACK_INSET,
 	};
-	private stableFloatingCreateButtonBottom = CREATE_BUTTON_SIZE + CREATE_BUTTON_GAP;
-	private stableFixedCreateButtonBottom = CREATE_BUTTON_SIZE + CREATE_BUTTON_GAP;
+	private stableFloatingCreateButtonBottom = CREATE_BUTTON_HEIGHT + CREATE_BUTTON_GAP;
+	private stableFixedCreateButtonBottom = CREATE_BUTTON_HEIGHT + CREATE_BUTTON_GAP;
 	private readonly stylePropsByElement = new WeakMap<HTMLElement, Map<string, string>>();
 
 	constructor(
@@ -165,6 +168,7 @@ export class MobileNavbarCompactController {
 
 			this.hideNativeActions(navbarEl);
 			this.syncSidebarButton(navbarEl);
+			this.syncNativeActionGroup(navbarEl);
 			this.syncCreateButton(navbarEl, floating, edgeInsets);
 		} finally {
 			this.endMutationSuppressionSoon();
@@ -435,8 +439,38 @@ export class MobileNavbarCompactController {
 		this.moveSidebarButtonToFirstVisiblePosition(actionsEl, navbarEl);
 	}
 
+	/** Groups retained native actions so they can share one visual container. */
+	private syncNativeActionGroup(navbarEl: HTMLElement): void {
+		const actionsEl = this.findActionsContainer(navbarEl);
+		if (actionsEl === null) {
+			return;
+		}
+		if (this.nativeGroupEl === null || !this.nativeGroupEl.isConnected) {
+			this.nativeGroupEl?.remove();
+			this.nativeGroupEl = actionsEl.ownerDocument.createElement("div");
+			this.nativeGroupEl.className = NATIVE_GROUP_CLASS;
+		}
+		if (this.nativeGroupEl.parentElement !== actionsEl) {
+			actionsEl.appendChild(this.nativeGroupEl);
+		}
+		const retainedActions = RETAINED_NATIVE_ACTIONS
+			.map((key) => this.findAction(navbarEl, key))
+			.filter((element): element is HTMLElement => element !== null);
+		for (const action of retainedActions) {
+			if (action.parentElement !== this.nativeGroupEl) {
+				this.nativeGroupEl.appendChild(action);
+			}
+		}
+	}
+
 	private moveSidebarButtonToFirstVisiblePosition(actionsEl: HTMLElement, navbarEl: HTMLElement): void {
 		if (this.sidebarButtonEl === null) {
+			return;
+		}
+		if (this.nativeGroupEl?.parentElement === actionsEl) {
+			if (this.sidebarButtonEl.nextSibling !== this.nativeGroupEl) {
+				actionsEl.insertBefore(this.sidebarButtonEl, this.nativeGroupEl);
+			}
 			return;
 		}
 		const firstRetainedAction = RETAINED_NATIVE_ACTIONS
@@ -460,6 +494,24 @@ export class MobileNavbarCompactController {
 		for (const element of this.doc.body.findAll(`.${SIDEBAR_ACTION_CLASS}`)) {
 			element.remove();
 		}
+		this.unwrapNativeGroup(this.nativeGroupEl);
+		this.nativeGroupEl = null;
+		for (const element of this.doc.body.findAll(`.${NATIVE_GROUP_CLASS}`)) {
+			this.unwrapNativeGroup(element);
+		}
+	}
+
+	/** Restores retained native actions before removing the temporary group. */
+	private unwrapNativeGroup(groupEl: HTMLElement | null): void {
+		const parentEl = groupEl?.parentElement;
+		if (groupEl === null || parentEl === null || parentEl === undefined) {
+			groupEl?.remove();
+			return;
+		}
+		while (groupEl.firstChild !== null) {
+			parentEl.insertBefore(groupEl.firstChild, groupEl);
+		}
+		groupEl.remove();
 	}
 
 	private syncCreateButton(navbarEl: HTMLElement, floating: boolean, edgeInsets: ChromeEdgeInsets): void {
@@ -499,11 +551,19 @@ export class MobileNavbarCompactController {
 		this.setStyleProperty(this.createButtonEl, CREATE_BUTTON_BOTTOM_VAR, `${bottom}px`);
 	}
 
+	/** Aligns the create button with the visible compact controls instead of the native navbar shell. */
+	private getCompactControlsRect(navbarEl: HTMLElement): DOMRect {
+		const groupRect = this.nativeGroupEl?.getBoundingClientRect();
+		return groupRect !== undefined && this.isBottomNavbarRect(groupRect)
+			? groupRect
+			: navbarEl.getBoundingClientRect();
+	}
+
 	private getFloatingCreateButtonBottom(navbarEl: HTMLElement): number {
-		const rect = navbarEl.getBoundingClientRect();
+		const rect = this.getCompactControlsRect(navbarEl);
 		if (this.isBottomNavbarRect(rect)) {
 			const centerY = rect.top + rect.height / 2;
-			const bottom = Math.round(this.win.innerHeight - centerY - CREATE_BUTTON_SIZE / 2);
+			const bottom = Math.round(this.win.innerHeight - centerY - CREATE_BUTTON_HEIGHT / 2);
 			if (this.isUsableCreateButtonBottom(bottom)) {
 				this.stableFloatingCreateButtonBottom = bottom;
 			}
@@ -512,9 +572,10 @@ export class MobileNavbarCompactController {
 	}
 
 	private getFixedCreateButtonBottom(navbarEl: HTMLElement): number {
-		const rect = navbarEl.getBoundingClientRect();
+		const rect = this.getCompactControlsRect(navbarEl);
 		if (this.isBottomNavbarRect(rect)) {
-			const bottom = Math.round(this.win.innerHeight - rect.top + CREATE_BUTTON_GAP);
+			const centerY = rect.top + rect.height / 2;
+			const bottom = Math.round(this.win.innerHeight - centerY - CREATE_BUTTON_HEIGHT / 2);
 			if (this.isUsableCreateButtonBottom(bottom)) {
 				this.stableFixedCreateButtonBottom = bottom;
 			}
@@ -546,7 +607,7 @@ export class MobileNavbarCompactController {
 		this.setStyleProperty(
 			navbarEl,
 			NAVBAR_RESERVED_RIGHT_VAR,
-			`${edgeInsets.right + CREATE_BUTTON_SIZE + MIN_COLLISION_GAP}px`,
+			`${edgeInsets.right + CREATE_BUTTON_WIDTH + MIN_COLLISION_GAP}px`,
 		);
 	}
 
@@ -683,6 +744,15 @@ export class MobileNavbarCompactController {
 		body.removeClass(BODY_FIXED_CLASS);
 		for (const element of body.findAll(`.${SIDEBAR_ACTION_CLASS}, .${CREATE_BUTTON_CLASS}`)) {
 			element.remove();
+		}
+		for (const groupEl of body.findAll(`.${NATIVE_GROUP_CLASS}`)) {
+			const parentEl = groupEl.parentElement;
+			if (parentEl !== null) {
+				while (groupEl.firstChild !== null) {
+					parentEl.insertBefore(groupEl.firstChild, groupEl);
+				}
+			}
+			groupEl.remove();
 		}
 		for (const element of body.findAll(`.${NAVBAR_COMPACT_CLASS}`)) {
 			element.setCssProps({

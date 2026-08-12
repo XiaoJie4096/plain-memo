@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { ensureObsidianStub } from "./helpers/obsidianStub";
 
-test("renders sidebar navigation, trash, stats, tags, and resizer structure", async () => {
+test("renders the editable subtitle, settings action, trash, stats, tags, and resizer structure", async () => {
 	await ensureObsidianStub();
 	const {
 		renderKnomoSidebar,
@@ -17,6 +17,7 @@ test("renders sidebar navigation, trash, stats, tags, and resizer structure", as
 	const elements = renderKnomoSidebar(sidebar.asHtml(), {
 		sidebarMinWidth: SIDEBAR_MIN_WIDTH,
 		sidebarMaxWidth: SIDEBAR_MAX_WIDTH,
+		subtitle: "A quiet place for thoughts",
 		timeBuoyEnabled: true,
 		createHiddenText: (container, id, text) => {
 			container.createSpan({ cls: "sr-only", text, attr: { id } });
@@ -36,19 +37,14 @@ test("renders sidebar navigation, trash, stats, tags, and resizer structure", as
 		},
 	});
 
+	assert.equal(elements.subtitleEl.getText(), "A quiet place for thoughts");
+	assert.equal(elements.subtitleEl.getAttr("contenteditable"), "plaintext-only");
+	assert.equal(sidebar.find("[data-action='open-settings']")?.getAttr("data-icon"), "settings-2");
 	assert.equal(elements.statsEl.getAttr("aria-labelledby"), "stats-label");
 	renderSidebarStat(elements.statsEl, "12", "Notes");
 	assert.equal(elements.statsEl.find(".knomo-stat-value")?.getText(), "12");
 
-	assert.deepEqual(sidebar.findAll("[data-nav]").map((item) => item.getAttr("data-nav")), [
-		"all",
-		"review",
-		"random",
-		"shuffleDay",
-		"time-buoy",
-		"record-stats",
-		"trash",
-	]);
+	assert.deepEqual(sidebar.findAll("[data-nav]").map((item) => item.getAttr("data-nav")), ["trash"]);
 	assert.equal(sidebar.find(".knomo-time-buoy-count"), null);
 	assert.equal(sidebar.find("[data-nav='trash']")?.hasClass("knomo-trash-nav-button"), true);
 	assert.equal(elements.resizerEl.getAttr("role"), "separator");
@@ -85,10 +81,9 @@ test("renders sidebar navigation, trash, stats, tags, and resizer structure", as
 	assert.equal(projectToggle?.getAttr("aria-expanded"), "false");
 	assert.equal(projectToggle?.getAttr("aria-label"), collapsedLabel);
 
-	syncSidebarNavButtons(sidebar.asHtml(), "review");
-	assert.equal(sidebar.find("[data-nav='review']")?.hasClass("is-active"), true);
-	assert.equal(sidebar.find("[data-nav='review']")?.getAttr("aria-pressed"), "true");
-	assert.equal(sidebar.find("[data-nav='all']")?.getAttr("aria-pressed"), "false");
+	syncSidebarNavButtons(sidebar.asHtml(), "trash");
+	assert.equal(sidebar.find("[data-nav='trash']")?.hasClass("is-active"), true);
+	assert.equal(sidebar.find("[data-nav='trash']")?.getAttr("aria-pressed"), "true");
 });
 
 test("renders sidebar tag empty state", async () => {

@@ -1,3 +1,6 @@
+import { setIcon } from "obsidian";
+
+import { KNOMO_ALL_NOTES_ICON, KNOMO_RANDOM_REUNION_ICON, KNOMO_TIME_BUOY_ICON } from "../icons";
 import { getKnomoLocale, t } from "../i18n";
 import type { CardFlowHeader } from "./KnomoCardFlowPresenter";
 import type { ShuffleDayStats } from "../utils/shuffleDay";
@@ -9,6 +12,51 @@ interface RenderLoadMoreButtonOptions {
 	action: LoadMoreAction;
 	extraClass?: string;
 	sentinel?: boolean;
+}
+
+export interface FeedQuickActionsOptions {
+	pinnedCount: number;
+	pinsCollapsed: boolean;
+	randomActive: boolean;
+	timeBuoyActive: boolean;
+	timeBuoyEnabled: boolean;
+}
+
+/** Renders the persistent feed controls shared by desktop and mobile layouts. */
+export function renderKnomoFeedQuickActions(
+	container: HTMLElement,
+	options: FeedQuickActionsOptions,
+): HTMLElement {
+	const actions = container.createDiv({ cls: "knomo-feed-quick-actions" });
+	const hasPinnedMemos = options.pinnedCount > 0;
+	renderFeedQuickAction(
+		actions,
+		options.randomActive ? KNOMO_ALL_NOTES_ICON : KNOMO_RANDOM_REUNION_ICON,
+		options.randomActive ? t("feed.backHome") : t("feed.random"),
+		"open-random-reunion",
+		options.randomActive,
+	);
+	if (options.timeBuoyEnabled) {
+		renderFeedQuickAction(
+			actions,
+			options.timeBuoyActive ? KNOMO_ALL_NOTES_ICON : KNOMO_TIME_BUOY_ICON,
+			options.timeBuoyActive ? t("feed.backHome") : t("feed.timeBuoy"),
+			"open-time-buoy",
+			options.timeBuoyActive,
+		);
+	}
+	renderFeedQuickAction(
+		actions,
+		hasPinnedMemos ? (options.pinsCollapsed ? "chevron-left" : "chevron-down") : null,
+		hasPinnedMemos
+			? (options.pinsCollapsed ? t("feed.pins.expand") : t("feed.pins.collapse"))
+			: t("feed.pins.none"),
+		"toggle-pinned-section",
+		hasPinnedMemos && !options.pinsCollapsed,
+		true,
+		!hasPinnedMemos,
+	);
+	return actions;
 }
 
 export function renderKnomoListSummary(container: HTMLElement, text: string): HTMLElement {
@@ -83,6 +131,35 @@ export function renderKnomoEmptyState(container: HTMLElement, title = t("empty.g
 		emptyState.createDiv({ cls: "knomo-empty-description", text: description });
 	}
 	return emptyState;
+}
+
+/** Renders one stateful action in the persistent feed control row. */
+function renderFeedQuickAction(
+	container: HTMLElement,
+	icon: string | null,
+	label: string,
+	action: string,
+	active: boolean,
+	iconAfterLabel = false,
+	disabled = false,
+): HTMLButtonElement {
+	const button = container.createEl("button", {
+		cls: active ? "knomo-feed-quick-action is-active" : "knomo-feed-quick-action",
+		attr: {
+			type: "button",
+			"data-action": action,
+			"aria-pressed": active ? "true" : "false",
+			...(disabled ? { disabled: "", "aria-disabled": "true" } : {}),
+		},
+	});
+	if (icon !== null && !iconAfterLabel) {
+		setIcon(button.createSpan({ cls: "knomo-button-icon" }), icon);
+	}
+	button.createSpan({ cls: "knomo-button-label", text: label });
+	if (icon !== null && iconAfterLabel) {
+		setIcon(button.createSpan({ cls: "knomo-button-icon" }), icon);
+	}
+	return button;
 }
 
 function formatShuffleDayDateTitle(selectedDate: string): string {

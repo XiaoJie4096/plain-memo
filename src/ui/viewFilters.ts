@@ -69,6 +69,7 @@ export interface DailyDateConfig {
 export interface MemoStats {
 	memoCount: number;
 	tagCount: number;
+	activeDayCount: number;
 	imageCount: number;
 	wordCount: number;
 }
@@ -86,6 +87,7 @@ export function getMemoStats(memos: MemoRecord[]): MemoStats {
 	return {
 		memoCount: memos.length,
 		tagCount: tagKeys.size,
+		activeDayCount: new Set(memos.map((memo) => memo.createdAt.slice(0, 10))).size,
 		imageCount: memos.reduce((count, memo) => count + getMemoImages(memo).length, 0),
 		wordCount: memos.reduce((count, memo) => count + getMemoContentStats(memo).wordCount, 0),
 	};

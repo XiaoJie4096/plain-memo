@@ -30,6 +30,7 @@ test("computes memo stats from normalized tags and supported images", () => {
 			],
 		}),
 		makeMemo("b", {
+			createdAt: "2026-05-21T10:00:00",
 			contentSnapshot: "two words",
 			tags: ["life"],
 			images: [
@@ -41,9 +42,11 @@ test("computes memo stats from normalized tags and supported images", () => {
 	assert.deepEqual(getMemoStats(memos), {
 		memoCount: 2,
 		tagCount: 2,
+		activeDayCount: 2,
 		imageCount: 2,
 		wordCount: 5,
 	});
+	assert.equal(getMemoStats([...memos, makeMemo("c", { createdAt: "2026-05-21T18:00:00" })]).activeDayCount, 2);
 	assert.deepEqual(getMemoImages(memos[0]).map((image) => image.path), ["image.png"]);
 });
 

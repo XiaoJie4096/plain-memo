@@ -44,6 +44,7 @@ export interface RenderMemoCardOptions {
 	reusedBodyEl?: HTMLElement | null;
 	reusedImagesEl?: HTMLElement | null;
 	collapseLineThreshold?: number;
+	collapseLineCapacity?: number;
 	expanded?: boolean;
 	pinned?: boolean;
 }
@@ -119,6 +120,7 @@ export function renderKnomoMemoCard(container: HTMLElement, memo: MemoRecord, op
 		card,
 		memo,
 		options.collapseLineThreshold ?? 8,
+		options.collapseLineCapacity ?? 50,
 		options.expanded ?? false,
 		options.reusedBodyEl !== undefined && options.reusedBodyEl !== null,
 	);
@@ -127,8 +129,15 @@ export function renderKnomoMemoCard(container: HTMLElement, memo: MemoRecord, op
 	return card;
 }
 
-function renderMemoCollapseControl(card: HTMLElement, memo: MemoRecord, threshold: number, expanded: boolean, reused: boolean): void {
-	const lineWeight = getMemoCollapseLineWeight(memo.contentSnapshot);
+function renderMemoCollapseControl(
+	card: HTMLElement,
+	memo: MemoRecord,
+	threshold: number,
+	lineCapacity: number,
+	expanded: boolean,
+	reused: boolean,
+): void {
+	const lineWeight = getMemoCollapseLineWeight(memo.contentSnapshot, lineCapacity);
 	const body = card.find(".knomo-card-body");
 	if (body === null) return;
 	if (reused) {

@@ -4,15 +4,50 @@ import { ensureObsidianStub } from "./helpers/obsidianStub";
 
 test("renders feed summary, toolbar, load more buttons, and empty states", async () => {
 	await ensureObsidianStub();
+	const { KNOMO_ALL_NOTES_ICON, KNOMO_RANDOM_REUNION_ICON } = await import("../src/icons");
 	const {
-		renderKnomoCardFlowHeaders,
-		renderKnomoEmptyState,
+		 renderKnomoCardFlowHeaders,
+		 renderKnomoEmptyState,
+		renderKnomoFeedQuickActions,
 		renderKnomoListSummary,
 		renderKnomoLoadMoreButton,
 		renderKnomoRandomReunionToolbar,
 		renderKnomoShuffleDayHeader,
 	} = await import("../src/ui/KnomoFeed");
 	const root = new TestElement("div");
+	const quickActions = renderKnomoFeedQuickActions(root.asHtml(), {
+		pinnedCount: 2,
+		pinsCollapsed: true,
+		randomActive: false,
+		timeBuoyActive: true,
+		timeBuoyEnabled: true,
+	});
+	assert.deepEqual(quickActions.findAll("[data-action]").map((item) => item.getAttr("data-action")), [
+		"open-random-reunion",
+		"open-time-buoy",
+		"toggle-pinned-section",
+	]);
+	assert.equal(quickActions.find("[data-action='toggle-pinned-section']")?.getAttr("aria-pressed"), "false");
+	assert.equal(quickActions.find("[data-action='toggle-pinned-section']")?.getText(), "Show pins");
+	assert.equal(quickActions.find("[data-action='toggle-pinned-section']")?.findAll(".knomo-button-icon").length, 1);
+	assert.equal(quickActions.find("[data-action='open-time-buoy']")?.getAttr("aria-pressed"), "true");
+	assert.equal(quickActions.find("[data-action='open-time-buoy']")?.getText(), "Back home");
+	assert.equal(quickActions.find("[data-action='open-time-buoy']")?.find(".knomo-button-icon")?.getAttr("data-icon"), KNOMO_ALL_NOTES_ICON);
+
+	const noPinsActions = renderKnomoFeedQuickActions(root.asHtml(), {
+		pinnedCount: 0,
+		pinsCollapsed: false,
+		randomActive: true,
+		timeBuoyActive: false,
+		timeBuoyEnabled: true,
+	});
+	const noPinsButton = noPinsActions.find("[data-action='toggle-pinned-section']");
+	assert.equal(noPinsButton?.getText(), "No pins");
+	assert.equal(noPinsButton?.getAttr("disabled"), "");
+	assert.equal(noPinsButton?.findAll(".knomo-button-icon").length, 0);
+	assert.equal(noPinsActions.find("[data-action='open-random-reunion']")?.getText(), "Back home");
+	assert.equal(noPinsActions.find("[data-action='open-random-reunion']")?.find(".knomo-button-icon")?.getAttr("data-icon"), KNOMO_ALL_NOTES_ICON);
+	assert.equal(quickActions.find("[data-action='open-random-reunion']")?.find(".knomo-button-icon")?.getAttr("data-icon"), KNOMO_RANDOM_REUNION_ICON);
 
 	const summary = renderKnomoListSummary(root.asHtml(), "Filtered 3 memos");
 	assert.equal(summary.hasClass("knomo-list-summary"), true);
@@ -100,6 +135,10 @@ class TestElement {
 
 	createDiv(options: CreateElementOptions = {}): TestElement {
 		return this.createEl("div", options);
+	}
+
+	createSpan(options: CreateElementOptions = {}): TestElement {
+		return this.createEl("span", options);
 	}
 
 	createEl(tagName: string, options: CreateElementOptions = {}): TestElement {

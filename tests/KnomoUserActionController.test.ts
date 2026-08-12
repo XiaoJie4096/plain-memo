@@ -95,10 +95,16 @@ test("root click routes memo, trash, and generic actions", async () => {
 		await actions.controller.handleRootClick(createMouseEvent(new TestElement("button", {
 			attr: { "data-action": "record-stats-filter-tag" },
 		})));
+		const collapsedCard = new TestElement("article", {
+			cls: "knomo-card has-collapsed-memo",
+			attr: { "data-memo-id": "memo-collapsed" },
+		});
+		await actions.controller.handleRootClick(createMouseEvent(collapsedCard.createChild("div", { cls: "knomo-card-body" })));
 		assert.deepEqual(actions.calls, [
 			"memo:edit:memo-1",
 			"trash:restore:memo-2",
 			"record-tag",
+			"toggle-collapse:memo-collapsed",
 		]);
 	} finally {
 		cleanup();
@@ -244,6 +250,9 @@ test("handleAction dispatches every simple action to the expected view callbacks
 		"collapse-sidebar": {
 			expected: ["collapse-sidebar", "sync-chrome", "sync-card-menu"],
 		},
+		"open-settings": {
+			expected: ["open-settings"],
+		},
 		refresh: {
 			expected: ["refresh"],
 		},
@@ -279,6 +288,12 @@ test("handleAction dispatches every simple action to the expected view callbacks
 		},
 		"open-time-buoy": {
 			expected: ["time-buoy-open"],
+		},
+		"open-random-reunion": {
+			expected: ["open-random-reunion"],
+		},
+		"toggle-pinned-section": {
+			expected: ["toggle-pinned-section"],
 		},
 		"retry-all-memos": {
 			overrides: { deferAllMemos: true },
@@ -478,6 +493,7 @@ function createHarness(overrides: Partial<HarnessState> = {}): {
 			toggleScopeMenu: () => calls.push("toggle-scope"),
 			toggleSidebar: () => calls.push("toggle-sidebar"),
 			collapseSidebar: () => calls.push("collapse-sidebar"),
+			openSettings: () => calls.push("open-settings"),
 			handleManualRefresh: async () => {
 				calls.push("refresh");
 			},
@@ -494,6 +510,10 @@ function createHarness(overrides: Partial<HarnessState> = {}): {
 			setTimeBuoyTab: (tab) => calls.push(`time-buoy-tab:${tab}`),
 			loadMoreTimeBuoyCards: () => calls.push("time-buoy-more-cards"),
 			openTimeBuoy: () => calls.push("time-buoy-open"),
+			openRandomReunion: () => calls.push("open-random-reunion"),
+			togglePinnedSection: async () => {
+				calls.push("toggle-pinned-section");
+			},
 			renderAllMemosLoadingState: () => calls.push("all-memos-loading"),
 			ensureAllMemosLoaded: async () => {
 				calls.push("ensure-all-memos");
@@ -623,6 +643,10 @@ class TestElement {
 
 	getAttr(key: string): string | null {
 		return this.attrs.get(key) ?? null;
+	}
+
+	hasClass(cls: string): boolean {
+		return this.classes.has(cls);
 	}
 
 	setAttr(key: string, value: string): void {

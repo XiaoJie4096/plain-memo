@@ -8,6 +8,7 @@ export type RootClickRoute =
 	| { type: "memo-action"; element: HTMLElement; memoId: string | null; action: string | null }
 	| { type: "action"; element: HTMLElement; memoId: string | null; action: string | null; mobileToolButtonEl: HTMLElement | null }
 	| { type: "memo-card-open"; element: HTMLElement; memoId: string | null; randomReunion: boolean }
+	| { type: "memo-card-expand"; element: HTMLElement; memoId: string | null }
 	| {
 		type: "outside";
 		closeCardMenu: boolean;
@@ -89,6 +90,15 @@ export function getRootClickRoute(target: Element, mobile: boolean): RootClickRo
 		};
 	}
 
+	const memoCardExpandRoute = getMemoCardExpandRoute(target);
+	if (memoCardExpandRoute !== null) {
+		return {
+			type: "memo-card-expand",
+			element: memoCardExpandRoute.element,
+			memoId: memoCardExpandRoute.memoId,
+		};
+	}
+
 	return {
 		type: "outside",
 		closeCardMenu: target.closest(".knomo-card-actions") === null && target.closest(".knomo-card-menu") === null,
@@ -96,6 +106,28 @@ export function getRootClickRoute(target: Element, mobile: boolean): RootClickRo
 		closeDesktopSearch: target.closest(".knomo-search-wrap, .knomo-compact-search-wrap, .knomo-search-menu") === null,
 		closeCompactSearch: target.closest(".knomo-compact-search-panel") === null && target.closest("[data-action='toggle-compact-search']") === null,
 	};
+}
+
+export function getMemoCardExpandRoute(target: Element): { element: HTMLElement; memoId: string | null } | null {
+	if (isMemoCardInteractiveTarget(target)) {
+		return null;
+	}
+	const card = closestHTMLElement(target, ".knomo-card");
+	if (card === null || !card.hasClass("has-collapsed-memo")) {
+		return null;
+	}
+	return { element: card, memoId: card.getAttr("data-memo-id") };
+}
+
+export function getMemoCardEditRoute(target: Element): { element: HTMLElement; memoId: string | null } | null {
+	if (isMemoCardInteractiveTarget(target) || closestHTMLElement(target, ".knomo-card-body") === null) {
+		return null;
+	}
+	const card = closestHTMLElement(target, ".knomo-card");
+	if (card === null) {
+		return null;
+	}
+	return { element: card, memoId: card.getAttr("data-memo-id") };
 }
 
 export function getMemoCardOpenRoute(target: Element): { element: HTMLElement; memoId: string | null; randomReunion: boolean } | null {
@@ -124,4 +156,8 @@ export function getComposerToolButtonRoute(target: Element): { element: HTMLElem
 function closestHTMLElement(target: Element, selector: string): HTMLElement | null {
 	const element = target.closest(selector);
 	return element?.instanceOf(HTMLElement) ? element : null;
+}
+
+function isMemoCardInteractiveTarget(target: Element): boolean {
+	return target.closest("button, a, input, textarea, select, label, .tag, [data-knomo-card-image]") !== null;
 }

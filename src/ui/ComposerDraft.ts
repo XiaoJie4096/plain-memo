@@ -41,6 +41,37 @@ export function getComposerMode(editingMemo: object | null, quoteSourceMemoId: s
 	return "create";
 }
 
+/** Keeps the plain create draft separate while another memo temporarily occupies the composer. */
+export function captureCreateDraft(
+	createDraft: string,
+	currentContent: string,
+	mode: ComposerMode,
+): string {
+	return mode === "create" ? currentContent : createDraft;
+}
+
+/** Restores the create draft after an edit, and clears it only after creating a memo. */
+export function getComposerContentAfterSave(
+	saveType: "create" | "update",
+	createDraft: string,
+): string {
+	return saveType === "update" ? createDraft : "";
+}
+
+/** Allows mobile Back to dismiss only a blank new-memo composer. */
+export function shouldDismissBlankCreateComposer(content: string, editingMemo: object | null): boolean {
+	return editingMemo === null && content.trim() === "";
+}
+
+/** Finds pending attachments no longer used by the current or preserved draft. */
+export function getDiscardedComposerAttachmentPaths(
+	pendingPaths: Iterable<string>,
+	referencedPaths: ReadonlySet<string>,
+	retainedPaths: ReadonlySet<string>,
+): string[] {
+	return [...pendingPaths].filter((path) => !referencedPaths.has(path) && !retainedPaths.has(path));
+}
+
 export function getDraftForComposerClose(
 	draft: string,
 	mode: ComposerMode,
