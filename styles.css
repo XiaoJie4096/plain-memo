@@ -160,6 +160,8 @@ body.theme-dark {
 	--knomo-memo-chip-background-active: rgb(146 178 236 / 41%);
 	--knomo-memo-chip-text: #427eed;
 	--knomo-memo-chip-text-active: #427eed;
+	--knomo-memo-tag-text: #577fc9;
+	--knomo-memo-tag-text-active: #577fc9;
 
 	/* Accent — follows user's Obsidian theme accent */
 
@@ -365,6 +367,8 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .knomo-view-host {
 	--knomo-card-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
 	--knomo-memo-chip-text: #588ff5;
 	--knomo-memo-chip-text-active: #92b2ec;
+	--knomo-memo-tag-text: #92b2ec;
+	--knomo-memo-tag-text-active: #92b2ec;
 }
 
 .knomo-plugin.is-layout-desktop-medium,
@@ -1943,7 +1947,7 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .knomo-plugin.is-resiz
 	flex: 0 0 auto;
 	padding: 2px 8px;
 	border-radius: 5px;
-	color: var(--knomo-memo-chip-text);
+	color: var(--knomo-memo-tag-text);
 	background: var(--knomo-memo-chip-background);
 	font-size: 13px;
 	line-height: 1.35;
@@ -3240,7 +3244,7 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .knomo-plugin.is-resiz
 .knomo-plugin .knomo-card-content .tag {
 	padding: 2px 8px;
 	border-radius: 5px;
-	color: var(--knomo-memo-chip-text);
+	color: var(--knomo-memo-tag-text);
 	background: var(--knomo-memo-chip-background);
 	font-size: 13px;
 	font-weight: var(--font-normal);
@@ -3248,7 +3252,7 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .knomo-plugin.is-resiz
 
 .knomo-plugin .knomo-card-content .tag:hover,
 .knomo-plugin .knomo-card-content .tag:focus-visible {
-	color: var(--knomo-memo-chip-text-active);
+	color: var(--knomo-memo-tag-text-active);
 	background: var(--knomo-memo-chip-background-active);
 }
 
