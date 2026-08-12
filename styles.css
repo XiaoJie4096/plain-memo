@@ -156,6 +156,10 @@ body.theme-dark {
 	--knomo-subtle-surface: color-mix(in srgb, var(--background-primary) 94%, var(--text-normal) 6%);
 	--knomo-soft-border: var(--background-modifier-border);
 	--knomo-row-hover: var(--background-modifier-hover);
+	--knomo-memo-chip-background: rgb(146 178 236 / 21%);
+	--knomo-memo-chip-background-active: rgb(146 178 236 / 41%);
+	--knomo-memo-chip-text: #427eed;
+	--knomo-memo-chip-text-active: #427eed;
 
 	/* Accent — follows user's Obsidian theme accent */
 
@@ -359,6 +363,8 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .knomo-view-host {
 
 .theme-dark .knomo-plugin {
 	--knomo-card-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+	--knomo-memo-chip-text: #588ff5;
+	--knomo-memo-chip-text-active: #92b2ec;
 }
 
 .knomo-plugin.is-layout-desktop-medium,
@@ -1936,9 +1942,9 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .knomo-plugin.is-resiz
 .knomo-plugin .knomo-composer-tag-chip {
 	flex: 0 0 auto;
 	padding: 2px 8px;
-	border-radius: 10px;
-	color: var(--text-muted);
-	background: var(--background-modifier-hover);
+	border-radius: 5px;
+	color: var(--knomo-memo-chip-text);
+	background: var(--knomo-memo-chip-background);
 	font-size: 13px;
 	line-height: 1.35;
 	animation: knomo-tag-chip-appear 140ms ease-out;
@@ -3105,15 +3111,15 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .knomo-plugin.is-resiz
 	height: auto;
 	min-height: 0;
 	margin: 2px 0 0 auto;
-	padding: 0 3px;
-	color: var(--text-muted);
+	padding: 4px 8px;
+	color: var(--knomo-memo-chip-text);
 	font-size: var(--font-ui-smallest);
 	line-height: 1.2;
 	text-align: center;
 	cursor: pointer;
-	background: transparent;
+	background: var(--knomo-memo-chip-background);
 	border: 0;
-	border-radius: 3px;
+	border-radius: 6px;
 	box-shadow: none;
 }
 
@@ -3126,13 +3132,11 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .knomo-plugin.is-resiz
 }
 
 .knomo-plugin .knomo-card-body + .knomo-card-collapse-toggle:hover,
-.knomo-plugin .knomo-card-body + .knomo-card-collapse-toggle:focus-visible {
-	color: var(--text-normal);
-	background: var(--background-modifier-hover);
-}
-
-.knomo-plugin.is-layout-mobile .knomo-card-body + .knomo-card-collapse-toggle {
-	background: var(--background-modifier-hover);
+.knomo-plugin .knomo-card-body + .knomo-card-collapse-toggle:focus-visible,
+.knomo-plugin .knomo-floating-collapse-proxy:hover,
+.knomo-plugin .knomo-floating-collapse-proxy:focus-visible {
+	color: var(--knomo-memo-chip-text-active);
+	background: var(--knomo-memo-chip-background-active);
 }
 
 .knomo-plugin .knomo-card-body + .knomo-card-collapse-toggle.is-viewport-floating {
@@ -3141,7 +3145,7 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .knomo-plugin.is-resiz
 	bottom: var(--knomo-floating-collapse-bottom, 12px);
 	z-index: 90;
 	margin: 0;
-	background: var(--background-modifier-hover);
+	background: var(--knomo-memo-chip-background);
 	box-shadow: var(--shadow-s);
 }
 
@@ -3160,13 +3164,13 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .knomo-plugin.is-resiz
 	height: auto;
 	min-height: 0;
 	margin: 0;
-	padding: 0 3px;
-	color: var(--text-muted);
+	padding: 4px 8px;
+	color: var(--knomo-memo-chip-text);
 	font-size: var(--font-ui-smallest);
 	line-height: 1.2;
-	background: var(--background-modifier-hover);
+	background: var(--knomo-memo-chip-background);
 	border: 0;
-	border-radius: 3px;
+	border-radius: 6px;
 	box-shadow: var(--shadow-s);
 }
 
@@ -3235,16 +3239,17 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .knomo-plugin.is-resiz
 
 .knomo-plugin .knomo-card-content .tag {
 	padding: 2px 8px;
-	border-radius: 10px;
-	color: var(--text-muted);
-	background: var(--background-modifier-hover);
+	border-radius: 5px;
+	color: var(--knomo-memo-chip-text);
+	background: var(--knomo-memo-chip-background);
 	font-size: 13px;
 	font-weight: var(--font-normal);
 }
 
-.knomo-plugin .knomo-card-content .tag:hover {
-	color: var(--knomo-accent-text);
-	background: var(--knomo-row-hover);
+.knomo-plugin .knomo-card-content .tag:hover,
+.knomo-plugin .knomo-card-content .tag:focus-visible {
+	color: var(--knomo-memo-chip-text-active);
+	background: var(--knomo-memo-chip-background-active);
 }
 
 .knomo-plugin .knomo-card-images {
