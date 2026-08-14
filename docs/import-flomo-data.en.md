@@ -4,7 +4,7 @@ PlainMemo can convert a Flomo HTML or ZIP export into standalone PlainMemo Markd
 
 ## Export from Flomo
 
-<!-- Add the current Flomo export instructions and an English screenshot here. -->
+<img title="" src="../screenshots/flomo-export-guide-zh-CN.png" alt="Flomo export entry" data-align="left" width="607">
 
 ## Import into PlainMemo
 
