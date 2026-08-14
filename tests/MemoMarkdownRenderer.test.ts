@@ -9,7 +9,7 @@ test("post-processes memo markdown DOM metadata", async () => {
 	const { prepareRenderedMemoMarkdown, applyTaskCheckboxDomState } = await import("../src/ui/MemoMarkdownRenderer");
 	setDomGlobals();
 	const container = new TestElement("div");
-	container.addClass("knomo-card-content");
+	container.addClass("plain-memo-card-content");
 	const link = container.createEl("a", {
 		cls: "internal-link",
 		attr: { href: "Project" },
@@ -21,14 +21,14 @@ test("post-processes memo markdown DOM metadata", async () => {
 
 	prepareRenderedMemoMarkdown(container.asHtml(), makeMemo({ contentSnapshot: "- [ ] task" }));
 
-	assert.equal(link.getAttr("data-knomo-source-path"), "Daily/2026-06-02.md");
+	assert.equal(link.getAttr("data-plain-memo-source-path"), "Daily/2026-06-02.md");
 	assert.equal(image.getAttr("loading"), "lazy");
 	assert.equal(tag.getAttr("data-tag"), "Project/Knomo");
 	assert.equal(tag.getAttr("data-tag-key"), "project/knomo");
-	assert.equal(checkbox.hasClass("knomo-task-checkbox"), true);
-	assert.equal(checkbox.getAttr("data-knomo-memo-id"), "memo-1");
-	assert.equal(checkbox.getAttr("data-knomo-task-index"), "0");
-	assert.equal(taskItem.getAttr("data-knomo-task-index"), "0");
+	assert.equal(checkbox.hasClass("plain-memo-task-checkbox"), true);
+	assert.equal(checkbox.getAttr("data-plain-memo-memo-id"), "memo-1");
+	assert.equal(checkbox.getAttr("data-plain-memo-task-index"), "0");
+	assert.equal(taskItem.getAttr("data-plain-memo-task-index"), "0");
 
 	applyTaskCheckboxDomState(checkbox.asInput(), "-");
 
@@ -50,17 +50,17 @@ test("recognizes delegated task checkbox inputs", async () => {
 		concurrency: 1,
 	});
 	const content = new TestElement("div");
-	content.addClass("knomo-card-content");
+	content.addClass("plain-memo-card-content");
 	const input = content.createEl("input", {
 		attr: {
 			type: "checkbox",
-			"data-knomo-task-index": "2",
+			"data-plain-memo-task-index": "2",
 		},
 	});
 	const outside = new TestElement("input", {
 		attr: {
 			type: "checkbox",
-			"data-knomo-task-index": "2",
+			"data-plain-memo-task-index": "2",
 		},
 	});
 

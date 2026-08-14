@@ -36,7 +36,7 @@ test("renders composer input, tools, actions, and reference preview", async () =
 	assert.equal(elements.inputEl.value, "draft memo");
 	assert.equal(elements.inputEl.disabled, true);
 	assert.equal(elements.inputEl.getAttr("aria-labelledby"), "composer-input-label");
-	assert.equal(root.find(".knomo-composer-markdown-preview"), null);
+	assert.equal(root.find(".plain-memo-composer-markdown-preview"), null);
 	assert.deepEqual(elements.toolsEl.findAll("[data-action]").map((item) => item.getAttr("data-action")), [
 		"insert-tag",
 		"insert-wiki-link",
@@ -45,7 +45,7 @@ test("renders composer input, tools, actions, and reference preview", async () =
 		"insert-list",
 		"insert-numbered-list",
 	]);
-	assert.equal(elements.tagChipListEl.hasClass("knomo-composer-tag-chips"), true);
+	assert.equal(elements.tagChipListEl.hasClass("plain-memo-composer-tag-chips"), true);
 	assert.equal(elements.timeBuoyButtonEl?.disabled, true);
 	assert.equal(elements.timeBuoyButtonEl?.getAttr("data-icon"), KNOMO_TIME_BUOY_ICON);
 	assert.equal(elements.timeBuoyButtonEl?.getAttr("aria-haspopup"), "dialog");
@@ -63,15 +63,15 @@ test("renders composer input, tools, actions, and reference preview", async () =
 		setTooltipIfDesktopOnly: (element) => element.setAttr("data-tooltip-position", "top"),
 	});
 	assert.equal(elements.referencePreviewEl.hasClass("is-visible"), true);
-	assert.equal(elements.referencePreviewEl.find(".knomo-reference-content")?.getText(), "source memo");
-	assert.equal(elements.referencePreviewEl.find(".knomo-reference-clear")?.getAttr("data-icon"), "x");
-	assert.equal(elements.referencePreviewEl.find(".knomo-reference-clear")?.getAttr("data-tooltip-position"), "top");
+	assert.equal(elements.referencePreviewEl.find(".plain-memo-reference-content")?.getText(), "source memo");
+	assert.equal(elements.referencePreviewEl.find(".plain-memo-reference-clear")?.getAttr("data-icon"), "x");
+	assert.equal(elements.referencePreviewEl.find(".plain-memo-reference-clear")?.getAttr("data-tooltip-position"), "top");
 
 	renderComposerReferencePreview(elements.referencePreviewEl, null, {
 		setTooltipIfDesktopOnly: (element) => element.setAttr("data-tooltip-position", "top"),
 	});
 	assert.equal(elements.referencePreviewEl.hasClass("is-visible"), false);
-	assert.equal(elements.referencePreviewEl.find(".knomo-reference-content"), null);
+	assert.equal(elements.referencePreviewEl.find(".plain-memo-reference-content"), null);
 });
 
 test("renders mobile Time buoy pickers with future-only dates and direct selection", async () => {
@@ -90,7 +90,7 @@ test("renders mobile Time buoy pickers with future-only dates and direct selecti
 	assert.equal(picker.getAttr("role"), "dialog");
 	assert.equal(picker.getAttr("aria-modal"), "true");
 	assert.equal(picker.hasClass("is-modal"), true);
-	const shortcuts = picker.findAll(".knomo-time-buoy-picker-shortcut");
+	const shortcuts = picker.findAll(".plain-memo-time-buoy-picker-shortcut");
 	assert.deepEqual(shortcuts.map((shortcut) => shortcut.getText()), ["Tomorrow", "In 7 days", "In 30 days", "In 90 days"]);
 	assert.deepEqual(shortcuts.map((shortcut) => shortcut.getAttr("data-time-buoy-date")), [
 		"2026-07-12",
@@ -98,7 +98,7 @@ test("renders mobile Time buoy pickers with future-only dates and direct selecti
 		"2026-08-10",
 		"2026-10-09",
 	]);
-	assert.equal(picker.findAll(".knomo-time-buoy-picker-day").length, 42);
+	assert.equal(picker.findAll(".plain-memo-time-buoy-picker-day").length, 42);
 	assert.equal(picker.find("[data-time-buoy-date='2026-07-10']")?.disabled, true);
 	assert.equal(picker.find("[data-time-buoy-date='2026-07-10']")?.getAttr("aria-disabled"), "true");
 	assert.equal(picker.find("[data-time-buoy-date='2026-07-11']")?.disabled, false);
@@ -238,13 +238,13 @@ test("appends Time buoy cards directly without date titles or grouping container
 	appendTimeBuoyItems(root.asHtml(), items, 3, (container, _item, renderIndex) => {
 		assert.equal(container, root.asHtml());
 		renderIndexes.push(renderIndex);
-		container.createDiv({ cls: "knomo-card" });
+		container.createDiv({ cls: "plain-memo-card" });
 	});
 
 	assert.deepEqual(renderIndexes, [3, 4]);
 	assert.equal(root.find("h3"), null);
 	assert.equal(root.find("[data-time-buoy-date-group]"), null);
-	assert.equal(root.findAll(".knomo-card").length, 2);
+	assert.equal(root.findAll(".plain-memo-card").length, 2);
 });
 
 interface CreateElementOptions {

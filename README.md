@@ -2,41 +2,57 @@
 
 English | [简体中文](./README.zh-CN.md)
 
-> An Obsidian Memos plugin that stores each memo as an independent Markdown file.
+> PlainMemo is an unofficial fork of [BanyanSo/knomo](https://github.com/BanyanSo/knomo), continued under the upstream MIT license. It is not affiliated with the upstream project. Thanks to the original author for creating Knomo and releasing it under the MIT license.
 
-Current stable release: [PlainMemo 2.2.3](https://github.com/MMKLN0/plain-memo/releases/tag/2.2.3)
+Current stable release: [PlainMemo 2.2.3](https://github.com/XiaoJie4096/plain-memo/releases/tag/2.2.3)
 
-PlainMemo is an unofficial fork of [BanyanSo/knomo](https://github.com/BanyanSo/knomo), continued under the upstream MIT license. It is not an official release channel for the upstream project and does not imply upstream endorsement or support.
+PlainMemo is a card-based note-taking plugin for Obsidian that helps you capture and manage everyday thoughts. Every memo is stored in your Vault as an independent, ordinary Markdown file, while card browsing, tags, search, images, links, and review remain available. Capture freely without locking notes into a plugin-specific format.
 
-PlainMemo keeps Knomo's card-based browsing, search, tags, links, review, and mobile input experience while making every card a self-contained Markdown file that remains useful outside Obsidian.
+## What it does
 
-## How PlainMemo differs from upstream
+| Need | PlainMemo experience |
+| --- | --- |
+| Capture quickly | Create, edit, delete, search, filter, and revisit notes in a card flow on desktop and mobile. |
+| Keep ordinary Markdown files | One memo is one `.md` file, with no YAML or plugin-private markers, so the files remain useful in your file system and other Markdown tools. |
+| Connect ideas | Recognize `#tags` and Obsidian WikiLinks; browse hierarchical tags and rename a tag path from the sidebar. |
+| Write with Markdown and images | Render lists, tasks, quotes, images, and links; paste images on desktop and mobile, or drag images into the desktop editor. |
+| Meet old notes again | Use pinning, Random reunion, Time buoy, and long-note collapsing. |
+| Organize and sync | Recursively scan multiple Vault folders and refresh synchronized settings and pin state. |
+| Move your data | Prepare existing Markdown files, import from Flomo and Knomo, or export to Flomo and Knomo. |
 
-| Area | Upstream Knomo | PlainMemo |
+## Interface preview
+
+### Desktop
+
+<p align="center">
+  <img src="screenshots/plainmemo-desktop-en.png" alt="PlainMemo desktop card flow and sidebar" width="100%">
+</p>
+
+### Mobile
+
+<p align="center">
+  <img src="screenshots/plainmemo-mobile-feed-en.jpg" alt="PlainMemo mobile card flow" width="31%">
+  <img src="screenshots/plainmemo-mobile-sidebar-en.jpg" alt="PlainMemo mobile sidebar and tags" width="31%">
+  <img src="screenshots/plainmemo-mobile-composer-en.jpg" alt="PlainMemo mobile composer" width="31%">
+</p>
+
+## Move your data
+
+- [Import Flomo data into PlainMemo](docs/import-flomo-data.en.md)
+- [Import Knomo data into PlainMemo](docs/import-knomo-data.en.md)
+- [Export PlainMemo data to Flomo](docs/export-flomo-data.en.md)
+- [Export PlainMemo data to Knomo](docs/export-knomo-data.en.md)
+
+## PlainMemo and Knomo
+
+| Area | Knomo | PlainMemo |
 | --- | --- | --- |
-| Storage unit | Memos in Daily Notes plus maintained monthly collections | One Markdown file per memo |
-| Organization | Depends on Daily Notes and monthly Memos files | Recursively scans one or more configured folders; Daily Notes are not required |
-| Filename | Carried by daily/monthly source files | `<first body line>_YYMMDDHHmm.md`, with ` (2)`-style collision suffixes |
-| Content format | Upstream memo format and indexing workflow | The entire memo is ordinary Markdown; there is no separate title field, YAML frontmatter, or private marker |
-| Import | Based on Daily Notes/monthly files | Prepares existing Markdown filenames in place and imports Flomo HTML/ZIP exports |
-| Monthly archives | Maintained automatically | Removed |
+| Memo storage | Memos live in Daily Notes, with monthly files maintained alongside them | One memo is one ordinary Markdown file |
+| File organization | Depends on Daily Notes and monthly files | Scans one or more Vault folders without requiring Daily Notes |
+| Content format | Uses Knomo's memo and indexing workflow | The body is complete Markdown, with no YAML or plugin-private markers |
+| Migration | Maintains existing Knomo data | Can import Knomo data into independent PlainMemo files and export back to Knomo |
 
-This is an intentional storage-model change. Existing upstream Daily Notes and monthly Memos are not split into standalone files automatically. Back up your Vault before reorganizing existing files.
-
-## Features
-
-- Create, edit, delete, search, filter, and revisit standalone Markdown memos in a card flow.
-- Recursively scan multiple Vault-relative folders and choose a separate default folder for new memos.
-- Recognize `#tags` and Obsidian WikiLinks such as `[[Project note]]`.
-- Browse hierarchical tags in the sidebar and rename a tag path, including its descendants, across recognized PlainMemo files.
-- Render Markdown lists, tasks, quotes, images, and links; paste images on desktop and mobile, or drag image files into the desktop editor.
-- Collapse long cards after a configurable line threshold.
-- Pin a configurable number of important memos above the regular card feed, with a collapsible pinned area.
-- Store pins, scan folders, and other memo-related state under `PlainMemo/data` in the Vault and refresh synchronized state without restarting Obsidian.
-- Prepare existing Markdown files by adding recognizable creation-time filename suffixes without rewriting their content.
-- Import Flomo HTML or ZIP exports while preserving memo timestamps, tags, web links, and optional attachments.
-- Use optional Time buoy reminders from `@YYYY-MM-DD` in the memo body.
-- Use desktop and mobile card browsing, editing, tag completion, and WikiLink insertion controls.
+The two projects use different storage models. Existing Knomo Daily Notes and monthly files are not rewritten automatically; back up the Vault first, then use the import guide above when migrating.
 
 ## File format
 
@@ -66,27 +82,26 @@ PlainMemo is not currently published in the Obsidian Community Plugins directory
 ### BRAT (recommended)
 
 1. Install and enable [BRAT](https://github.com/TfTHacker/obsidian42-brat) from Obsidian's Community Plugins directory.
-2. In BRAT settings, choose **Add Beta plugin** and enter `MMKLN0/plain-memo`.
+2. In BRAT settings, choose **Add Beta plugin** and enter `XiaoJie4096/plain-memo`.
 3. Enable PlainMemo in Obsidian's Community Plugins settings.
 
 BRAT installs and updates PlainMemo from the latest stable GitHub Release.
 
 ### Manual installation
 
-1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/MMKLN0/plain-memo/releases/latest).
+1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/XiaoJie4096/plain-memo/releases/latest).
 2. Place the three files in `<vault>/.obsidian/plugins/plain-memo/`.
 3. Reload Obsidian and enable PlainMemo under Community Plugins.
 
-## First-time setup
+## Optional settings
 
-Open PlainMemo settings and find the standalone memo file section:
+You can start recording immediately after installation and enabling the plugin; no setup is required. PlainMemo creates a `PlainMemo` folder at the Vault root and uses it as the default creation and scan location. `PlainMemo/data` and `PlainMemo/picture` are managed automatically and never shown as memos.
 
-1. On startup, PlainMemo creates `PlainMemo`, `PlainMemo/data`, and `PlainMemo/picture`. `PlainMemo` is the initial scan folder and default save folder.
-2. Add, remove, or change scan folders relative to the Vault root, for example `Memos` or `Inbox/Cards`.
-3. Choose a default save folder. New memos are written there, and the folder is automatically included in the scan scope.
-4. Optionally adjust the long-card threshold (minimum 6 lines), mobile compact layout, and Time buoy reminders.
+Open PlainMemo settings only when you want to adjust how it works:
 
-No personal paths are preconfigured. PlainMemo only treats files inside the configured scan folders as memos and always excludes `PlainMemo/data` and `PlainMemo/picture`.
+1. Add, remove, or change scan folders relative to the Vault root, for example `Memos` or `Inbox/Cards`.
+2. Change the default creation folder. New memos are written there, and the folder is automatically included in the scan scope.
+3. Optionally adjust the long-card threshold, mobile compact layout, and Time buoy reminders.
 
 ## Import existing Markdown files
 
@@ -100,22 +115,11 @@ Already recognized files are skipped. Markdown content is not changed, name coll
 
 Files can also be prepared manually by using `<name>_YYMMDDHHmm.md` or `<name>_YYMMDDHHmm (2).md` inside a configured folder.
 
-## Import Flomo data
-
-PlainMemo settings also provide **Import Flomo data**:
-
-1. Select a Flomo `.html` or `.zip` export.
-2. Choose a destination folder inside the Vault.
-3. Keep the default option to skip `.m4a` voice attachments, or change the audio and image attachment options as needed.
-4. Review the detected memo and attachment counts, then start the import.
-
-Each Flomo memo becomes a standalone PlainMemo Markdown file. The original body, first line, timestamp, tags, and web links are preserved. Imported attachments are stored under `<destination>/flomo-attachments`. Repeated imports reuse matching content and attachments instead of creating unnecessary duplicates.
-
 ## Data and privacy
 
 Every memo is an ordinary Markdown file in your Vault. PlainMemo requires no account, relies on no external service, and does not actively upload note content. Scan folders, collapse thresholds, pin markers, random-review records, and shuffle-day history are stored under `PlainMemo/data` so they can synchronize with the Vault. Each pinned memo uses a separate state file to reduce cross-device overwrite conflicts.
 
-Device UI state, including whether the pinned section is collapsed, desktop sidebar geometry, and mobile layout preferences, remains in the local plugin `data.json`. The current version does not migrate settings or pins from older plugin `data.json` formats; arrange existing memo files and configure the new version manually.
+Device UI state, including whether the pinned section is collapsed, desktop sidebar geometry, and mobile layout preferences, remains in the local plugin `data.json`.
 
 ## Development
 
@@ -130,4 +134,4 @@ For local testing, copy `main.js`, `manifest.json`, and `styles.css` into the te
 
 ## Credits and license
 
-This repository is based on [BanyanSo/knomo](https://github.com/BanyanSo/knomo). Thanks to the upstream author for creating Knomo and releasing it under the MIT license. PlainMemo retains the original copyright and license notices; see [LICENSE](LICENSE).
+PlainMemo uses a one-Markdown-file-per-memo storage model: it does not depend on Daily Notes or monthly archives, recursively scans one or more configured folders, and names files as `<first body line>_YYMMDDHHmm.md`. PlainMemo retains the original copyright and license notices; see [LICENSE](LICENSE).

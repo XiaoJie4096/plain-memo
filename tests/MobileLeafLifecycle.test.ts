@@ -31,34 +31,34 @@ test("mobile navbar compact controller starts, ignores pre-start sync requests, 
 	assert.deepEqual(new Set(env.clearedTimers), new Set([1, 2, 3]));
 	assert.equal(env.offRefs.length, 2);
 	assert.deepEqual(env.bodyRemovedClasses.sort(), [
-		"knomo-mobile-navbar-compact-active",
-		"knomo-mobile-navbar-fixed",
-		"knomo-mobile-navbar-floating",
+		"plain-memo-mobile-navbar-compact-active",
+		"plain-memo-mobile-navbar-fixed",
+		"plain-memo-mobile-navbar-floating",
 	].sort());
 });
 
 test("mobile navbar compact cleanup removes injected chrome and resets CSS variables", async () => {
 	await ensureObsidianStub();
 	const { MobileNavbarCompactController } = await import("../src/ui/MobileNavbarCompactController");
-	const compactNavbar = new CleanupElement(["knomo-mobile-navbar-compact"]);
-	const sidebarAction = new CleanupElement(["knomo-mobile-navbar-sidebar-action"]);
-	const createButton = new CleanupElement(["knomo-mobile-create-fab"]);
-	const nativeAction = new CleanupElement(["knomo-mobile-navbar-hidden"]);
+	const compactNavbar = new CleanupElement(["plain-memo-mobile-navbar-compact"]);
+	const sidebarAction = new CleanupElement(["plain-memo-mobile-navbar-sidebar-action"]);
+	const createButton = new CleanupElement(["plain-memo-mobile-create-fab"]);
+	const nativeAction = new CleanupElement(["plain-memo-mobile-navbar-hidden"]);
 	const body = new CleanupBody([compactNavbar, sidebarAction, createButton, nativeAction]);
 
 	MobileNavbarCompactController.cleanupDocument({ body } as unknown as Document);
 
 	assert.deepEqual(body.removedClasses.sort(), [
-		"knomo-mobile-navbar-compact-active",
-		"knomo-mobile-navbar-fixed",
-		"knomo-mobile-navbar-floating",
+		"plain-memo-mobile-navbar-compact-active",
+		"plain-memo-mobile-navbar-fixed",
+		"plain-memo-mobile-navbar-floating",
 	].sort());
 	assert.equal(sidebarAction.removed, true);
 	assert.equal(createButton.removed, true);
-	assert.equal(compactNavbar.hasClass("knomo-mobile-navbar-compact"), false);
-	assert.equal(compactNavbar.cssProps.get("--knomo-mobile-navbar-edge-left"), "8px");
-	assert.equal(compactNavbar.cssProps.get("--knomo-mobile-navbar-reserved-right"), "80px");
-	assert.equal(nativeAction.hasClass("knomo-mobile-navbar-hidden"), false);
+	assert.equal(compactNavbar.hasClass("plain-memo-mobile-navbar-compact"), false);
+	assert.equal(compactNavbar.cssProps.get("--plain-memo-mobile-navbar-edge-left"), "8px");
+	assert.equal(compactNavbar.cssProps.get("--plain-memo-mobile-navbar-reserved-right"), "80px");
+	assert.equal(nativeAction.hasClass("plain-memo-mobile-navbar-hidden"), false);
 });
 
 function createControllerEnv() {

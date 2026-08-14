@@ -35,7 +35,7 @@ export function renderKnomoRecordStatsPage(
 	container: HTMLElement,
 	options: RenderKnomoRecordStatsPageOptions,
 ): HTMLElement {
-	const page = container.createDiv({ cls: "knomo-record-stats-page" });
+	const page = container.createDiv({ cls: "plain-memo-record-stats-page" });
 	if (options.snapshot.state === "idle" || options.snapshot.state === "loading") {
 		renderLoadingState(page);
 		return page;
@@ -56,50 +56,50 @@ export function renderKnomoRecordStatsPage(
 
 function renderLoadingState(container: HTMLElement): void {
 	const status = container.createDiv({
-		cls: "knomo-record-stats-loading",
+		cls: "plain-memo-record-stats-loading",
 		attr: { role: "status", "aria-live": "polite" },
 	});
-	status.createDiv({ cls: "knomo-record-stats-state-title", text: t("recordStats.loading.title") });
-	status.createDiv({ cls: "knomo-record-stats-state-description", text: t("recordStats.loading.desc") });
-	const skeleton = container.createDiv({ cls: "knomo-record-stats-skeleton", attr: { "aria-hidden": "true" } });
-	const overview = skeleton.createDiv({ cls: "knomo-record-stats-skeleton-section" });
+	status.createDiv({ cls: "plain-memo-record-stats-state-title", text: t("recordStats.loading.title") });
+	status.createDiv({ cls: "plain-memo-record-stats-state-description", text: t("recordStats.loading.desc") });
+	const skeleton = container.createDiv({ cls: "plain-memo-record-stats-skeleton", attr: { "aria-hidden": "true" } });
+	const overview = skeleton.createDiv({ cls: "plain-memo-record-stats-skeleton-section" });
 	renderSkeletonGrid(overview, 3);
-	const range = skeleton.createDiv({ cls: "knomo-record-stats-skeleton-section knomo-record-stats-skeleton-range" });
-	range.createDiv({ cls: "knomo-record-stats-skeleton-controls" });
-	range.createDiv({ cls: "knomo-record-stats-skeleton-navigation" });
-	range.createDiv({ cls: "knomo-record-stats-skeleton-chart" });
-	const metrics = range.createDiv({ cls: "knomo-record-stats-skeleton-group" });
-	metrics.createDiv({ cls: "knomo-record-stats-skeleton-subtitle" });
+	const range = skeleton.createDiv({ cls: "plain-memo-record-stats-skeleton-section plain-memo-record-stats-skeleton-range" });
+	range.createDiv({ cls: "plain-memo-record-stats-skeleton-controls" });
+	range.createDiv({ cls: "plain-memo-record-stats-skeleton-navigation" });
+	range.createDiv({ cls: "plain-memo-record-stats-skeleton-chart" });
+	const metrics = range.createDiv({ cls: "plain-memo-record-stats-skeleton-group" });
+	metrics.createDiv({ cls: "plain-memo-record-stats-skeleton-subtitle" });
 	renderSkeletonGrid(metrics, 9);
-	const hours = range.createDiv({ cls: "knomo-record-stats-skeleton-group" });
-	hours.createDiv({ cls: "knomo-record-stats-skeleton-subtitle" });
-	hours.createDiv({ cls: "knomo-record-stats-skeleton-chart" });
-	const tags = range.createDiv({ cls: "knomo-record-stats-skeleton-group" });
-	tags.createDiv({ cls: "knomo-record-stats-skeleton-subtitle" });
-	const tagChart = tags.createDiv({ cls: "knomo-record-stats-skeleton-tag-chart" });
+	const hours = range.createDiv({ cls: "plain-memo-record-stats-skeleton-group" });
+	hours.createDiv({ cls: "plain-memo-record-stats-skeleton-subtitle" });
+	hours.createDiv({ cls: "plain-memo-record-stats-skeleton-chart" });
+	const tags = range.createDiv({ cls: "plain-memo-record-stats-skeleton-group" });
+	tags.createDiv({ cls: "plain-memo-record-stats-skeleton-subtitle" });
+	const tagChart = tags.createDiv({ cls: "plain-memo-record-stats-skeleton-tag-chart" });
 	for (let index = 0; index < 5; index += 1) {
-		tagChart.createDiv({ cls: "knomo-record-stats-skeleton-tag-row" });
+		tagChart.createDiv({ cls: "plain-memo-record-stats-skeleton-tag-row" });
 	}
 }
 
 function renderErrorState(container: HTMLElement, error: string | null): void {
-	const state = container.createDiv({ cls: "knomo-record-stats-state is-error", attr: { role: "alert" } });
-	state.createDiv({ cls: "knomo-record-stats-state-title", text: t("recordStats.error.title") });
-	state.createDiv({ cls: "knomo-record-stats-state-description", text: t("recordStats.error.desc") });
+	const state = container.createDiv({ cls: "plain-memo-record-stats-state is-error", attr: { role: "alert" } });
+	state.createDiv({ cls: "plain-memo-record-stats-state-title", text: t("recordStats.error.title") });
+	state.createDiv({ cls: "plain-memo-record-stats-state-description", text: t("recordStats.error.desc") });
 	if (error !== null && error.trim().length > 0) {
-		state.createDiv({ cls: "knomo-record-stats-error-detail", text: error });
+		state.createDiv({ cls: "plain-memo-record-stats-error-detail", text: error });
 	}
 	state.createEl("button", {
-		cls: "knomo-inline-button knomo-record-stats-retry",
+		cls: "plain-memo-inline-button plain-memo-record-stats-retry",
 		text: t("recordStats.error.retry"),
 		attr: { type: "button", "data-action": "record-stats-retry" },
 	});
 }
 
 function renderGlobalEmptyState(container: HTMLElement): void {
-	const state = container.createDiv({ cls: "knomo-record-stats-state" });
-	state.createDiv({ cls: "knomo-record-stats-state-title", text: t("recordStats.empty.title") });
-	state.createDiv({ cls: "knomo-record-stats-state-description", text: t("recordStats.empty.desc") });
+	const state = container.createDiv({ cls: "plain-memo-record-stats-state" });
+	state.createDiv({ cls: "plain-memo-record-stats-state-title", text: t("recordStats.empty.title") });
+	state.createDiv({ cls: "plain-memo-record-stats-state-description", text: t("recordStats.empty.desc") });
 }
 
 function renderOverview(container: HTMLElement, selected: SelectedRecordStats): void {
@@ -113,7 +113,7 @@ function renderOverview(container: HTMLElement, selected: SelectedRecordStats): 
 		},
 		{ label: t("recordStats.overview.words"), value: selected.overview.wordCount },
 		{ label: t("recordStats.metric.recordDays"), value: selected.overview.recordDayCount },
-	], "knomo-record-stats-overview-grid");
+	], "plain-memo-record-stats-overview-grid");
 }
 
 function renderSelectedRange(container: HTMLElement, options: RenderKnomoRecordStatsPageOptions): void {
@@ -121,7 +121,7 @@ function renderSelectedRange(container: HTMLElement, options: RenderKnomoRecordS
 	if (selected === null) {
 		return;
 	}
-	const section = createSection(container, "knomo-record-stats-range-section");
+	const section = createSection(container, "plain-memo-record-stats-range-section");
 	renderViewControls(section, options.view);
 	renderRangeNavigation(section, selected, options.canRetreat, options.canAdvance);
 	renderTrendChart(section, options.view, selected, options.createHiddenText);
@@ -132,18 +132,18 @@ function renderSelectedRange(container: HTMLElement, options: RenderKnomoRecordS
 
 function createSection(container: HTMLElement, cls = ""): HTMLElement {
 	return container.createEl("section", {
-		cls: cls.length > 0 ? `knomo-record-stats-section ${cls}` : "knomo-record-stats-section",
+		cls: cls.length > 0 ? `plain-memo-record-stats-section ${cls}` : "plain-memo-record-stats-section",
 	});
 }
 
 function renderViewControls(container: HTMLElement, view: RecordStatsView): void {
 	const controls = container.createDiv({
-		cls: "knomo-record-stats-view-controls",
+		cls: "plain-memo-record-stats-view-controls",
 		attr: { role: "group", "aria-label": t("recordStats.view.label") },
 	});
 	for (const option of ["week", "month", "year"] as const) {
 		controls.createEl("button", {
-			cls: option === view ? "knomo-record-stats-view-button is-active" : "knomo-record-stats-view-button",
+			cls: option === view ? "plain-memo-record-stats-view-button is-active" : "plain-memo-record-stats-view-button",
 			text: getViewLabel(option),
 			attr: {
 				type: "button",
@@ -160,9 +160,9 @@ function renderRangeNavigation(
 	canRetreat: boolean,
 	canAdvance: boolean,
 ): void {
-	const navigation = container.createDiv({ cls: "knomo-record-stats-range-navigation" });
+	const navigation = container.createDiv({ cls: "plain-memo-record-stats-range-navigation" });
 	const previous = navigation.createEl("button", {
-		cls: "knomo-record-stats-range-button",
+		cls: "plain-memo-record-stats-range-button",
 		attr: {
 			type: "button",
 			"aria-label": t("recordStats.range.previous"),
@@ -173,12 +173,12 @@ function renderRangeNavigation(
 	previous.disabled = !canRetreat;
 	setIcon(previous, "chevron-left");
 	navigation.createDiv({
-		cls: "knomo-record-stats-range-label",
+		cls: "plain-memo-record-stats-range-label",
 		text: formatRangeLabel(selected.startDate, selected.endDateExclusive),
 		attr: { "aria-live": "polite" },
 	});
 	const next = navigation.createEl("button", {
-		cls: "knomo-record-stats-range-button",
+		cls: "plain-memo-record-stats-range-button",
 		attr: {
 			type: "button",
 			"aria-label": t("recordStats.range.next"),
@@ -196,15 +196,15 @@ function renderTrendChart(
 	selected: SelectedRecordStats,
 	createHiddenText: RenderKnomoRecordStatsPageOptions["createHiddenText"],
 ): void {
-	const chartSection = container.createDiv({ cls: "knomo-record-stats-chart-section" });
+	const chartSection = container.createDiv({ cls: "plain-memo-record-stats-chart-section" });
 	const chartLabelId = createHiddenText(chartSection, "record-stats-trend-label", t("recordStats.trend"));
 	const scroll = chartSection.createDiv({
 		cls: view !== "week"
-			? "knomo-record-stats-chart-scroll is-scrollable"
-			: "knomo-record-stats-chart-scroll",
+			? "plain-memo-record-stats-chart-scroll is-scrollable"
+			: "plain-memo-record-stats-chart-scroll",
 	});
 	renderBarChart(scroll, selected.trend, {
-		chartClass: `knomo-record-stats-chart is-${view}`,
+		chartClass: `plain-memo-record-stats-chart is-${view}`,
 		labelledBy: chartLabelId,
 		getVisibleLabel: (point, index) => getTrendVisibleLabel(view, point, index, selected.trend.length),
 		getAriaLabel: (point, index) => t("recordStats.chart.memoCount", {
@@ -223,13 +223,13 @@ function renderTrendChart(
 		}),
 	});
 	if (selected.range.memoCount === 0) {
-		chartSection.createDiv({ cls: "knomo-record-stats-chart-empty", text: t("recordStats.range.empty") });
+		chartSection.createDiv({ cls: "plain-memo-record-stats-chart-empty", text: t("recordStats.range.empty") });
 	}
 }
 
 function renderRangeMetrics(container: HTMLElement, view: RecordStatsView, selected: SelectedRecordStats): void {
-	const section = container.createDiv({ cls: "knomo-record-stats-metrics-section" });
-	section.createEl("h3", { cls: "knomo-record-stats-subtitle", text: getRangeStatsTitle(view) });
+	const section = container.createDiv({ cls: "plain-memo-record-stats-metrics-section" });
+	section.createEl("h3", { cls: "plain-memo-record-stats-subtitle", text: getRangeStatsTitle(view) });
 	renderMetricGrid(section, [
 		{
 			label: t("recordStats.metric.notes"),
@@ -275,7 +275,7 @@ function renderRangeMetrics(container: HTMLElement, view: RecordStatsView, selec
 			action: "record-stats-filter-max-daily-words",
 			ariaLabel: t("recordStats.action.filterMaxDailyWords"),
 		},
-	], "knomo-record-stats-range-grid");
+	], "plain-memo-record-stats-range-grid");
 }
 
 function renderActiveHours(
@@ -283,16 +283,16 @@ function renderActiveHours(
 	selected: SelectedRecordStats,
 	createHiddenText: RenderKnomoRecordStatsPageOptions["createHiddenText"],
 ): void {
-	const section = container.createDiv({ cls: "knomo-record-stats-chart-section" });
-	section.createEl("h3", { cls: "knomo-record-stats-subtitle", text: t("recordStats.activeHours") });
+	const section = container.createDiv({ cls: "plain-memo-record-stats-chart-section" });
+	section.createEl("h3", { cls: "plain-memo-record-stats-subtitle", text: t("recordStats.activeHours") });
 	const chartLabelId = createHiddenText(section, "record-stats-hours-label", t("recordStats.activeHours"));
-	const scroll = section.createDiv({ cls: "knomo-record-stats-chart-scroll is-scrollable" });
+	const scroll = section.createDiv({ cls: "plain-memo-record-stats-chart-scroll is-scrollable" });
 	const chart = renderBarChart(scroll, selected.activeHours.map((point) => ({
 		key: String(point.hour),
 		label: String(point.hour).padStart(2, "0"),
 		count: point.count,
 	})), {
-		chartClass: "knomo-record-stats-chart is-hours",
+		chartClass: "plain-memo-record-stats-chart is-hours",
 		labelledBy: chartLabelId,
 		getVisibleLabel: (point, index) => index % 2 === 0 || index === 23 ? point.label : "",
 		getAriaLabel: (point) => t("recordStats.chart.hourCount", { hour: point.label, count: point.count }),
@@ -304,23 +304,23 @@ function renderActiveHours(
 	});
 	centerChartItem(scroll, chart.children.item(12));
 	if (selected.range.memoCount === 0) {
-		section.createDiv({ cls: "knomo-record-stats-chart-empty", text: t("recordStats.range.empty") });
+		section.createDiv({ cls: "plain-memo-record-stats-chart-empty", text: t("recordStats.range.empty") });
 	}
 }
 
 function renderCommonTags(container: HTMLElement, selected: SelectedRecordStats): void {
-	const section = container.createDiv({ cls: "knomo-record-stats-chart-section" });
-	section.createEl("h3", { cls: "knomo-record-stats-subtitle", text: t("recordStats.commonTags") });
+	const section = container.createDiv({ cls: "plain-memo-record-stats-chart-section" });
+	section.createEl("h3", { cls: "plain-memo-record-stats-subtitle", text: t("recordStats.commonTags") });
 	if (selected.commonTags.length === 0) {
-		section.createDiv({ cls: "knomo-record-stats-tag-empty", text: t("recordStats.commonTags.empty") });
+		section.createDiv({ cls: "plain-memo-record-stats-tag-empty", text: t("recordStats.commonTags.empty") });
 		return;
 	}
-	const chart = section.createDiv({ cls: "knomo-record-stats-tag-chart", attr: { role: "list" } });
+	const chart = section.createDiv({ cls: "plain-memo-record-stats-tag-chart", attr: { role: "list" } });
 	const max = Math.max(...selected.commonTags.map((tag) => tag.count));
 	for (const tag of selected.commonTags) {
-		const item = chart.createDiv({ cls: "knomo-record-stats-tag-item", attr: { role: "listitem" } });
+		const item = chart.createDiv({ cls: "plain-memo-record-stats-tag-item", attr: { role: "listitem" } });
 		const button = item.createEl("button", {
-			cls: "knomo-record-stats-tag-button",
+			cls: "plain-memo-record-stats-tag-button",
 			attr: {
 				type: "button",
 				"data-action": "record-stats-filter-tag",
@@ -328,11 +328,11 @@ function renderCommonTags(container: HTMLElement, selected: SelectedRecordStats)
 				"aria-label": t("recordStats.action.filterTag", { tag: tag.label, count: tag.count }),
 			},
 		});
-		button.createSpan({ cls: "knomo-record-stats-tag-label", text: formatTagFilterText(tag.label) });
-		button.createDiv({ cls: "knomo-record-stats-tag-track" })
-			.createDiv({ cls: "knomo-record-stats-tag-bar" })
-			.setCssProps({ "--knomo-record-stats-tag-ratio": String(tag.count / max) });
-		button.createSpan({ cls: "knomo-record-stats-tag-count", text: formatNumber(tag.count) });
+		button.createSpan({ cls: "plain-memo-record-stats-tag-label", text: formatTagFilterText(tag.label) });
+		button.createDiv({ cls: "plain-memo-record-stats-tag-track" })
+			.createDiv({ cls: "plain-memo-record-stats-tag-bar" })
+			.setCssProps({ "--plain-memo-record-stats-tag-ratio": String(tag.count / max) });
+		button.createSpan({ cls: "plain-memo-record-stats-tag-count", text: formatNumber(tag.count) });
 	}
 }
 
@@ -351,28 +351,28 @@ function renderBarChart(
 		cls: options.chartClass,
 		attr: { role: "list", "aria-labelledby": options.labelledBy },
 	});
-	chart.setCssProps({ "--knomo-record-stats-columns": String(points.length) });
+	chart.setCssProps({ "--plain-memo-record-stats-columns": String(points.length) });
 	const max = Math.max(0, ...points.map((point) => point.count));
 	for (const [index, point] of points.entries()) {
 		const action = point.count > 0 ? options.getAction?.(point, index) ?? null : null;
 		const item = chart.createDiv({
-			cls: action === null ? "knomo-record-stats-bar-item" : "knomo-record-stats-bar-item is-interactive",
+			cls: action === null ? "plain-memo-record-stats-bar-item" : "plain-memo-record-stats-bar-item is-interactive",
 			attr: { role: "listitem" },
 		});
 		if (action === null) {
 			item.setAttr("aria-label", options.getAriaLabel(point, index));
 		}
 		item.createDiv({
-			cls: "knomo-record-stats-bar-value",
+			cls: "plain-memo-record-stats-bar-value",
 			text: point.count > 0 ? formatNumber(point.count) : "",
 		});
-		item.createDiv({ cls: "knomo-record-stats-bar-track" }).createDiv({ cls: "knomo-record-stats-bar" }).setCssProps({
-			"--knomo-record-stats-ratio": max === 0 ? "0" : String(point.count / max),
+		item.createDiv({ cls: "plain-memo-record-stats-bar-track" }).createDiv({ cls: "plain-memo-record-stats-bar" }).setCssProps({
+			"--plain-memo-record-stats-ratio": max === 0 ? "0" : String(point.count / max),
 		});
-		item.createDiv({ cls: "knomo-record-stats-bar-label", text: options.getVisibleLabel(point, index) });
+		item.createDiv({ cls: "plain-memo-record-stats-bar-label", text: options.getVisibleLabel(point, index) });
 		if (action !== null) {
 			item.createEl("button", {
-				cls: "knomo-record-stats-bar-hit",
+				cls: "plain-memo-record-stats-bar-hit",
 				attr: {
 					type: "button",
 					"aria-label": action.ariaLabel,
@@ -395,28 +395,28 @@ function centerChartItem(scroll: HTMLElement, item: Element | null): void {
 }
 
 function renderMetricGrid(container: HTMLElement, items: MetricItem[], cls: string): void {
-	const grid = container.createDiv({ cls: `knomo-record-stats-metric-grid ${cls}` });
+	const grid = container.createDiv({ cls: `plain-memo-record-stats-metric-grid ${cls}` });
 	for (const item of items) {
 		const action = item.value > 0 ? item.action ?? null : null;
 		const metric = action !== null
 			? grid.createEl("button", {
-				cls: "knomo-record-stats-metric is-interactive",
+				cls: "plain-memo-record-stats-metric is-interactive",
 				attr: {
 					type: "button",
 					"data-action": action,
 					"aria-label": item.ariaLabel ?? item.label,
 				},
 			})
-			: grid.createDiv({ cls: "knomo-record-stats-metric" });
-		metric.createDiv({ cls: "knomo-record-stats-metric-value", text: formatNumber(item.value) });
-		metric.createDiv({ cls: "knomo-record-stats-metric-label", text: item.label });
+			: grid.createDiv({ cls: "plain-memo-record-stats-metric" });
+		metric.createDiv({ cls: "plain-memo-record-stats-metric-value", text: formatNumber(item.value) });
+		metric.createDiv({ cls: "plain-memo-record-stats-metric-label", text: item.label });
 	}
 }
 
 function renderSkeletonGrid(container: HTMLElement, count: number): void {
-	const grid = container.createDiv({ cls: "knomo-record-stats-skeleton-grid" });
+	const grid = container.createDiv({ cls: "plain-memo-record-stats-skeleton-grid" });
 	for (let index = 0; index < count; index += 1) {
-		grid.createDiv({ cls: "knomo-record-stats-skeleton-item" });
+		grid.createDiv({ cls: "plain-memo-record-stats-skeleton-item" });
 	}
 }
 

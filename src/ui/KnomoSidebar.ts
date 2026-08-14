@@ -47,11 +47,11 @@ export interface SidebarDragState {
 }
 
 export function renderKnomoSidebar(sidebar: HTMLElement, options: KnomoSidebarOptions): KnomoSidebarElements {
-	const header = sidebar.createDiv({ cls: "knomo-sidebar-header" });
-	const brand = header.createDiv({ cls: "knomo-brand" });
-	brand.createDiv({ cls: "knomo-brand-title", text: "PlainMemo" });
+	const header = sidebar.createDiv({ cls: "plain-memo-sidebar-header" });
+	const brand = header.createDiv({ cls: "plain-memo-brand" });
+	brand.createDiv({ cls: "plain-memo-brand-title", text: "PlainMemo" });
 	const subtitleEl = brand.createDiv({
-		cls: "knomo-brand-subtitle",
+		cls: "plain-memo-brand-subtitle",
 		text: options.subtitle,
 		attr: {
 			contenteditable: "plaintext-only",
@@ -60,36 +60,36 @@ export function renderKnomoSidebar(sidebar: HTMLElement, options: KnomoSidebarOp
 			"aria-label": t("sidebar.subtitle"),
 		},
 	});
-	const actions = header.createDiv({ cls: "knomo-sidebar-actions" });
-	options.createIconButton(actions, "settings-2", t("sidebar.settings"), "knomo-sidebar-action", "open-settings");
-	options.createIconButton(actions, "refresh-cw", t("sidebar.refresh"), "knomo-sidebar-action", "refresh");
-	options.createIconButton(actions, "panel-left-close", t("sidebar.hide"), "knomo-sidebar-action knomo-desktop-only", "collapse-sidebar");
+	const actions = header.createDiv({ cls: "plain-memo-sidebar-actions" });
+	options.createIconButton(actions, "settings", t("sidebar.settings"), "plain-memo-sidebar-action", "open-settings");
+	options.createIconButton(actions, "refresh-cw", t("sidebar.refresh"), "plain-memo-sidebar-action", "refresh");
+	options.createIconButton(actions, "panel-left-close", t("sidebar.hide"), "plain-memo-sidebar-action plain-memo-desktop-only", "collapse-sidebar");
 
 	const statsLabelId = options.createHiddenText(sidebar, "stats-label", t("sidebar.stats"));
-	const statsEl = sidebar.createDiv({ cls: "knomo-sidebar-stats", attr: { "aria-labelledby": statsLabelId, tabindex: "-1" } });
+	const statsEl = sidebar.createDiv({ cls: "plain-memo-sidebar-stats", attr: { "aria-labelledby": statsLabelId, tabindex: "-1" } });
 
 	const navItems = getSidebarNavItems(options.timeBuoyEnabled === true);
 	if (navItems.length > 0) {
 		const navLabelId = options.createHiddenText(sidebar, "nav-label", t("sidebar.scope"));
 		const nav = sidebar.createEl("nav", {
-			cls: "knomo-nav",
+			cls: "plain-memo-nav",
 			attr: { "aria-labelledby": navLabelId },
 		});
 		for (const item of navItems) renderSidebarNavButton(nav, item);
 	}
 
-	const allTagSection = sidebar.createDiv({ cls: "knomo-tag-section" });
-	allTagSection.createDiv({ cls: "knomo-section-label", text: t("sidebar.allTags") });
-	const allTagsEl = allTagSection.createDiv({ cls: "knomo-tag-list" });
+	const allTagSection = sidebar.createDiv({ cls: "plain-memo-tag-section" });
+	allTagSection.createDiv({ cls: "plain-memo-section-label", text: t("sidebar.allTags") });
+	const allTagsEl = allTagSection.createDiv({ cls: "plain-memo-tag-list" });
 
-	const trashSection = sidebar.createDiv({ cls: "knomo-trash-section" });
+	const trashSection = sidebar.createDiv({ cls: "plain-memo-trash-section" });
 	const trashButton = renderSidebarNavButton(trashSection, TRASH_NAV_ITEM);
-	trashButton.addClass("knomo-trash-nav-button");
-	const trashCountEl = trashButton.createSpan({ cls: "knomo-trash-count" });
+	trashButton.addClass("plain-memo-trash-nav-button");
+	const trashCountEl = trashButton.createSpan({ cls: "plain-memo-trash-count" });
 
 	const resizerLabelId = options.createHiddenText(sidebar, "resizer-label", t("sidebar.resize"));
 	const resizerEl = sidebar.createDiv({
-		cls: "knomo-sidebar-resizer knomo-desktop-only",
+		cls: "plain-memo-sidebar-resizer plain-memo-desktop-only",
 		attr: {
 			role: "separator",
 			"aria-orientation": "vertical",
@@ -118,9 +118,9 @@ export function getSidebarDragWidth(drag: SidebarDragState, clientX: number): nu
 }
 
 export function renderSidebarStat(container: HTMLElement, value: string, label: string): void {
-	const item = container.createDiv({ cls: "knomo-stat" });
-	item.createDiv({ cls: "knomo-stat-value", text: value });
-	item.createDiv({ cls: "knomo-stat-label", text: label });
+	const item = container.createDiv({ cls: "plain-memo-stat" });
+	item.createDiv({ cls: "plain-memo-stat-value", text: value });
+	item.createDiv({ cls: "plain-memo-stat-label", text: label });
 }
 
 export function renderSidebarTags(container: HTMLElement | null, tags: TagSummary[], options: RenderSidebarTagsOptions): void {
@@ -130,7 +130,7 @@ export function renderSidebarTags(container: HTMLElement | null, tags: TagSummar
 	container.empty();
 	const tree = buildTagTree(tags);
 	if (tree.length === 0) {
-		container.createDiv({ cls: "knomo-muted-text", text: options.emptyText });
+		container.createDiv({ cls: "plain-memo-muted-text", text: options.emptyText });
 		return;
 	}
 	for (const tag of tree) {
@@ -154,24 +154,24 @@ export function syncSidebarNavButtons(rootEl: HTMLElement | null, activeNav: Sid
 
 function renderSidebarNavButton(container: HTMLElement, item: SidebarNavItem): HTMLButtonElement {
 	const button = container.createEl("button", {
-		cls: "knomo-nav-button",
+		cls: "plain-memo-nav-button",
 		attr: {
 			type: "button",
 			"aria-pressed": "false",
 			"data-nav": item.nav,
 		},
 	});
-	setIcon(button.createSpan({ cls: "knomo-button-icon" }), item.icon);
-	button.createSpan({ cls: "knomo-button-label", text: item.label });
+	setIcon(button.createSpan({ cls: "plain-memo-button-icon" }), item.icon);
+	button.createSpan({ cls: "plain-memo-button-label", text: item.label });
 	return button;
 }
 
 function renderTagTreeNode(container: HTMLElement, tag: TagTreeNode, options: RenderSidebarTagsOptions): void {
 	const collapsed = tag.children.length > 0 && !options.expandedTagGroups.has(tag.key);
-	const node = container.createDiv({ cls: collapsed ? "knomo-tag-node is-collapsed" : "knomo-tag-node" });
-	const row = node.createDiv({ cls: "knomo-tag-row" });
+	const node = container.createDiv({ cls: collapsed ? "plain-memo-tag-node is-collapsed" : "plain-memo-tag-node" });
+	const row = node.createDiv({ cls: "plain-memo-tag-row" });
 	const button = row.createEl("button", {
-		cls: options.activeTagKey === tag.key ? "knomo-tag-nav is-active" : "knomo-tag-nav",
+		cls: options.activeTagKey === tag.key ? "plain-memo-tag-nav is-active" : "plain-memo-tag-nav",
 		attr: {
 			type: "button",
 			"data-tag": tag.name,
@@ -179,10 +179,10 @@ function renderTagTreeNode(container: HTMLElement, tag: TagTreeNode, options: Re
 			"aria-pressed": options.activeTagKey === tag.key ? "true" : "false",
 		},
 	});
-	button.createSpan({ cls: "knomo-tag-name", text: tag.label });
+	button.createSpan({ cls: "plain-memo-tag-name", text: tag.label });
 	if (tag.children.length > 0) {
 		const toggle = row.createEl("button", {
-			cls: "knomo-tag-toggle",
+			cls: "plain-memo-tag-toggle",
 			attr: {
 				type: "button",
 				"aria-label": collapsed ? t("tags.expandGroup") : t("tags.collapseGroup"),
@@ -190,14 +190,14 @@ function renderTagTreeNode(container: HTMLElement, tag: TagTreeNode, options: Re
 				"data-tag-toggle": tag.key,
 			},
 		});
-		toggle.createSpan({ cls: "knomo-tag-count", text: String(tag.count) });
-		const toggleIcon = toggle.createSpan({ cls: "knomo-tag-toggle-icon" });
+		toggle.createSpan({ cls: "plain-memo-tag-count", text: String(tag.count) });
+		const toggleIcon = toggle.createSpan({ cls: "plain-memo-tag-toggle-icon" });
 		setIcon(toggleIcon, "chevron-down");
 	} else {
-		row.createSpan({ cls: "knomo-tag-count", text: String(tag.count) });
+		row.createSpan({ cls: "plain-memo-tag-count", text: String(tag.count) });
 	}
 	const menuButton = row.createEl("button", {
-		cls: "knomo-tag-menu-button",
+		cls: "plain-memo-tag-menu-button",
 		attr: { type: "button", "aria-label": t("tags.menu") },
 	});
 	setIcon(menuButton, "ellipsis");
@@ -218,7 +218,7 @@ function renderTagTreeNode(container: HTMLElement, tag: TagTreeNode, options: Re
 		});
 	}
 	if (tag.children.length > 0) {
-		const children = node.createDiv({ cls: "knomo-tag-children" });
+		const children = node.createDiv({ cls: "plain-memo-tag-children" });
 		for (const child of tag.children) {
 			renderTagTreeNode(children, child, options);
 		}
@@ -235,13 +235,13 @@ function showMobileTagMenu(button: HTMLElement, tag: TagTreeNode, options: Rende
 	}
 	activeMobileTagMenus.get(document)?.();
 	const menu = document.createElement("div");
-	menu.addClass("knomo-tag-context-menu");
+	menu.addClass("plain-memo-tag-context-menu");
 	menu.setAttr("role", "menu");
 	const action = menu.createEl("button", {
-		cls: "knomo-tag-context-menu-item",
+		cls: "plain-memo-tag-context-menu-item",
 		attr: { type: "button", role: "menuitem" },
 	});
-	setIcon(action.createSpan({ cls: "knomo-tag-context-menu-icon" }), "pencil");
+	setIcon(action.createSpan({ cls: "plain-memo-tag-context-menu-icon" }), "pencil");
 	action.createSpan({ text: t("tags.rename") });
 	document.body.appendChild(menu);
 	positionMobileTagMenu(menu, button, window);

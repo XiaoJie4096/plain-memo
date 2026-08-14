@@ -79,11 +79,11 @@ export function renderKnomoMemoCard(container: HTMLElement, memo: MemoRecord, op
 			: `${shell.className}${timeBuoyClass}`,
 		attr: shell.attrs,
 	});
-	const head = card.createDiv({ cls: "knomo-card-head" });
+	const head = card.createDiv({ cls: "plain-memo-card-head" });
 	renderMemoCardTime(head, memo, options);
 	if (options.includeActions) {
 		const menu = head.createEl("button", {
-			cls: "knomo-card-menu",
+			cls: "plain-memo-card-menu",
 			attr: {
 				type: "button",
 				"aria-label": t("card.moreActions"),
@@ -94,12 +94,12 @@ export function renderKnomoMemoCard(container: HTMLElement, memo: MemoRecord, op
 		});
 		setIcon(menu, "more-horizontal");
 
-		const actions = head.createDiv({ cls: "knomo-card-actions", attr: { role: "menu" } });
+		const actions = head.createDiv({ cls: "plain-memo-card-actions", attr: { role: "menu" } });
 		for (const action of getMemoCardActions(options.pinned === true)) {
 			renderCardAction(actions, memo.id, action.action, getMemoActionLabel(action.action), action.className);
 		}
 		actions.createDiv({
-			cls: "knomo-card-word-count",
+			cls: "plain-memo-card-word-count",
 			text: t("card.wordCount", { count: getMemoContentStats(memo).wordCount }),
 		});
 	}
@@ -138,7 +138,7 @@ function renderMemoCollapseControl(
 	reused: boolean,
 ): void {
 	const lineWeight = getMemoCollapseLineWeight(memo.contentSnapshot, lineCapacity);
-	const body = card.find(".knomo-card-body");
+	const body = card.find(".plain-memo-card-body");
 	if (body === null) return;
 	if (reused) {
 		const removable = body as HTMLElement & { removeClass?: (...classes: string[]) => void };
@@ -147,9 +147,9 @@ function renderMemoCollapseControl(
 	if (lineWeight <= threshold) return;
 	body.addClass(expanded ? "is-expanded" : "is-collapsed");
 	card.addClass(expanded ? "has-expanded-memo" : "has-collapsed-memo");
-	card.style?.setProperty("--knomo-collapse-lines", String(threshold));
+	card.style?.setProperty("--plain-memo-collapse-lines", String(threshold));
 	card.createEl("button", {
-		cls: "knomo-card-collapse-toggle",
+		cls: "plain-memo-card-collapse-toggle",
 		text: expanded ? t("card.collapse") : t("card.expand"),
 		attr: {
 			type: "button",
@@ -161,7 +161,7 @@ function renderMemoCollapseControl(
 }
 
 function renderMemoCardTime(container: HTMLElement, memo: MemoRecord, options: RenderMemoCardOptions): void {
-	const group = container.createDiv({ cls: "knomo-card-time-group" });
+	const group = container.createDiv({ cls: "plain-memo-card-time-group" });
 	const attrs: Record<string, string> = {
 		type: "button",
 		"aria-label": t("card.openDaily"),
@@ -172,12 +172,12 @@ function renderMemoCardTime(container: HTMLElement, memo: MemoRecord, options: R
 		attrs["data-random-reunion-card"] = "true";
 	}
 	group.createEl("button", {
-		cls: "knomo-card-time",
+		cls: "plain-memo-card-time",
 		text: options.formatDisplayTime(memo.createdAt),
 		attr: attrs,
 	});
 	if (options.pinned === true) {
-		const pin = group.createSpan({ cls: "knomo-card-pin", attr: { "aria-label": t("card.pinned") } });
+		const pin = group.createSpan({ cls: "plain-memo-card-pin", attr: { "aria-label": t("card.pinned") } });
 		setIcon(pin, "pin");
 	}
 }
@@ -188,7 +188,7 @@ function renderMemoCardTimeBuoy(card: HTMLElement, timeBuoy: MemoCardTimeBuoy | 
 	}
 	if (timeBuoy.status === "today") {
 		const wave = card.createSvg("svg", {
-			cls: "knomo-card-time-buoy-wave",
+			cls: "plain-memo-card-time-buoy-wave",
 			attr: {
 				viewBox: "0 0 100 10",
 				preserveAspectRatio: "none",
@@ -198,16 +198,16 @@ function renderMemoCardTimeBuoy(card: HTMLElement, timeBuoy: MemoCardTimeBuoy | 
 		});
 		const wavePath = "M0 6 C10 2 20 10 30 6 C40 2 50 10 60 6 C70 2 80 10 90 6 C94 4.4 97 4.6 100 6";
 		wave.createSvg("path", {
-			cls: "knomo-card-time-buoy-wave-fill",
+			cls: "plain-memo-card-time-buoy-wave-fill",
 			attr: { d: `${wavePath} L100 10 L0 10 Z` },
 		});
 		wave.createSvg("path", {
-			cls: "knomo-card-time-buoy-wave-line",
+			cls: "plain-memo-card-time-buoy-wave-line",
 			attr: { d: wavePath },
 		});
 	}
 	const indicator = card.createSpan({
-		cls: "knomo-card-time-buoy",
+		cls: "plain-memo-card-time-buoy",
 		attr: {
 			role: "img",
 			"aria-label": timeBuoy.label,
@@ -224,9 +224,9 @@ export function renderKnomoTrashMemoCard(container: HTMLElement, memo: MemoRecor
 		cls: getTrashMemoCardClass(options.busyAction),
 		attr: { "data-memo-id": memo.id },
 	});
-	const head = card.createDiv({ cls: "knomo-card-head" });
-	head.createDiv({ cls: "knomo-card-time", text: t("trash.createdAt", { time: options.formatDisplayTime(memo.createdAt) }) });
-	const actions = head.createDiv({ cls: "knomo-trash-actions" });
+	const head = card.createDiv({ cls: "plain-memo-card-head" });
+	head.createDiv({ cls: "plain-memo-card-time", text: t("trash.createdAt", { time: options.formatDisplayTime(memo.createdAt) }) });
+	const actions = head.createDiv({ cls: "plain-memo-trash-actions" });
 	for (const action of getTrashCardActions(options.busyAction)) {
 		renderTrashAction(
 			actions,
@@ -246,7 +246,7 @@ export function renderKnomoTrashMemoCard(container: HTMLElement, memo: MemoRecor
 		renderMemoCardImages: options.renderMemoCardImages,
 	});
 
-	const meta = card.createDiv({ cls: "knomo-card-meta knomo-trash-meta" });
+	const meta = card.createDiv({ cls: "plain-memo-card-meta plain-memo-trash-meta" });
 	meta.createDiv({ text: t("trash.deletedAt", { time: options.formatOptionalTime(memo.deletedAt) }) });
 	if (memo.deleteSource !== undefined && memo.deleteSource.trim().length > 0) {
 		meta.createDiv({ text: t("trash.deleteSource", { source: options.formatDeleteSource(memo.deleteSource) }) });
@@ -254,7 +254,7 @@ export function renderKnomoTrashMemoCard(container: HTMLElement, memo: MemoRecor
 	const warningText = getTrashMemoWarningText(memo);
 	if (warningText !== null) {
 		card.createDiv({
-			cls: "knomo-card-warning",
+			cls: "plain-memo-card-warning",
 			text: memo.issue === null ? options.formatSettingsText(warningText) : formatMemoIssue(memo.issue),
 		});
 	}
@@ -272,9 +272,9 @@ interface RenderMemoCardBodyOptions {
 
 export function renderMemoCardBody(card: HTMLElement, memo: MemoRecord, options: RenderMemoCardBodyOptions): HTMLElement {
 	const preview = options.getMemoCardPreview(memo);
-	const body = card.createDiv({ cls: "knomo-card-body" });
+	const body = card.createDiv({ cls: "plain-memo-card-body" });
 	if (preview.text.trim().length > 0) {
-		const content = body.createDiv({ cls: "knomo-card-content markdown-rendered" });
+		const content = body.createDiv({ cls: "plain-memo-card-content markdown-rendered" });
 		options.queueMemoMarkdown(memo, content, options.generation, options.markdownPriority, preview.text);
 	}
 	options.renderMemoCardImages(body, memo, preview.images, options.generation, options.reusedImagesEl ?? null);
@@ -284,7 +284,7 @@ export function renderMemoCardBody(card: HTMLElement, memo: MemoRecord, options:
 function renderCardMeta(card: HTMLElement, memo: MemoRecord, options: RenderMemoCardOptions): void {
 	const sourceReference = getMemoSourceReferenceMeta(memo, options.deletedMemoIds);
 	if (sourceReference.type !== "none") {
-		const meta = card.createDiv({ cls: "knomo-card-meta knomo-source-reference markdown-rendered" });
+		const meta = card.createDiv({ cls: "plain-memo-card-meta plain-memo-source-reference markdown-rendered" });
 		if (sourceReference.type === "plain") {
 			meta.setText(`${t("reference.fromPrefix")}${sourceReference.sourceMemoId}`);
 		} else {
@@ -300,7 +300,7 @@ function renderCardMeta(card: HTMLElement, memo: MemoRecord, options: RenderMemo
 	const warningText = getMemoWarningText(memo);
 	if (warningText !== null) {
 		card.createDiv({
-			cls: "knomo-card-warning",
+			cls: "plain-memo-card-warning",
 			text: memo.issue === null ? options.formatSettingsText(warningText) : formatMemoIssue(memo.issue),
 		});
 	}

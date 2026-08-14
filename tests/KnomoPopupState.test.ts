@@ -57,10 +57,10 @@ test("popup outside handler ignores targets inside the open card menu", () => {
 	withFakeDomConstructors(() => {
 		const state = new KnomoPopupState(() => fakeWindow());
 		const card = new FakeElement("div", {
-			cls: "knomo-card",
+			cls: "plain-memo-card",
 			attr: { "data-memo-id": "memo-1" },
 		});
-		const actions = card.createChild("div", { cls: "knomo-card-actions" });
+		const actions = card.createChild("div", { cls: "plain-memo-card-actions" });
 		const actionButton = actions.createChild("button");
 		const event = new FakeEvent(actionButton);
 		state.activeMenuMemoId = "memo-1";

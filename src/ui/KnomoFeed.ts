@@ -27,7 +27,7 @@ export function renderKnomoFeedQuickActions(
 	container: HTMLElement,
 	options: FeedQuickActionsOptions,
 ): HTMLElement {
-	const actions = container.createDiv({ cls: "knomo-feed-quick-actions" });
+	const actions = container.createDiv({ cls: "plain-memo-feed-quick-actions" });
 	const hasPinnedMemos = options.pinnedCount > 0;
 	renderFeedQuickAction(
 		actions,
@@ -61,16 +61,16 @@ export function renderKnomoFeedQuickActions(
 
 export function renderKnomoListSummary(container: HTMLElement, text: string): HTMLElement {
 	return container.createDiv({
-		cls: "knomo-list-summary",
+		cls: "plain-memo-list-summary",
 		text,
 	});
 }
 
 export function renderKnomoRandomReunionToolbar(container: HTMLElement, count: number): HTMLElement {
-	const toolbar = container.createDiv({ cls: "knomo-list-toolbar" });
+	const toolbar = container.createDiv({ cls: "plain-memo-list-toolbar" });
 	renderKnomoListSummary(toolbar, t("list.randomSummary", { count }));
 	toolbar.createEl("button", {
-		cls: "knomo-inline-button",
+		cls: "plain-memo-inline-button",
 		text: t("list.randomRefresh"),
 		attr: {
 			type: "button",
@@ -85,11 +85,11 @@ export function renderKnomoShuffleDayHeader(
 	selectedDate: string,
 	stats: ShuffleDayStats,
 ): HTMLElement {
-	const header = container.createDiv({ cls: "knomo-shuffle-day-header" });
-	header.createDiv({ cls: "knomo-shuffle-day-date", text: formatShuffleDayDateTitle(selectedDate) });
+	const header = container.createDiv({ cls: "plain-memo-shuffle-day-header" });
+	header.createDiv({ cls: "plain-memo-shuffle-day-date", text: formatShuffleDayDateTitle(selectedDate) });
 	const summary = formatShuffleDaySummary(stats);
 	if (summary.length > 0) {
-		header.createDiv({ cls: "knomo-shuffle-day-summary", text: summary });
+		header.createDiv({ cls: "plain-memo-shuffle-day-summary", text: summary });
 	}
 	return header;
 }
@@ -115,8 +115,8 @@ export function renderKnomoLoadMoreButton(container: HTMLElement, options: Rende
 		attr["data-load-more-sentinel"] = "true";
 	}
 	const cls = options.extraClass === undefined
-		? "knomo-load-more"
-		: `knomo-load-more ${options.extraClass}`;
+		? "plain-memo-load-more"
+		: `plain-memo-load-more ${options.extraClass}`;
 	return container.createEl("button", {
 		cls,
 		text: t("list.loadMore", { count: options.remainingCount }),
@@ -125,10 +125,10 @@ export function renderKnomoLoadMoreButton(container: HTMLElement, options: Rende
 }
 
 export function renderKnomoEmptyState(container: HTMLElement, title = t("empty.generic"), description = ""): HTMLElement {
-	const emptyState = container.createDiv({ cls: "knomo-empty-state" });
-	emptyState.createDiv({ cls: "knomo-empty-title", text: title });
+	const emptyState = container.createDiv({ cls: "plain-memo-empty-state" });
+	emptyState.createDiv({ cls: "plain-memo-empty-title", text: title });
 	if (description.length > 0) {
-		emptyState.createDiv({ cls: "knomo-empty-description", text: description });
+		emptyState.createDiv({ cls: "plain-memo-empty-description", text: description });
 	}
 	return emptyState;
 }
@@ -144,7 +144,7 @@ function renderFeedQuickAction(
 	disabled = false,
 ): HTMLButtonElement {
 	const button = container.createEl("button", {
-		cls: active ? "knomo-feed-quick-action is-active" : "knomo-feed-quick-action",
+		cls: active ? "plain-memo-feed-quick-action is-active" : "plain-memo-feed-quick-action",
 		attr: {
 			type: "button",
 			"data-action": action,
@@ -153,11 +153,11 @@ function renderFeedQuickAction(
 		},
 	});
 	if (icon !== null && !iconAfterLabel) {
-		setIcon(button.createSpan({ cls: "knomo-button-icon" }), icon);
+		setIcon(button.createSpan({ cls: "plain-memo-button-icon" }), icon);
 	}
-	button.createSpan({ cls: "knomo-button-label", text: label });
+	button.createSpan({ cls: "plain-memo-button-label", text: label });
 	if (icon !== null && iconAfterLabel) {
-		setIcon(button.createSpan({ cls: "knomo-button-icon" }), icon);
+		setIcon(button.createSpan({ cls: "plain-memo-button-icon" }), icon);
 	}
 	return button;
 }

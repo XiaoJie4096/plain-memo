@@ -642,8 +642,8 @@ export class MobileComposerController {
 		const inputMaxHeightValue = `${this.mobileComposerInputMaxHeight}px`;
 		for (const element of [this.options.getRootEl(), this.mobileComposerLayerEl]) {
 			element?.setCssProps({
-				"--knomo-composer-content-max-height": contentMaxHeightValue,
-				"--knomo-composer-input-max-height": inputMaxHeightValue,
+				"--plain-memo-composer-content-max-height": contentMaxHeightValue,
+				"--plain-memo-composer-input-max-height": inputMaxHeightValue,
 			});
 		}
 		return measurements.inputMaxHeight;
@@ -817,7 +817,7 @@ export class MobileComposerController {
 			this.updateToolbarAnchorInset();
 		}
 		this.syncComposerDockOffset(composerDock, baselineHeight);
-		this.mobileComposerLayerEl?.setAttr("data-knomo-composer-dock-source", composerDock.source);
+		this.mobileComposerLayerEl?.setAttr("data-plain-memo-composer-dock-source", composerDock.source);
 		this.maybeFinishClosingAfterDockSettles();
 	}
 
@@ -1001,7 +1001,7 @@ export class MobileComposerController {
 
 	private setKeyboardMetrics(keyboardHeight: number): void {
 		const keyboardHeightValue = `${Math.round(keyboardHeight)}px`;
-		this.mobileComposerLayerEl?.setCssProps({ "--knomo-keyboard-height": keyboardHeightValue });
+		this.mobileComposerLayerEl?.setCssProps({ "--plain-memo-keyboard-height": keyboardHeightValue });
 		this.mobileComposerLayerEl?.toggleClass("is-keyboard-open", keyboardHeight > 0);
 	}
 
@@ -1072,7 +1072,7 @@ export class MobileComposerController {
 		fallbackBottom: number,
 	): { bottom: number; source: MobileComposerToolbarAnchorSource } {
 		let buttonRowBottom = 0;
-		const buttonEls = toolbarEl.querySelectorAll(".knomo-tool-button, .knomo-send-button, .knomo-cancel-edit-button");
+		const buttonEls = toolbarEl.querySelectorAll(".plain-memo-tool-button, .plain-memo-send-button, .plain-memo-cancel-edit-button");
 		for (const buttonEl of Array.from(buttonEls)) {
 			const buttonBottom = buttonEl.getBoundingClientRect().bottom;
 			if (Number.isFinite(buttonBottom) && buttonBottom > 0) {
@@ -1088,7 +1088,7 @@ export class MobileComposerController {
 	private setComposerBottomOffset(bottomOffset: number): void {
 		this.mobileComposerBottomOffset = Math.round(bottomOffset);
 		const bottomOffsetValue = `${this.mobileComposerBottomOffset}px`;
-		this.mobileComposerLayerEl?.setCssProps({ "--knomo-mobile-composer-bottom-offset": bottomOffsetValue });
+		this.mobileComposerLayerEl?.setCssProps({ "--plain-memo-mobile-composer-bottom-offset": bottomOffsetValue });
 	}
 
 	private setComposerDockDiagnostics(composerDock: MobileComposerDockTop, baselineHeight: number): void {
@@ -1102,18 +1102,18 @@ export class MobileComposerController {
 		const capacitorKeyboardHeightValue = `${Math.round(this.mobileCapacitorKeyboardHeight ?? 0)}px`;
 		for (const element of [this.options.getRootEl(), this.mobileComposerLayerEl]) {
 			element?.setCssProps({
-				"--knomo-mobile-composer-dock-top": dockTopValue,
-				"--knomo-mobile-composer-baseline-height": baselineHeightValue,
-				"--knomo-mobile-composer-layer-bottom": layerBottomValue,
-				"--knomo-mobile-composer-applied-bottom-offset": bottomOffsetValue,
-				"--knomo-mobile-composer-toolbar-anchor-inset": toolbarAnchorInsetValue,
-				"--knomo-mobile-composer-toolbar-anchor-bottom": toolbarAnchorBottomValue,
-				"--knomo-mobile-composer-toolbar-wrapper-bottom": toolbarWrapperBottomValue,
-				"--knomo-mobile-composer-capacitor-keyboard-height": capacitorKeyboardHeightValue,
+				"--plain-memo-mobile-composer-dock-top": dockTopValue,
+				"--plain-memo-mobile-composer-baseline-height": baselineHeightValue,
+				"--plain-memo-mobile-composer-layer-bottom": layerBottomValue,
+				"--plain-memo-mobile-composer-applied-bottom-offset": bottomOffsetValue,
+				"--plain-memo-mobile-composer-toolbar-anchor-inset": toolbarAnchorInsetValue,
+				"--plain-memo-mobile-composer-toolbar-anchor-bottom": toolbarAnchorBottomValue,
+				"--plain-memo-mobile-composer-toolbar-wrapper-bottom": toolbarWrapperBottomValue,
+				"--plain-memo-mobile-composer-capacitor-keyboard-height": capacitorKeyboardHeightValue,
 			});
 		}
-		this.mobileComposerLayerEl?.setAttr("data-knomo-composer-dock-source", composerDock.source);
-		this.mobileComposerLayerEl?.setAttr("data-knomo-composer-toolbar-anchor-source", this.mobileComposerToolbarAnchorSource);
+		this.mobileComposerLayerEl?.setAttr("data-plain-memo-composer-dock-source", composerDock.source);
+		this.mobileComposerLayerEl?.setAttr("data-plain-memo-composer-toolbar-anchor-source", this.mobileComposerToolbarAnchorSource);
 	}
 
 	private clearKeyboardMetrics(): void {

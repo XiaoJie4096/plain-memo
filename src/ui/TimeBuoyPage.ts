@@ -23,7 +23,7 @@ export function renderTimeBuoyPage(
 	}
 	if (snapshot.error !== null) {
 		const state = renderKnomoEmptyState(container, t("timeBuoy.loadFailed"));
-		const actions = state.createDiv({ cls: "knomo-time-buoy-error-actions" });
+		const actions = state.createDiv({ cls: "plain-memo-time-buoy-error-actions" });
 		renderActionButton(actions, t("timeBuoy.retry"), "retry-time-buoy");
 		return { panelEl: null, items: [] };
 	}
@@ -54,13 +54,13 @@ function renderTabs(
 		{ tab: "past", label: t("timeBuoy.past") },
 	];
 	const tabList = container.createDiv({
-		cls: "knomo-time-buoy-tabs",
+		cls: "plain-memo-time-buoy-tabs",
 		attr: { role: "tablist", "aria-label": t("timeBuoy.tabs.label") },
 	});
 	for (const { tab, label } of tabs) {
 		const active = tab === snapshot.activeTab;
 		tabList.createEl("button", {
-			cls: active ? "knomo-time-buoy-tab is-active" : "knomo-time-buoy-tab",
+			cls: active ? "plain-memo-time-buoy-tab is-active" : "plain-memo-time-buoy-tab",
 			text: label,
 			attr: {
 				type: "button",
@@ -85,7 +85,7 @@ function renderTabs(
 		if (!active) {
 			attr.hidden = "";
 		}
-		const panel = container.createEl("section", { cls: "knomo-time-buoy-panel", attr });
+		const panel = container.createEl("section", { cls: "plain-memo-time-buoy-panel", attr });
 		if (active) {
 			activePanel = panel;
 		}
@@ -111,7 +111,7 @@ function getEmptyCopy(tab: TimeBuoyTab): { title: string; description: string } 
 
 function renderActionButton(container: HTMLElement, text: string, action: string): HTMLButtonElement {
 	return container.createEl("button", {
-		cls: "knomo-inline-button knomo-time-buoy-action",
+		cls: "plain-memo-inline-button plain-memo-time-buoy-action",
 		text,
 		attr: { type: "button", "data-action": action },
 	});

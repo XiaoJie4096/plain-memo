@@ -49,14 +49,14 @@ const MOBILE_NAVBAR_SELECTORS: Record<MobileNavbarSelectorKey, string[]> &
 const HIDDEN_NATIVE_ACTIONS: NavbarActionKey[] = ["back", "forward", "newTab"];
 const RETAINED_NATIVE_ACTIONS: NavbarActionKey[] = ["quickSwitcher", "tabs", "menu"];
 
-const BODY_ACTIVE_CLASS = "knomo-mobile-navbar-compact-active";
-const BODY_FLOATING_CLASS = "knomo-mobile-navbar-floating";
-const BODY_FIXED_CLASS = "knomo-mobile-navbar-fixed";
-const NAVBAR_COMPACT_CLASS = "knomo-mobile-navbar-compact";
-const NATIVE_HIDDEN_CLASS = "knomo-mobile-navbar-hidden";
-const SIDEBAR_ACTION_CLASS = "knomo-mobile-navbar-sidebar-action";
-const NATIVE_GROUP_CLASS = "knomo-mobile-navbar-native-group";
-const CREATE_BUTTON_CLASS = "knomo-mobile-create-fab";
+const BODY_ACTIVE_CLASS = "plain-memo-mobile-navbar-compact-active";
+const BODY_FLOATING_CLASS = "plain-memo-mobile-navbar-floating";
+const BODY_FIXED_CLASS = "plain-memo-mobile-navbar-fixed";
+const NAVBAR_COMPACT_CLASS = "plain-memo-mobile-navbar-compact";
+const NATIVE_HIDDEN_CLASS = "plain-memo-mobile-navbar-hidden";
+const SIDEBAR_ACTION_CLASS = "plain-memo-mobile-navbar-sidebar-action";
+const NATIVE_GROUP_CLASS = "plain-memo-mobile-navbar-native-group";
+const CREATE_BUTTON_CLASS = "plain-memo-mobile-create-fab";
 const CREATE_BUTTON_HIDDEN_CLASS = "is-hidden";
 const CREATE_BUTTON_WIDTH = 64;
 const CREATE_BUTTON_HEIGHT = 52;
@@ -66,12 +66,12 @@ const CHROME_EDGE_FALLBACK_INSET = 8;
 const CHROME_EDGE_MAX_INSET = 72;
 const STABILIZED_SYNC_DELAYS = [120, 320];
 const SYNC_THROTTLE_MS = 300;
-const NAVBAR_EDGE_LEFT_VAR = "--knomo-mobile-navbar-edge-left";
-const NAVBAR_RESERVED_RIGHT_VAR = "--knomo-mobile-navbar-reserved-right";
+const NAVBAR_EDGE_LEFT_VAR = "--plain-memo-mobile-navbar-edge-left";
+const NAVBAR_RESERVED_RIGHT_VAR = "--plain-memo-mobile-navbar-reserved-right";
 const NAVBAR_EDGE_LEFT_DEFAULT = `${CHROME_EDGE_FALLBACK_INSET}px`;
 const NAVBAR_RESERVED_RIGHT_DEFAULT = `${CHROME_EDGE_FALLBACK_INSET + CREATE_BUTTON_WIDTH + MIN_COLLISION_GAP}px`;
-const CREATE_BUTTON_RIGHT_VAR = "--knomo-mobile-create-fab-right";
-const CREATE_BUTTON_BOTTOM_VAR = "--knomo-mobile-create-fab-bottom";
+const CREATE_BUTTON_RIGHT_VAR = "--plain-memo-mobile-create-fab-right";
+const CREATE_BUTTON_BOTTOM_VAR = "--plain-memo-mobile-create-fab-bottom";
 
 export class MobileNavbarCompactController {
 	private started = false;
@@ -308,7 +308,7 @@ export class MobileNavbarCompactController {
 
 	private isIgnoredMutationTarget(element: HTMLElement): boolean {
 		return (
-			element.closest(".knomo-plugin") !== null ||
+			element.closest(".plain-memo-plugin") !== null ||
 			element.closest(`.${CREATE_BUTTON_CLASS}`) !== null ||
 			element.closest(`.${SIDEBAR_ACTION_CLASS}`) !== null
 		);

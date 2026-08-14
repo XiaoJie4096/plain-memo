@@ -114,10 +114,10 @@ function appendResourceVersion(
 	const base = hashIndex === -1 ? url : url.slice(0, hashIndex);
 	const fragment = hashIndex === -1 ? "" : url.slice(hashIndex);
 	const params = [
-		modifiedAt === undefined ? null : `knomo-mtime=${modifiedAt}`,
+		modifiedAt === undefined ? null : `plain-memo-mtime=${modifiedAt}`,
 		refreshVersion === 0 && resourceRefreshVersion === 0
 			? null
-			: `knomo-refresh=${refreshVersion}-${resourceRefreshVersion}`,
+			: `plain-memo-refresh=${refreshVersion}-${resourceRefreshVersion}`,
 	].filter((value): value is string => value !== null);
 	const separator = base.includes("?") ? "&" : "?";
 	return `${base}${separator}${params.join("&")}${fragment}`;

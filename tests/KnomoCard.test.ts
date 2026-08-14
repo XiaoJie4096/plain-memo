@@ -157,8 +157,8 @@ test("memo card action menu includes open daily in the requested order", async (
 		"delete",
 	]);
 	assert.equal(root.find("[data-memo-action='open-daily']")?.getText(), "Open note");
-	assert.equal(root.find(".knomo-card-word-count")?.getText(), "Words: 1");
-	assert.equal(root.find(".knomo-card-actions")?.getText().endsWith("PinDeleteWords: 1"), true);
+	assert.equal(root.find(".plain-memo-card-word-count")?.getText(), "Words: 1");
+	assert.equal(root.find(".plain-memo-card-actions")?.getText().endsWith("PinDeleteWords: 1"), true);
 	const card = root.find("article");
 	assert.equal(card?.getAttr("data-memo-card-open"), null);
 	assert.equal(card?.getAttr("tabindex"), null);
@@ -230,11 +230,11 @@ test("renders Time buoy card states with the project icon and a today wave", asy
 	assert.equal(indicator?.getAttr("role"), "img");
 	assert.equal(indicator?.getAttr("aria-label"), "Time buoy today");
 	assert.equal(today.find("article")?.hasClass("is-time-buoy-today"), true);
-	assert.notEqual(today.find(".knomo-card-time-buoy-wave"), null);
+	assert.notEqual(today.find(".plain-memo-card-time-buoy-wave"), null);
 	assert.equal(upcoming.find("article")?.hasClass("is-time-buoy-upcoming"), true);
-	assert.equal(upcoming.find(".knomo-card-time-buoy-wave"), null);
+	assert.equal(upcoming.find(".plain-memo-card-time-buoy-wave"), null);
 	assert.equal(past.find("article")?.hasClass("is-time-buoy-past"), true);
-	assert.equal(past.find(".knomo-card-time-buoy-wave"), null);
+	assert.equal(past.find(".plain-memo-card-time-buoy-wave"), null);
 });
 
 test("trash memo cards do not get daily note card-open attributes", async () => {
@@ -297,7 +297,7 @@ async function renderMemoCard(
 		},
 		renderMemoCardImages: (container, _memo, images) => {
 			if (images.length > 0) {
-				container.createDiv({ cls: "knomo-card-images" });
+				container.createDiv({ cls: "plain-memo-card-images" });
 			}
 		},
 		queueSourceReferenceMarkdown: () => {
@@ -312,10 +312,10 @@ async function renderMemoCard(
 	}
 	return {
 		card,
-		body: root.find(".knomo-card-body"),
-		content: root.find(".knomo-card-content"),
-		images: root.find(".knomo-card-images"),
-		collapseToggle: root.find(".knomo-card-collapse-toggle"),
+		body: root.find(".plain-memo-card-body"),
+		content: root.find(".plain-memo-card-content"),
+		images: root.find(".plain-memo-card-images"),
+		collapseToggle: root.find(".plain-memo-card-collapse-toggle"),
 		queued,
 	};
 }

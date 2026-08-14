@@ -22,7 +22,7 @@ test("builds memo card shell metadata without daily-open card attributes", () =>
 		includeActions: true,
 		activeMenuMemoId: "memo-1",
 	}), {
-		className: "knomo-card is-menu-open",
+		className: "plain-memo-card is-menu-open",
 		attrs: {
 			"data-memo-id": "memo-1",
 		},
@@ -33,7 +33,7 @@ test("builds memo card shell metadata without daily-open card attributes", () =>
 		includeActions: false,
 		activeMenuMemoId: "memo-2",
 	}), {
-		className: "knomo-card",
+		className: "plain-memo-card",
 		attrs: {
 			"data-memo-id": "memo-2",
 		},
@@ -41,39 +41,39 @@ test("builds memo card shell metadata without daily-open card attributes", () =>
 });
 
 test("builds card action and trash action metadata", () => {
-	assert.equal(getMemoActionClass("edit"), "knomo-card-action");
-	assert.equal(getMemoActionClass("delete"), "knomo-card-action is-danger");
+	assert.equal(getMemoActionClass("edit"), "plain-memo-card-action");
+	assert.equal(getMemoActionClass("delete"), "plain-memo-card-action is-danger");
 	assert.deepEqual(getMemoCardActions(false), [
-		{ action: "edit", className: "knomo-card-action" },
-		{ action: "reference", className: "knomo-card-action" },
-		{ action: "open-daily", className: "knomo-card-action" },
-		{ action: "copy-text", className: "knomo-card-action" },
-		{ action: "copy-link", className: "knomo-card-action" },
-		{ action: "pin", className: "knomo-card-action" },
-		{ action: "delete", className: "knomo-card-action is-danger" },
+		{ action: "edit", className: "plain-memo-card-action" },
+		{ action: "reference", className: "plain-memo-card-action" },
+		{ action: "open-daily", className: "plain-memo-card-action" },
+		{ action: "copy-text", className: "plain-memo-card-action" },
+		{ action: "copy-link", className: "plain-memo-card-action" },
+		{ action: "pin", className: "plain-memo-card-action" },
+		{ action: "delete", className: "plain-memo-card-action is-danger" },
 	]);
 	assert.deepEqual(getMemoCardActions(true).map((item) => item.action), [
 		"edit", "reference", "open-daily", "copy-text", "copy-link", "unpin", "delete",
 	]);
-	assert.equal(getTrashActionClass("restore"), "knomo-inline-button");
-	assert.equal(getTrashActionClass("purge"), "knomo-inline-button is-danger");
+	assert.equal(getTrashActionClass("restore"), "plain-memo-inline-button");
+	assert.equal(getTrashActionClass("purge"), "plain-memo-inline-button is-danger");
 	assert.deepEqual(getTrashActionState("restore", null), { disabled: false, busy: false });
 	assert.deepEqual(getTrashActionState("restore", "restore"), { disabled: true, busy: true });
 	assert.deepEqual(getTrashActionState("purge", "restore"), { disabled: true, busy: false });
 	assert.deepEqual(getTrashCardActions("restore"), [
 		{
 			action: "restore",
-			className: "knomo-inline-button",
+			className: "plain-memo-inline-button",
 			state: { disabled: true, busy: true },
 		},
 		{
 			action: "purge",
-			className: "knomo-inline-button is-danger",
+			className: "plain-memo-inline-button is-danger",
 			state: { disabled: true, busy: false },
 		},
 	]);
-	assert.equal(getTrashMemoCardClass(null), "knomo-card knomo-trash-card");
-	assert.equal(getTrashMemoCardClass("purge"), "knomo-card knomo-trash-card is-busy");
+	assert.equal(getTrashMemoCardClass(null), "plain-memo-card plain-memo-trash-card");
+	assert.equal(getTrashMemoCardClass("purge"), "plain-memo-card plain-memo-trash-card is-busy");
 });
 
 test("builds memo source reference metadata", () => {

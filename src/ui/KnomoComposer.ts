@@ -38,11 +38,11 @@ interface RenderReferencePreviewOptions {
 }
 
 export function renderKnomoComposer(container: HTMLElement, options: RenderKnomoComposerOptions): KnomoComposerElements {
-	const composerEl = container.createDiv({ cls: "knomo-composer" });
-	const inputArea = composerEl.createDiv({ cls: "knomo-composer-input-area" });
+	const composerEl = container.createDiv({ cls: "plain-memo-composer" });
+	const inputArea = composerEl.createDiv({ cls: "plain-memo-composer-input-area" });
 	const composerInputLabelId = options.createHiddenText(inputArea, "composer-input-label", t("composer.inputLabel"));
 	const inputEl = inputArea.createEl("textarea", {
-		cls: "knomo-composer-input",
+		cls: "plain-memo-composer-input",
 		attr: {
 			placeholder: t("composer.placeholder"),
 			"aria-labelledby": composerInputLabelId,
@@ -51,30 +51,30 @@ export function renderKnomoComposer(container: HTMLElement, options: RenderKnomo
 	inputEl.disabled = !options.dailyEnabled;
 	inputEl.value = options.draftContent;
 
-	const referencePreviewEl = inputArea.createDiv({ cls: "knomo-reference-preview" });
+	const referencePreviewEl = inputArea.createDiv({ cls: "plain-memo-reference-preview" });
 	const tagChipListEl = inputArea.createDiv({
-		cls: "knomo-composer-tag-chips",
+		cls: "plain-memo-composer-tag-chips",
 		attr: { "aria-live": "polite", "aria-atomic": "true" },
 	});
-	const composerBarEl = inputArea.createDiv({ cls: "knomo-composer-bar" });
-	const toolsEl = composerBarEl.createDiv({ cls: "knomo-tool-group" });
-	options.createIconButton(toolsEl, "hash", t("composer.insertTag"), "knomo-tool-button", "insert-tag", false);
-	options.createIconButton(toolsEl, "link", t("composer.insertWikiLink"), "knomo-tool-button", "insert-wiki-link", false);
-	options.createIconButton(toolsEl, "image", t("composer.insertImage"), "knomo-tool-button", "insert-image", false);
+	const composerBarEl = inputArea.createDiv({ cls: "plain-memo-composer-bar" });
+	const toolsEl = composerBarEl.createDiv({ cls: "plain-memo-tool-group" });
+	options.createIconButton(toolsEl, "hash", t("composer.insertTag"), "plain-memo-tool-button", "insert-tag", false);
+	options.createIconButton(toolsEl, "link", t("composer.insertWikiLink"), "plain-memo-tool-button", "insert-wiki-link", false);
+	options.createIconButton(toolsEl, "image", t("composer.insertImage"), "plain-memo-tool-button", "insert-image", false);
 	const timeBuoyButtonEl = options.timeBuoyEnabled === true
-		? options.createIconButton(toolsEl, KNOMO_TIME_BUOY_ICON, t("composer.addTimeBuoy"), "knomo-tool-button", "insert-time-buoy", true)
+		? options.createIconButton(toolsEl, KNOMO_TIME_BUOY_ICON, t("composer.addTimeBuoy"), "plain-memo-tool-button", "insert-time-buoy", true)
 		: null;
 	if (timeBuoyButtonEl !== null) {
 		timeBuoyButtonEl.disabled = !options.dailyEnabled;
 		timeBuoyButtonEl.setAttrs({
 			"aria-haspopup": "dialog",
 			"aria-expanded": "false",
-			"aria-controls": options.timeBuoyPickerId ?? "knomo-time-buoy-picker",
+			"aria-controls": options.timeBuoyPickerId ?? "plain-memo-time-buoy-picker",
 		});
 	}
 	const timeBuoyMonthStatusEl = options.timeBuoyEnabled === true
 		? composerEl.createDiv({
-			cls: "knomo-visually-hidden",
+			cls: "plain-memo-visually-hidden",
 			attr: {
 				role: "status",
 				"aria-live": "polite",
@@ -82,12 +82,12 @@ export function renderKnomoComposer(container: HTMLElement, options: RenderKnomo
 			},
 		})
 		: null;
-	options.createIconButton(toolsEl, "list", t("composer.insertList"), "knomo-tool-button", "insert-list", false);
-	options.createIconButton(toolsEl, "list-ordered", t("composer.insertNumberedList"), "knomo-tool-button", "insert-numbered-list", false);
+	options.createIconButton(toolsEl, "list", t("composer.insertList"), "plain-memo-tool-button", "insert-list", false);
+	options.createIconButton(toolsEl, "list-ordered", t("composer.insertNumberedList"), "plain-memo-tool-button", "insert-numbered-list", false);
 
-	const actions = composerBarEl.createDiv({ cls: "knomo-composer-actions" });
+	const actions = composerBarEl.createDiv({ cls: "plain-memo-composer-actions" });
 	const cancelEditButtonEl = actions.createEl("button", {
-		cls: "knomo-cancel-edit-button",
+		cls: "plain-memo-cancel-edit-button",
 		text: t("composer.cancelEdit"),
 		attr: {
 			type: "button",
@@ -96,10 +96,10 @@ export function renderKnomoComposer(container: HTMLElement, options: RenderKnomo
 		},
 	});
 	const statusEl = composerEl.createDiv({
-		cls: options.dailyEnabled ? "knomo-status" : "knomo-status is-error",
+		cls: options.dailyEnabled ? "plain-memo-status" : "plain-memo-status is-error",
 	});
 	const sendButtonEl = actions.createEl("button", {
-		cls: "knomo-send-button",
+		cls: "plain-memo-send-button",
 		attr: {
 			type: "button",
 			"aria-label": t("composer.send"),
@@ -135,15 +135,15 @@ export function renderComposerReferencePreview(
 	}
 	container.empty();
 	const previewText = container.createDiv({
-		cls: "knomo-reference-preview-text",
+		cls: "plain-memo-reference-preview-text",
 	});
-	previewText.createSpan({ cls: "knomo-reference-label", text: t("reference.label") });
+	previewText.createSpan({ cls: "plain-memo-reference-label", text: t("reference.label") });
 	previewText.createSpan({
-		cls: "knomo-reference-content",
+		cls: "plain-memo-reference-content",
 		text: quoteMarkdownText.replace(/^> ?/gm, ""),
 	});
 	const clearButton = container.createEl("button", {
-		cls: "knomo-reference-clear",
+		cls: "plain-memo-reference-clear",
 		attr: {
 			type: "button",
 			"aria-label": t("reference.clear"),

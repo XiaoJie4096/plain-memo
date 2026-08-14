@@ -69,7 +69,7 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 		this.queuePopoverReposition();
 		const container = this.getSuggestionContainer();
 		if (container !== null) {
-			container.addClass("knomo-tag-suggest-popover");
+			container.addClass("plain-memo-tag-suggest-popover");
 		}
 	}
 
@@ -157,12 +157,12 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 		if (container === null) {
 			return;
 		}
-		container.addClass("knomo-tag-suggest-popover");
-		container.addClass("knomo-tag-suggest-positioning");
+		container.addClass("plain-memo-tag-suggest-popover");
+		container.addClass("plain-memo-tag-suggest-positioning");
 	}
 
 	private showPositionedPopover(container = this.getSuggestionContainer()): void {
-		container?.removeClass("knomo-tag-suggest-positioning");
+		container?.removeClass("plain-memo-tag-suggest-positioning");
 	}
 
 	private getTagsSnapshot(): string[] {
@@ -226,7 +226,7 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 		if (anchor === null || container === null) {
 			return;
 		}
-		const layer = this.inputEl.closest(".knomo-mobile-composer-layer");
+		const layer = this.inputEl.closest(".plain-memo-mobile-composer-layer");
 		if (layer !== null) {
 			const win = this.inputEl.ownerDocument.defaultView;
 			const viewport = win?.visualViewport ?? null;
@@ -238,7 +238,7 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 			const maxHeight = Math.min(maxHeightLimit, availableAbove);
 			const contentHeight = measureSuggestionContentHeight(this.inputEl, container, ".suggestion-item");
 			const measuredHeight = Math.min(maxHeight, contentHeight > 0 ? contentHeight : maxHeight);
-			container.addClass("knomo-tag-suggest-popover");
+			container.addClass("plain-memo-tag-suggest-popover");
 			const top = Math.max(viewportTop + topGuard, anchor.top - measuredHeight - gap);
 			const inputRect = this.inputEl.getBoundingClientRect();
 			const viewportLeft = viewport ? Math.max(0, viewport.offsetLeft) : 0;
@@ -257,7 +257,7 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 			this.showPositionedPopover(container);
 			return;
 		}
-		container.addClass("knomo-tag-suggest-popover");
+		container.addClass("plain-memo-tag-suggest-popover");
 		const win = this.inputEl.ownerDocument.defaultView;
 		const viewport = win?.visualViewport ?? null;
 		const viewportLeft = viewport ? Math.max(0, viewport.offsetLeft) : 0;
@@ -295,15 +295,15 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 
 	private setPopoverOffsetPosition(container: HTMLElement, left: number, top: number, width: number, maxHeight: number): void {
 		container.setCssProps({
-			"--knomo-suggest-translate-x": "0px",
-			"--knomo-suggest-translate-y": "0px",
+			"--plain-memo-suggest-translate-x": "0px",
+			"--plain-memo-suggest-translate-y": "0px",
 		});
 		const currentRect = container.getBoundingClientRect();
 		container.setCssProps({
-			"--knomo-suggest-translate-x": `${Math.round(left - currentRect.left)}px`,
-			"--knomo-suggest-translate-y": `${Math.round(top - currentRect.top)}px`,
-			"--knomo-suggest-width": `${Math.round(width)}px`,
-			"--knomo-suggest-max-height": `${Math.round(maxHeight)}px`,
+			"--plain-memo-suggest-translate-x": `${Math.round(left - currentRect.left)}px`,
+			"--plain-memo-suggest-translate-y": `${Math.round(top - currentRect.top)}px`,
+			"--plain-memo-suggest-width": `${Math.round(width)}px`,
+			"--plain-memo-suggest-max-height": `${Math.round(maxHeight)}px`,
 		});
 	}
 

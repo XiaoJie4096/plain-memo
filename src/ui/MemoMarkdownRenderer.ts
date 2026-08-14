@@ -104,18 +104,18 @@ export class MemoMarkdownRenderer {
 		if (!node?.instanceOf(HTMLElement)) {
 			return null;
 		}
-		if (node.tagName !== "INPUT" || node.closest(".knomo-card-content") === null) {
+		if (node.tagName !== "INPUT" || node.closest(".plain-memo-card-content") === null) {
 			return null;
 		}
 		const input = node as HTMLInputElement;
-		if (input.type !== "checkbox" || input.getAttr("data-knomo-task-index") === null) {
+		if (input.type !== "checkbox" || input.getAttr("data-plain-memo-task-index") === null) {
 			return null;
 		}
 		return input;
 	}
 
 	getTaskCheckboxIndex(input: HTMLInputElement): number | null {
-		const value = input.getAttr("data-knomo-task-index");
+		const value = input.getAttr("data-plain-memo-task-index");
 		if (value === null) {
 			return null;
 		}
@@ -128,9 +128,9 @@ export class MemoMarkdownRenderer {
 			if (container === null) {
 				continue;
 			}
-			for (const checkboxEl of container.findAll(".knomo-task-checkbox")) {
+			for (const checkboxEl of container.findAll(".plain-memo-task-checkbox")) {
 				const input = checkboxEl as HTMLInputElement;
-				if (input.getAttr("data-knomo-memo-id") === memo.id) {
+				if (input.getAttr("data-plain-memo-memo-id") === memo.id) {
 					this.syncTaskCheckboxDom(input, memo);
 				}
 			}
@@ -337,7 +337,7 @@ export function prepareRenderedMemoMarkdown(container: HTMLElement, memo: MemoRe
 export function prepareInternalLinks(container: HTMLElement, sourcePath: string): void {
 	const links = Array.from(container.querySelectorAll<HTMLAnchorElement>("a.internal-link"));
 	for (const linkEl of links) {
-		linkEl.setAttr("data-knomo-source-path", sourcePath);
+		linkEl.setAttr("data-plain-memo-source-path", sourcePath);
 	}
 }
 
@@ -352,12 +352,12 @@ export function prepareRenderedTaskCheckboxes(container: HTMLElement, memo: Memo
 			return;
 		}
 		const input = checkboxEl as HTMLInputElement;
-		input.addClass("knomo-task-checkbox");
-		input.setAttr("data-knomo-memo-id", memo.id);
-		input.setAttr("data-knomo-task-index", String(taskIndex));
+		input.addClass("plain-memo-task-checkbox");
+		input.setAttr("data-plain-memo-memo-id", memo.id);
+		input.setAttr("data-plain-memo-task-index", String(taskIndex));
 		const taskItem = input.closest("li");
 		if (taskItem?.instanceOf(HTMLElement)) {
-			taskItem.setAttr("data-knomo-task-index", String(taskIndex));
+			taskItem.setAttr("data-plain-memo-task-index", String(taskIndex));
 		}
 		taskIndex += 1;
 	}

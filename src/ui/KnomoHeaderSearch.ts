@@ -34,14 +34,14 @@ export interface CompactSearchPanelElements {
 }
 
 export function renderKnomoDesktopTopbar(container: HTMLElement, options: HeaderSearchRenderOptions): DesktopTopbarElements {
-	const topbar = container.createDiv({ cls: "knomo-topbar" });
-	options.createIconButton(topbar, KNOMO_SIDEBAR_MENU_ICON, t("sidebar.show"), "knomo-sidebar-toggle", "toggle-sidebar");
+	const topbar = container.createDiv({ cls: "plain-memo-topbar" });
+	options.createIconButton(topbar, KNOMO_SIDEBAR_MENU_ICON, t("sidebar.show"), "plain-memo-sidebar-toggle", "toggle-sidebar");
 
-	const scopeWrap = topbar.createDiv({ cls: "knomo-scope-wrap" });
-	const titleHostEl = scopeWrap.createDiv({ cls: "knomo-title-host" });
-	renderKnomoScopePopover(scopeWrap, "knomo-scope-popover knomo-desktop-scope-popover");
+	const scopeWrap = topbar.createDiv({ cls: "plain-memo-scope-wrap" });
+	const titleHostEl = scopeWrap.createDiv({ cls: "plain-memo-title-host" });
+	renderKnomoScopePopover(scopeWrap, "plain-memo-scope-popover plain-memo-desktop-scope-popover");
 
-	const searchWrap = topbar.createDiv({ cls: "knomo-search-wrap" });
+	const searchWrap = topbar.createDiv({ cls: "plain-memo-search-wrap" });
 	const searchInputEl = renderKnomoSearchInput(searchWrap, "desktop-search-label", options.createHiddenText);
 	renderKnomoSearchPopover(searchWrap);
 	return {
@@ -53,24 +53,24 @@ export function renderKnomoDesktopTopbar(container: HTMLElement, options: Header
 export function renderKnomoScopePopover(container: HTMLElement, cls: string): HTMLElement {
 	const popover = container.createDiv({ cls, attr: { role: "menu" } });
 	for (const option of TITLE_MODE_OPTIONS) {
-		renderTitleModeButton(popover, option, "knomo-scope-option");
+		renderTitleModeButton(popover, option, "plain-memo-scope-option");
 	}
 	return popover;
 }
 
 export function renderKnomoCompactHeader(container: HTMLElement, options: HeaderSearchRenderOptions): CompactHeaderElements {
-	const header = container.createDiv({ cls: "knomo-compact-header" });
-	options.createIconButton(header, KNOMO_SIDEBAR_MENU_ICON, t("mobile.menu"), "knomo-compact-menu-btn", "open-drawer");
+	const header = container.createDiv({ cls: "plain-memo-compact-header" });
+	options.createIconButton(header, KNOMO_SIDEBAR_MENU_ICON, t("mobile.menu"), "plain-memo-compact-menu-btn", "open-drawer");
 
 	const titleHostEl = header.createDiv({
-		cls: "knomo-compact-title",
+		cls: "plain-memo-compact-title",
 	});
 
-	const inlineSearchWrap = header.createDiv({ cls: "knomo-compact-search-wrap knomo-compact-inline-search" });
+	const inlineSearchWrap = header.createDiv({ cls: "plain-memo-compact-search-wrap plain-memo-compact-inline-search" });
 	const inlineSearchInputEl = renderKnomoSearchInput(inlineSearchWrap, "compact-inline-search-label", options.createHiddenText);
 	renderKnomoSearchPopover(inlineSearchWrap);
 
-	options.createIconButton(header, KNOMO_SEARCH_ICON, t("search.label"), "knomo-compact-search-btn", "toggle-compact-search");
+	options.createIconButton(header, KNOMO_SEARCH_ICON, t("search.label"), "plain-memo-compact-search-btn", "toggle-compact-search");
 	return {
 		titleHostEl,
 		inlineSearchInputEl,
@@ -78,17 +78,17 @@ export function renderKnomoCompactHeader(container: HTMLElement, options: Header
 }
 
 export function renderKnomoCompactSearchPanel(container: HTMLElement, options: HeaderSearchRenderOptions): CompactSearchPanelElements {
-	const panel = container.createDiv({ cls: "knomo-compact-search-panel" });
-	const searchWrap = panel.createDiv({ cls: "knomo-compact-search-wrap" });
+	const panel = container.createDiv({ cls: "plain-memo-compact-search-panel" });
+	const searchWrap = panel.createDiv({ cls: "plain-memo-compact-search-wrap" });
 	const searchInputEl = renderKnomoSearchInput(searchWrap, "compact-search-label", options.createHiddenText);
 	renderKnomoSearchPopover(searchWrap);
 	return { searchInputEl };
 }
 
 export function renderKnomoSearchPopover(container: HTMLElement): HTMLElement {
-	const searchMenu = container.createDiv({ cls: "knomo-search-menu", attr: { role: "menu" } });
+	const searchMenu = container.createDiv({ cls: "plain-memo-search-menu", attr: { role: "menu" } });
 	for (const option of SEARCH_DATE_OPTIONS) {
-		renderSearchDateButton(searchMenu, option, "knomo-search-menu-option");
+		renderSearchDateButton(searchMenu, option, "plain-memo-search-menu-option");
 	}
 	return searchMenu;
 }
@@ -102,8 +102,8 @@ export function renderTitleModeButton(container: HTMLElement, option: TitleModeO
 			"data-title-mode": option.mode,
 		},
 	});
-	setIcon(button.createSpan({ cls: "knomo-button-icon" }), option.icon);
-	button.createSpan({ cls: "knomo-button-label", text: option.label });
+	setIcon(button.createSpan({ cls: "plain-memo-button-icon" }), option.icon);
+	button.createSpan({ cls: "plain-memo-button-label", text: option.label });
 	return button;
 }
 
@@ -121,8 +121,8 @@ export function renderSearchDateButton(
 			"data-search-date": option.filter,
 		},
 	});
-	setIcon(button.createSpan({ cls: "knomo-button-icon" }), option.icon);
-	button.createSpan({ cls: "knomo-button-label", text: label });
+	setIcon(button.createSpan({ cls: "plain-memo-button-icon" }), option.icon);
+	button.createSpan({ cls: "plain-memo-button-label", text: label });
 	return button;
 }
 
@@ -131,10 +131,10 @@ function renderKnomoSearchInput(
 	labelName: string,
 	createHiddenText: HeaderSearchRenderOptions["createHiddenText"],
 ): HTMLInputElement {
-	setIcon(container.createSpan({ cls: "knomo-search-icon" }), KNOMO_SEARCH_ICON);
+	setIcon(container.createSpan({ cls: "plain-memo-search-icon" }), KNOMO_SEARCH_ICON);
 	const searchLabelId = createHiddenText(container, labelName, t("search.label"));
 	return container.createEl("input", {
-		cls: "knomo-search-input",
+		cls: "plain-memo-search-input",
 		attr: {
 			type: "search",
 			placeholder: t("search.label"),

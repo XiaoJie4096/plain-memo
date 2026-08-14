@@ -53,6 +53,8 @@ test("uses the default subtitle for blank values and limits custom text", () => 
 
 test("upgrades legacy default subtitles without replacing custom text", () => {
 	assert.equal(normalizeSettings({ sidebarSubtitle: "当下念想，潺潺光阴" }).sidebarSubtitle, DEFAULT_KNOMO_SETTINGS.sidebarSubtitle);
+	assert.equal(normalizeSettings({ sidebarSubtitle: "基于Knomo开发" }).sidebarSubtitle, DEFAULT_KNOMO_SETTINGS.sidebarSubtitle);
+	assert.equal(normalizeSettings({ sidebarSubtitle: "基于 Knomo 开发" }).sidebarSubtitle, DEFAULT_KNOMO_SETTINGS.sidebarSubtitle);
 	assert.equal(normalizeSettings({ sidebarSubtitle: "Fleeting thoughts, steady days" }).sidebarSubtitle, DEFAULT_KNOMO_SETTINGS.sidebarSubtitle);
 	assert.equal(normalizeSettings({ sidebarSubtitle: "My own subtitle" }).sidebarSubtitle, "My own subtitle");
 });

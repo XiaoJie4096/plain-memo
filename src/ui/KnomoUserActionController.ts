@@ -129,7 +129,7 @@ export class KnomoUserActionController {
 			return;
 		}
 
-		const imageTrigger = target.closest("[data-knomo-card-image]");
+		const imageTrigger = target.closest("[data-plain-memo-card-image]");
 		if (imageTrigger?.instanceOf(HTMLElement)) {
 			event.preventDefault();
 			event.stopPropagation();
@@ -253,7 +253,7 @@ export class KnomoUserActionController {
 				return true;
 			}
 		}
-		return this.options.isDrawerOpen() && target.closest(".knomo-sidebar, .knomo-drawer-backdrop") !== null;
+		return this.options.isDrawerOpen() && target.closest(".plain-memo-sidebar, .plain-memo-drawer-backdrop") !== null;
 	}
 
 	async handleAction(

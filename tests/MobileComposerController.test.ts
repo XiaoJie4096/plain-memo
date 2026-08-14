@@ -50,8 +50,8 @@ test("opens the prepared mobile composer and focuses synchronously", () => {
 	assert.equal(harness.controller.getPhase(), "open");
 	assert.equal(harness.syncRootCalls, 0);
 	assert.equal(layer?.hasClass("is-open"), true);
-	assert.equal(layer?.style.values.get("--knomo-keyboard-height"), "0px");
-	assert.equal(layer?.style.values.get("--knomo-mobile-composer-bottom-offset"), "0px");
+	assert.equal(layer?.style.values.get("--plain-memo-keyboard-height"), "0px");
+	assert.equal(layer?.style.values.get("--plain-memo-mobile-composer-bottom-offset"), "0px");
 
 	harness.win.flushAnimationFrames();
 	assert.equal(harness.syncRootCalls, 1);
@@ -67,17 +67,17 @@ test("positions the mobile composer from the toolbar anchor inset", () => {
 	harness.win.flushAnimationFrames();
 
 	const layer = harness.getLayer();
-	assert.equal(layer?.style.values.get("--knomo-mobile-composer-bottom-offset"), "284px");
+	assert.equal(layer?.style.values.get("--plain-memo-mobile-composer-bottom-offset"), "284px");
 
 	harness.win.flushAnimationFrames();
 
-	assert.equal(layer?.style.values.get("--knomo-mobile-composer-bottom-offset"), "284px");
+	assert.equal(layer?.style.values.get("--plain-memo-mobile-composer-bottom-offset"), "284px");
 });
 
 test("positions the mobile composer from the toolbar button row visual bottom", () => {
 	const harness = createHarness();
-	const toolButton = harness.composerBar.createDiv({ cls: "knomo-tool-button" });
-	const sendButton = harness.composerBar.createDiv({ cls: "knomo-send-button" });
+	const toolButton = harness.composerBar.createDiv({ cls: "plain-memo-tool-button" });
+	const sendButton = harness.composerBar.createDiv({ cls: "plain-memo-send-button" });
 	toolButton.bottom = 476;
 	sendButton.bottom = 480;
 	prepareComposerGeometry(harness, 500, 500);
@@ -87,17 +87,17 @@ test("positions the mobile composer from the toolbar button row visual bottom", 
 	harness.win.flushAnimationFrames();
 
 	const layer = harness.getLayer();
-	assert.equal(layer?.style.values.get("--knomo-mobile-composer-bottom-offset"), "284px");
-	assert.equal(layer?.style.values.get("--knomo-mobile-composer-toolbar-anchor-inset"), "20px");
-	assert.equal(layer?.style.values.get("--knomo-mobile-composer-toolbar-anchor-bottom"), "480px");
-	assert.equal(layer?.style.values.get("--knomo-mobile-composer-toolbar-wrapper-bottom"), "500px");
-	assert.equal(layer?.attrs.get("data-knomo-composer-toolbar-anchor-source"), "button-row");
+	assert.equal(layer?.style.values.get("--plain-memo-mobile-composer-bottom-offset"), "284px");
+	assert.equal(layer?.style.values.get("--plain-memo-mobile-composer-toolbar-anchor-inset"), "20px");
+	assert.equal(layer?.style.values.get("--plain-memo-mobile-composer-toolbar-anchor-bottom"), "480px");
+	assert.equal(layer?.style.values.get("--plain-memo-mobile-composer-toolbar-wrapper-bottom"), "500px");
+	assert.equal(layer?.attrs.get("data-plain-memo-composer-toolbar-anchor-source"), "button-row");
 });
 
 test("refreshes the toolbar anchor after the keyboard layout settles", () => {
 	const harness = createHarness();
-	const toolButton = harness.composerBar.createDiv({ cls: "knomo-tool-button" });
-	const sendButton = harness.composerBar.createDiv({ cls: "knomo-send-button" });
+	const toolButton = harness.composerBar.createDiv({ cls: "plain-memo-tool-button" });
+	const sendButton = harness.composerBar.createDiv({ cls: "plain-memo-send-button" });
 	toolButton.bottom = 476;
 	sendButton.bottom = 480;
 	prepareComposerGeometry(harness, 500, 500);
@@ -116,8 +116,8 @@ test("refreshes the toolbar anchor after the keyboard layout settles", () => {
 	harness.win.flushNextTimer();
 
 	const layer = harness.getLayer();
-	assert.equal(layer?.style.values.get("--knomo-mobile-composer-toolbar-anchor-inset"), "30px");
-	assert.equal(layer?.style.values.get("--knomo-mobile-composer-bottom-offset"), "274px");
+	assert.equal(layer?.style.values.get("--plain-memo-mobile-composer-toolbar-anchor-inset"), "30px");
+	assert.equal(layer?.style.values.get("--plain-memo-mobile-composer-bottom-offset"), "274px");
 });
 
 test("derives a resized fixed layer bottom from the layout viewport without reading the layer", () => {
@@ -134,8 +134,8 @@ test("derives a resized fixed layer bottom from the layout viewport without read
 	harness.win.dispatchEvent("resize");
 	harness.win.flushAnimationFrames();
 
-	assert.equal(layer?.style.values.get("--knomo-mobile-composer-bottom-offset"), "-16px");
-	assert.equal(layer?.attrs.get("data-knomo-composer-dock-source"), "layout-viewport");
+	assert.equal(layer?.style.values.get("--plain-memo-mobile-composer-bottom-offset"), "-16px");
+	assert.equal(layer?.attrs.get("data-plain-memo-composer-dock-source"), "layout-viewport");
 });
 
 test("tracks the composer dock top while the visual viewport is animating", () => {
@@ -148,13 +148,13 @@ test("tracks the composer dock top while the visual viewport is animating", () =
 
 	const layer = harness.getLayer();
 	assert.equal(layer?.hasClass("is-keyboard-tracking"), true);
-	assert.equal(layer?.style.values.get("--knomo-mobile-composer-bottom-offset"), "134px");
+	assert.equal(layer?.style.values.get("--plain-memo-mobile-composer-bottom-offset"), "134px");
 
 	harness.win.visualViewport.height = 500;
 	harness.win.visualViewport.dispatchEvent("resize");
 	harness.win.flushAnimationFrames();
 
-	assert.equal(layer?.style.values.get("--knomo-mobile-composer-bottom-offset"), "284px");
+	assert.equal(layer?.style.values.get("--plain-memo-mobile-composer-bottom-offset"), "284px");
 });
 
 test("samples delayed first-open viewport geometry without waiting for a resize event", () => {
@@ -169,9 +169,9 @@ test("samples delayed first-open viewport geometry without waiting for a resize 
 	harness.win.flushAnimationFrames();
 
 	const layer = harness.getLayer();
-	assert.equal(layer?.style.values.get("--knomo-keyboard-height"), "300px");
-	assert.equal(layer?.style.values.get("--knomo-mobile-composer-bottom-offset"), "284px");
-	assert.equal(layer?.attrs.get("data-knomo-composer-dock-source"), "visual-viewport");
+	assert.equal(layer?.style.values.get("--plain-memo-keyboard-height"), "300px");
+	assert.equal(layer?.style.values.get("--plain-memo-mobile-composer-bottom-offset"), "284px");
+	assert.equal(layer?.attrs.get("data-plain-memo-composer-dock-source"), "visual-viewport");
 
 	harness.win.flushNextTimer();
 	assert.equal(layer?.hasClass("is-keyboard-tracking"), false);
@@ -191,7 +191,7 @@ test("keeps the opening baseline when the keyboard triggers a window resize", ()
 	harness.win.flushAnimationFrames();
 
 	const layer = harness.getLayer();
-	assert.equal(layer?.style.values.get("--knomo-mobile-composer-bottom-offset"), "284px");
+	assert.equal(layer?.style.values.get("--plain-memo-mobile-composer-bottom-offset"), "284px");
 });
 
 test("uses the layout viewport when the visual viewport stays stale during keyboard resize", () => {
@@ -207,9 +207,9 @@ test("uses the layout viewport when the visual viewport stays stale during keybo
 	harness.win.flushAnimationFrames();
 
 	const layer = harness.getLayer();
-	assert.equal(layer?.style.values.get("--knomo-keyboard-height"), "300px");
-	assert.equal(layer?.style.values.get("--knomo-mobile-composer-bottom-offset"), "-16px");
-	assert.equal(layer?.attrs.get("data-knomo-composer-dock-source"), "layout-viewport");
+	assert.equal(layer?.style.values.get("--plain-memo-keyboard-height"), "300px");
+	assert.equal(layer?.style.values.get("--plain-memo-mobile-composer-bottom-offset"), "-16px");
+	assert.equal(layer?.attrs.get("data-plain-memo-composer-dock-source"), "layout-viewport");
 });
 
 test("uses the virtual keyboard rect as the composer dock source", () => {
@@ -221,8 +221,8 @@ test("uses the virtual keyboard rect as the composer dock source", () => {
 	harness.win.flushAnimationFrames();
 
 	const layer = harness.getLayer();
-	assert.equal(layer?.style.values.get("--knomo-keyboard-height"), "280px");
-	assert.equal(layer?.style.values.get("--knomo-mobile-composer-bottom-offset"), "264px");
+	assert.equal(layer?.style.values.get("--plain-memo-keyboard-height"), "280px");
+	assert.equal(layer?.style.values.get("--plain-memo-mobile-composer-bottom-offset"), "264px");
 });
 
 test("uses Capacitor keyboard events as the first composer dock source", () => {
@@ -237,9 +237,9 @@ test("uses Capacitor keyboard events as the first composer dock source", () => {
 	harness.win.flushAnimationFrames();
 
 	const layer = harness.getLayer();
-	assert.equal(layer?.style.values.get("--knomo-keyboard-height"), "260px");
-	assert.equal(layer?.style.values.get("--knomo-mobile-composer-bottom-offset"), "244px");
-	assert.equal(layer?.attrs.get("data-knomo-composer-dock-source"), "capacitor-keyboard");
+	assert.equal(layer?.style.values.get("--plain-memo-keyboard-height"), "260px");
+	assert.equal(layer?.style.values.get("--plain-memo-mobile-composer-bottom-offset"), "244px");
+	assert.equal(layer?.attrs.get("data-plain-memo-composer-dock-source"), "capacitor-keyboard");
 });
 
 test("clears the Capacitor keyboard dock source when the keyboard hides", () => {
@@ -255,9 +255,9 @@ test("clears the Capacitor keyboard dock source when the keyboard hides", () => 
 	harness.win.flushAnimationFrames();
 
 	const layer = harness.getLayer();
-	assert.equal(layer?.style.values.get("--knomo-keyboard-height"), "0px");
-	assert.equal(layer?.style.values.get("--knomo-mobile-composer-bottom-offset"), "0px");
-	assert.equal(layer?.attrs.get("data-knomo-composer-dock-source"), "fallback");
+	assert.equal(layer?.style.values.get("--plain-memo-keyboard-height"), "0px");
+	assert.equal(layer?.style.values.get("--plain-memo-mobile-composer-bottom-offset"), "0px");
+	assert.equal(layer?.attrs.get("data-plain-memo-composer-dock-source"), "fallback");
 });
 
 test("dismisses a visible mobile keyboard without closing the composer", () => {
@@ -357,9 +357,9 @@ test("keeps the composer docked when a focused input receives no keyboard signal
 
 	const layer = harness.getLayer();
 	assert.equal(layer?.hasClass("is-open"), true);
-	assert.equal(layer?.style.values.get("--knomo-keyboard-height"), "0px");
-	assert.equal(layer?.style.values.get("--knomo-mobile-composer-bottom-offset"), "0px");
-	assert.equal(layer?.attrs.get("data-knomo-composer-dock-source"), "fallback");
+	assert.equal(layer?.style.values.get("--plain-memo-keyboard-height"), "0px");
+	assert.equal(layer?.style.values.get("--plain-memo-mobile-composer-bottom-offset"), "0px");
+	assert.equal(layer?.attrs.get("data-plain-memo-composer-dock-source"), "fallback");
 
 	harness.win.flushNextTimer();
 	assert.equal(layer?.hasClass("is-keyboard-tracking"), false);
@@ -486,7 +486,7 @@ function createHarness(layout: "mobile" | "desktop-wide" = "mobile") {
 			syncRootCalls += 1;
 			syncRootLayerOpenStates.push(
 				doc.body.children
-					.find((child) => child.hasClass("knomo-mobile-composer-layer"))
+					.find((child) => child.hasClass("plain-memo-mobile-composer-layer"))
 					?.hasClass("is-open") ?? false,
 			);
 		},
@@ -516,11 +516,11 @@ function createHarness(layout: "mobile" | "desktop-wide" = "mobile") {
 		syncRootLayerOpenStates,
 		controller,
 		getComposerOpen: () => composerOpen,
-		getLayer: () => doc.body.children.find((child) => child.hasClass("knomo-mobile-composer-layer")) ?? null,
+		getLayer: () => doc.body.children.find((child) => child.hasClass("plain-memo-mobile-composer-layer")) ?? null,
 		getContent: () => {
-			const layer = doc.body.children.find((child) => child.hasClass("knomo-mobile-composer-layer")) ?? null;
-			const stage = layer?.children.find((child) => child.hasClass("knomo-mobile-composer-stage")) ?? null;
-			return stage?.children.find((child) => child.hasClass("knomo-mobile-composer-content")) ?? null;
+			const layer = doc.body.children.find((child) => child.hasClass("plain-memo-mobile-composer-layer")) ?? null;
+			const stage = layer?.children.find((child) => child.hasClass("plain-memo-mobile-composer-stage")) ?? null;
+			return stage?.children.find((child) => child.hasClass("plain-memo-mobile-composer-content")) ?? null;
 		},
 		get syncRootCalls() {
 			return syncRootCalls;

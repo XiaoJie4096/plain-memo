@@ -70,7 +70,7 @@ export function getRootClickRoute(target: Element, mobile: boolean): RootClickRo
 
 	const actionEl = closestHTMLElement(target, "[data-action]");
 	if (actionEl !== null) {
-		const mobileToolButtonEl = mobile ? closestHTMLElement(target, ".knomo-tool-button") : null;
+		const mobileToolButtonEl = mobile ? closestHTMLElement(target, ".plain-memo-tool-button") : null;
 		return {
 			type: "action",
 			element: actionEl,
@@ -101,10 +101,10 @@ export function getRootClickRoute(target: Element, mobile: boolean): RootClickRo
 
 	return {
 		type: "outside",
-		closeCardMenu: target.closest(".knomo-card-actions") === null && target.closest(".knomo-card-menu") === null,
-		closeScopeMenu: target.closest(".knomo-scope-popover") === null && target.closest("[data-action='toggle-scope-menu']") === null,
-		closeDesktopSearch: target.closest(".knomo-search-wrap, .knomo-compact-search-wrap, .knomo-search-menu") === null,
-		closeCompactSearch: target.closest(".knomo-compact-search-panel") === null && target.closest("[data-action='toggle-compact-search']") === null,
+		closeCardMenu: target.closest(".plain-memo-card-actions") === null && target.closest(".plain-memo-card-menu") === null,
+		closeScopeMenu: target.closest(".plain-memo-scope-popover") === null && target.closest("[data-action='toggle-scope-menu']") === null,
+		closeDesktopSearch: target.closest(".plain-memo-search-wrap, .plain-memo-compact-search-wrap, .plain-memo-search-menu") === null,
+		closeCompactSearch: target.closest(".plain-memo-compact-search-panel") === null && target.closest("[data-action='toggle-compact-search']") === null,
 	};
 }
 
@@ -112,7 +112,7 @@ export function getMemoCardExpandRoute(target: Element): { element: HTMLElement;
 	if (isMemoCardInteractiveTarget(target)) {
 		return null;
 	}
-	const card = closestHTMLElement(target, ".knomo-card");
+	const card = closestHTMLElement(target, ".plain-memo-card");
 	if (card === null || !card.hasClass("has-collapsed-memo")) {
 		return null;
 	}
@@ -120,10 +120,10 @@ export function getMemoCardExpandRoute(target: Element): { element: HTMLElement;
 }
 
 export function getMemoCardEditRoute(target: Element): { element: HTMLElement; memoId: string | null } | null {
-	if (isMemoCardInteractiveTarget(target) || closestHTMLElement(target, ".knomo-card-body") === null) {
+	if (isMemoCardInteractiveTarget(target) || closestHTMLElement(target, ".plain-memo-card-body") === null) {
 		return null;
 	}
-	const card = closestHTMLElement(target, ".knomo-card");
+	const card = closestHTMLElement(target, ".plain-memo-card");
 	if (card === null) {
 		return null;
 	}
@@ -143,7 +143,7 @@ export function getMemoCardOpenRoute(target: Element): { element: HTMLElement; m
 }
 
 export function getComposerToolButtonRoute(target: Element): { element: HTMLElement; action: string | null } | null {
-	const toolButtonEl = closestHTMLElement(target, ".knomo-tool-button");
+	const toolButtonEl = closestHTMLElement(target, ".plain-memo-tool-button");
 	if (toolButtonEl === null) {
 		return null;
 	}
@@ -159,5 +159,5 @@ function closestHTMLElement(target: Element, selector: string): HTMLElement | nu
 }
 
 function isMemoCardInteractiveTarget(target: Element): boolean {
-	return target.closest("button, a, input, textarea, select, label, .tag, [data-knomo-card-image]") !== null;
+	return target.closest("button, a, input, textarea, select, label, .tag, [data-plain-memo-card-image]") !== null;
 }

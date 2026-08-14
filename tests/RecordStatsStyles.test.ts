@@ -17,9 +17,9 @@ test("record statistics renders loading state with reserved skeleton sections", 
 		createHiddenText,
 	});
 
-	assert.equal(root.find("[role='status']")?.hasClass("knomo-record-stats-loading"), true);
-	assert.equal(root.findAll(".knomo-record-stats-skeleton-chart").length, 2);
-	assert.notEqual(root.find(".knomo-record-stats-skeleton-tag-chart"), null);
+	assert.equal(root.find("[role='status']")?.hasClass("plain-memo-record-stats-loading"), true);
+	assert.equal(root.findAll(".plain-memo-record-stats-skeleton-chart").length, 2);
+	assert.notEqual(root.find(".plain-memo-record-stats-skeleton-tag-chart"), null);
 });
 
 test("record statistics renders actionable range metrics, charts, hours, and common tags", async () => {
@@ -46,7 +46,7 @@ test("record statistics renders actionable range metrics, charts, hours, and com
 	const tagButton = root.find("[data-record-stats-tag-key='work']");
 	assert.equal(tagButton?.getAttr("data-action"), "record-stats-filter-tag");
 	assert.equal(tagButton?.getText(), "#Work3");
-	assert.equal(tagButton?.find(".knomo-record-stats-tag-bar")?.getCssProp("--knomo-record-stats-tag-ratio"), "1");
+	assert.equal(tagButton?.find(".plain-memo-record-stats-tag-bar")?.getCssProp("--plain-memo-record-stats-tag-ratio"), "1");
 });
 
 function createHiddenText(container: HTMLElement, id: string, text: string): string {

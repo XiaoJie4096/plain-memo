@@ -10,7 +10,7 @@ test("markdown internal link info prefers data-href over href", () => {
 			attr: {
 				href: "Fallback",
 				"data-href": "Project",
-				"data-knomo-source-path": "Daily/2026-06-02.md",
+				"data-plain-memo-source-path": "Daily/2026-06-02.md",
 			},
 		});
 
@@ -28,7 +28,7 @@ test("markdown internal link info resolves nested link targets", () => {
 			cls: "internal-link",
 			attr: {
 				href: "Project",
-				"data-knomo-source-path": "Daily/2026-06-02.md",
+				"data-plain-memo-source-path": "Daily/2026-06-02.md",
 			},
 		});
 		const child = link.createSpan();
@@ -51,7 +51,7 @@ test("markdown internal link info ignores incomplete or non-link targets", () =>
 			cls: "internal-link",
 			attr: {
 				href: "",
-				"data-knomo-source-path": "Daily/2026-06-02.md",
+				"data-plain-memo-source-path": "Daily/2026-06-02.md",
 			},
 		});
 		const regularElement = new TestElement("span");

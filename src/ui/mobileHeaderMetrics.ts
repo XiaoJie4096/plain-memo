@@ -7,7 +7,7 @@ export interface MobileHeaderOffsets {
 }
 
 const MOBILE_HEADER_SEARCH_ANCHOR_SELECTORS = [
-	".view-actions .knomo-mobile-header-action",
+	".view-actions .plain-memo-mobile-header-action",
 	".view-actions",
 	".view-header-title",
 	".view-header-title-container",
