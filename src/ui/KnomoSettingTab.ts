@@ -10,6 +10,8 @@ import type { PinnedMemoService } from "../services/PinnedMemoService";
 import { normalizeVaultPath } from "../utils/path";
 import { showKnomoConfirmModal } from "./KnomoConfirmModal";
 import { FlomoImportModal } from "./FlomoImportModal";
+import { KnomoDataImportService } from "../services/KnomoDataImportService";
+import { KnomoDataExportService } from "../services/KnomoDataExportService";
 
 /** Settings for the standalone file store; no legacy migration is performed. */
 export class KnomoSettingTab extends PluginSettingTab {
@@ -54,6 +56,16 @@ export class KnomoSettingTab extends PluginSettingTab {
 			.addButton((button) => button.setButtonText(t("settings.file.flomoImportAction")).onClick(() => {
 				this.openFlomoImport();
 			}));
+
+		new Setting(containerEl)
+			.setName(t("settings.file.knomoImport"))
+			.setDesc(t("settings.file.knomoImportDescription"))
+			.addButton((button) => button.setButtonText(t("settings.file.knomoImportAction")).onClick(() => { void this.importKnomoData(button); }));
+
+		new Setting(containerEl)
+			.setName(t("settings.file.knomoExport"))
+			.setDesc(t("settings.file.knomoExportDescription"))
+			.addButton((button) => button.setButtonText(t("settings.file.knomoExportAction")).onClick(() => { this.beginKnomoExport(button); }));
 
 		const current = this.settings.getSettings();
 		new Setting(containerEl)
@@ -138,7 +150,7 @@ export class KnomoSettingTab extends PluginSettingTab {
 
 	private renderFolders(): void {
 		const settings = this.settings.getSettings();
-		const section = this.containerEl.createDiv({ cls: "knomo-settings-folders" });
+		const section = this.containerEl.createDiv({ cls: "plain-memo-settings-folders" });
 		if ((settings.memoFolders ?? []).length === 0) {
 			section.createEl("p", { text: t("settings.file.noFolders") });
 			return;
@@ -188,6 +200,46 @@ export class KnomoSettingTab extends PluginSettingTab {
 				}
 			},
 		}).open();
+	}
+
+	/** Imports recognized Knomo memo blocks and reports duplicates without overwriting files. */
+	private async importKnomoData(button: { setDisabled: (disabled: boolean) => unknown }): Promise<void> {
+		button.setDisabled(true);
+		try {
+			const service = new KnomoDataImportService(this.app, () => this.settings.getSettings().defaultMemoFolder ?? "");
+			const result = await service.import();
+			this.store.invalidateAll();
+			await this.onSettingsChanged();
+			new Notice(t("settings.file.knomoImportComplete", {
+				created: result.created, skipped: result.skipped, changed: result.changed, failed: result.failed.length,
+			}));
+		} catch (error) {
+			new Notice(t("settings.file.knomoImportFailed", { message: error instanceof Error ? error.message : String(error) }));
+		} finally { button.setDisabled(false); }
+	}
+
+	/** Starts exporting from the settings button. */
+	private beginKnomoExport(button: { setDisabled: (disabled: boolean) => unknown }): void {
+		const service = new KnomoDataExportService(this.app, () => this.settings.getSettings().memoFolders ?? []);
+		if (!service.hasExportableMemos()) {
+			new Notice(t("settings.file.knomoExportNothing"));
+			return;
+		}
+		void this.exportKnomoData(button, service);
+	}
+
+	/** Exports PlainMemo Markdown as a ZIP of Knomo-compatible Daily Notes. */
+	private async exportKnomoData(
+		button: { setDisabled: (disabled: boolean) => unknown },
+		service: KnomoDataExportService,
+	): Promise<void> {
+		button.setDisabled(true);
+		try {
+			const result = await service.export();
+			new Notice(t("settings.file.knomoExportComplete", { memos: result.memoCount, days: result.dayCount, path: result.path }));
+		} catch (error) {
+			new Notice(t("settings.file.knomoExportFailed", { message: error instanceof Error ? error.message : String(error) }));
+		} finally { button.setDisabled(false); }
 	}
 
 	private async importFolderFilenames(folder: string): Promise<void> {

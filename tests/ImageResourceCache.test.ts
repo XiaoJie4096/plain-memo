@@ -11,7 +11,7 @@ test("resolves a complete Vault image path while Obsidian metadata is still stal
 
 	assert.equal(resolved.missing, false);
 	assert.equal(resolved.resourcePath, file.path);
-	assert.match(resolved.url ?? "", /knomo-mtime=42/);
+	assert.match(resolved.url ?? "", /plain-memo-mtime=42/);
 });
 
 test("invalidates cached misses so metadata resolution can retry without restarting Obsidian", async () => {
@@ -35,7 +35,7 @@ test("changes the resource URL after a synced attachment event retries a failed 
 	const retried = harness.cache.get(sourcePath, file.path, harness.app);
 
 	assert.notEqual(retried.url, first.url);
-	assert.match(retried.url ?? "", /knomo-refresh=0-1/);
+	assert.match(retried.url ?? "", /plain-memo-refresh=0-1/);
 });
 
 test("full refresh uses a new resource URL after an earlier path retry", async () => {
@@ -49,7 +49,7 @@ test("full refresh uses a new resource URL after an earlier path retry", async (
 	const fullRetry = harness.cache.get(sourcePath, file.path, harness.app);
 
 	assert.notEqual(fullRetry.url, pathRetry.url);
-	assert.match(fullRetry.url ?? "", /knomo-refresh=1-0/);
+	assert.match(fullRetry.url ?? "", /plain-memo-refresh=1-0/);
 });
 
 /** Creates a minimal Vault and metadata cache for image resolution tests. */

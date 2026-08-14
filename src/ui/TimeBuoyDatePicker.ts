@@ -31,7 +31,7 @@ export function renderTimeBuoyDatePicker(
 ): HTMLElement {
 	const isModal = state.mobile;
 	const picker = container.createDiv({
-		cls: `knomo-time-buoy-picker${state.mobile ? " is-mobile" : " is-desktop"}${isModal ? " is-modal" : " is-context"}`,
+		cls: `plain-memo-time-buoy-picker${state.mobile ? " is-mobile" : " is-desktop"}${isModal ? " is-modal" : " is-context"}`,
 		attr: {
 			id,
 			role: "dialog",
@@ -39,10 +39,10 @@ export function renderTimeBuoyDatePicker(
 			"aria-label": t("composer.addTimeBuoy"),
 		},
 	});
-	const header = picker.createDiv({ cls: "knomo-time-buoy-picker-header" });
-	header.createDiv({ cls: "knomo-time-buoy-picker-title", text: t("composer.addTimeBuoy") });
+	const header = picker.createDiv({ cls: "plain-memo-time-buoy-picker-header" });
+	header.createDiv({ cls: "plain-memo-time-buoy-picker-title", text: t("composer.addTimeBuoy") });
 	const closeButton = header.createEl("button", {
-		cls: "knomo-time-buoy-picker-icon-button",
+		cls: "plain-memo-time-buoy-picker-icon-button",
 		attr: {
 			type: "button",
 			"aria-label": t("timeBuoy.picker.close"),
@@ -51,7 +51,7 @@ export function renderTimeBuoyDatePicker(
 	});
 	setIcon(closeButton, "x");
 
-	const shortcuts = picker.createDiv({ cls: "knomo-time-buoy-picker-shortcuts" });
+	const shortcuts = picker.createDiv({ cls: "plain-memo-time-buoy-picker-shortcuts" });
 	for (const [label, offset] of [
 		[t("timeBuoy.picker.tomorrow"), 1],
 		[t("timeBuoy.picker.after7"), 7],
@@ -60,31 +60,31 @@ export function renderTimeBuoyDatePicker(
 	] as const) {
 		const date = formatTimeBuoyDate(addTimeBuoyCalendarDays(state.today, offset));
 		shortcuts.createEl("button", {
-			cls: "knomo-time-buoy-picker-shortcut",
+			cls: "plain-memo-time-buoy-picker-shortcut",
 			text: label,
 			attr: { type: "button", "data-time-buoy-date": date },
 		});
 	}
 
-	const monthHeader = picker.createDiv({ cls: "knomo-time-buoy-picker-month-header" });
+	const monthHeader = picker.createDiv({ cls: "plain-memo-time-buoy-picker-month-header" });
 	const previous = createMonthButton(monthHeader, "chevron-left", t("timeBuoy.picker.previousMonth"), "previous-month");
 	const currentMonth = new Date(state.today.getFullYear(), state.today.getMonth(), 1);
 	const browseMonth = new Date(state.browseYear, state.browseMonth, 1);
 	const calendarLocale = getCalendarLocale();
 	previous.disabled = browseMonth.getTime() <= currentMonth.getTime();
 	monthHeader.createDiv({
-		cls: "knomo-time-buoy-picker-month-label",
+		cls: "plain-memo-time-buoy-picker-month-label",
 		text: new Intl.DateTimeFormat(calendarLocale, { year: "numeric", month: "long" }).format(browseMonth),
 	});
 	createMonthButton(monthHeader, "chevron-right", t("timeBuoy.picker.nextMonth"), "next-month");
 
-	const grid = picker.createDiv({ cls: "knomo-time-buoy-picker-grid", attr: { role: "grid" } });
+	const grid = picker.createDiv({ cls: "plain-memo-time-buoy-picker-grid", attr: { role: "grid" } });
 	const weekStart = getCalendarWeekStart();
 	const weekdayFormatter = new Intl.DateTimeFormat(calendarLocale, { weekday: "narrow" });
 	for (let offset = 0; offset < 7; offset += 1) {
 		const day = new Date(2026, 0, 4 + ((weekStart + offset) % 7));
 		grid.createDiv({
-			cls: "knomo-time-buoy-picker-weekday",
+			cls: "plain-memo-time-buoy-picker-weekday",
 			text: weekdayFormatter.format(day),
 			attr: { role: "columnheader" },
 		});
@@ -98,7 +98,7 @@ export function renderTimeBuoyDatePicker(
 		const today = dateText === todayText;
 		const disabled = dateText < todayText;
 		const button = grid.createEl("button", {
-			cls: "knomo-time-buoy-picker-day",
+			cls: "plain-memo-time-buoy-picker-day",
 			text: String(date.getDate()),
 			attr: {
 				type: "button",
@@ -148,7 +148,7 @@ function createMonthButton(
 	action: string,
 ): HTMLButtonElement {
 	const button = container.createEl("button", {
-		cls: "knomo-time-buoy-picker-icon-button",
+		cls: "plain-memo-time-buoy-picker-icon-button",
 		attr: {
 			type: "button",
 			"aria-label": label,

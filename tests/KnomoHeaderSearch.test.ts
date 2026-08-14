@@ -32,9 +32,9 @@ test("renders desktop and compact header search structure", async () => {
 	};
 
 	const desktop = renderKnomoDesktopTopbar(root.asHtml(), options);
-	assert.equal(root.find("[data-action='toggle-sidebar']")?.hasClass("knomo-sidebar-toggle"), true);
+	assert.equal(root.find("[data-action='toggle-sidebar']")?.hasClass("plain-memo-sidebar-toggle"), true);
 	assert.equal(root.find("[data-action='record-stats-back']"), null);
-	assert.equal(desktop.titleHostEl.hasClass("knomo-title-host"), true);
+	assert.equal(desktop.titleHostEl.hasClass("plain-memo-title-host"), true);
 	assert.equal(desktop.searchInputEl.getAttr("type"), "search");
 	assert.equal(desktop.searchInputEl.getAttr("aria-labelledby"), "desktop-search-label");
 	assert.deepEqual(root.findAll("[data-search-date]").map((item) => item.getAttr("data-search-date")), [
@@ -47,7 +47,7 @@ test("renders desktop and compact header search structure", async () => {
 	]);
 
 	const scopeHost = new TestElement("div");
-	renderKnomoScopePopover(scopeHost.asHtml(), "knomo-scope-popover knomo-mobile-scope-popover");
+	renderKnomoScopePopover(scopeHost.asHtml(), "plain-memo-scope-popover plain-memo-mobile-scope-popover");
 	assert.deepEqual(scopeHost.findAll("[data-title-mode]").map((item) => item.getAttr("data-title-mode")), [
 		"all",
 		"no-tag",
@@ -57,11 +57,11 @@ test("renders desktop and compact header search structure", async () => {
 	]);
 
 	const compact = renderKnomoCompactHeader(root.asHtml(), options);
-	assert.equal(root.find("[data-action='open-drawer']")?.hasClass("knomo-compact-menu-btn"), true);
-	assert.equal(root.find("[data-action='toggle-compact-search']")?.hasClass("knomo-compact-search-btn"), true);
+	assert.equal(root.find("[data-action='open-drawer']")?.hasClass("plain-memo-compact-menu-btn"), true);
+	assert.equal(root.find("[data-action='toggle-compact-search']")?.hasClass("plain-memo-compact-search-btn"), true);
 	assert.equal(root.find("[data-action='toggle-compact-search']")?.getAttr("data-icon"), "search");
 	assert.equal(root.findAll("[data-action='record-stats-back']").length, 0);
-	assert.equal(compact.titleHostEl.hasClass("knomo-compact-title"), true);
+	assert.equal(compact.titleHostEl.hasClass("plain-memo-compact-title"), true);
 	assert.equal(compact.inlineSearchInputEl.getAttr("aria-labelledby"), "compact-inline-search-label");
 
 	const panel = renderKnomoCompactSearchPanel(root.asHtml(), options);
@@ -73,7 +73,7 @@ test("renders desktop and compact header search structure", async () => {
 		label: "Last 7 days",
 		mobileLabel: "7 days",
 		icon: "calendar-clock",
-	}, "knomo-mobile-search-chip", "7 days");
+	}, "plain-memo-mobile-search-chip", "7 days");
 	assert.equal(customButtonHost.find("[data-search-date='last-7']")?.getText(), "7 days");
 });
 

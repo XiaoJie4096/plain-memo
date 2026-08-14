@@ -29,10 +29,10 @@ test("renders feed summary, toolbar, load more buttons, and empty states", async
 	]);
 	assert.equal(quickActions.find("[data-action='toggle-pinned-section']")?.getAttr("aria-pressed"), "false");
 	assert.equal(quickActions.find("[data-action='toggle-pinned-section']")?.getText(), "Show pins");
-	assert.equal(quickActions.find("[data-action='toggle-pinned-section']")?.findAll(".knomo-button-icon").length, 1);
+	assert.equal(quickActions.find("[data-action='toggle-pinned-section']")?.findAll(".plain-memo-button-icon").length, 1);
 	assert.equal(quickActions.find("[data-action='open-time-buoy']")?.getAttr("aria-pressed"), "true");
 	assert.equal(quickActions.find("[data-action='open-time-buoy']")?.getText(), "Back home");
-	assert.equal(quickActions.find("[data-action='open-time-buoy']")?.find(".knomo-button-icon")?.getAttr("data-icon"), KNOMO_ALL_NOTES_ICON);
+	assert.equal(quickActions.find("[data-action='open-time-buoy']")?.find(".plain-memo-button-icon")?.getAttr("data-icon"), KNOMO_ALL_NOTES_ICON);
 
 	const noPinsActions = renderKnomoFeedQuickActions(root.asHtml(), {
 		pinnedCount: 0,
@@ -44,18 +44,18 @@ test("renders feed summary, toolbar, load more buttons, and empty states", async
 	const noPinsButton = noPinsActions.find("[data-action='toggle-pinned-section']");
 	assert.equal(noPinsButton?.getText(), "No pins");
 	assert.equal(noPinsButton?.getAttr("disabled"), "");
-	assert.equal(noPinsButton?.findAll(".knomo-button-icon").length, 0);
+	assert.equal(noPinsButton?.findAll(".plain-memo-button-icon").length, 0);
 	assert.equal(noPinsActions.find("[data-action='open-random-reunion']")?.getText(), "Back home");
-	assert.equal(noPinsActions.find("[data-action='open-random-reunion']")?.find(".knomo-button-icon")?.getAttr("data-icon"), KNOMO_ALL_NOTES_ICON);
-	assert.equal(quickActions.find("[data-action='open-random-reunion']")?.find(".knomo-button-icon")?.getAttr("data-icon"), KNOMO_RANDOM_REUNION_ICON);
+	assert.equal(noPinsActions.find("[data-action='open-random-reunion']")?.find(".plain-memo-button-icon")?.getAttr("data-icon"), KNOMO_ALL_NOTES_ICON);
+	assert.equal(quickActions.find("[data-action='open-random-reunion']")?.find(".plain-memo-button-icon")?.getAttr("data-icon"), KNOMO_RANDOM_REUNION_ICON);
 
 	const summary = renderKnomoListSummary(root.asHtml(), "Filtered 3 memos");
-	assert.equal(summary.hasClass("knomo-list-summary"), true);
+	assert.equal(summary.hasClass("plain-memo-list-summary"), true);
 	assert.equal(summary.getText(), "Filtered 3 memos");
 
 	const toolbar = renderKnomoRandomReunionToolbar(root.asHtml(), 5);
-	assert.equal(toolbar.hasClass("knomo-list-toolbar"), true);
-	assert.equal(toolbar.find(".knomo-list-summary")?.getText(), "5 memos found for a random revisit");
+	assert.equal(toolbar.hasClass("plain-memo-list-toolbar"), true);
+	assert.equal(toolbar.find(".plain-memo-list-summary")?.getText(), "5 memos found for a random revisit");
 	assert.equal(toolbar.find("[data-action='refresh-random-reunion']")?.getText(), "Shuffle");
 
 	const headerRoot = new TestElement("div");
@@ -64,10 +64,10 @@ test("renders feed summary, toolbar, load more buttons, and empty states", async
 		{ type: "random-toolbar", count: 2 },
 	]);
 	assert.equal(headers.length, 2);
-	assert.equal(headers[0].hasClass("knomo-list-summary"), true);
+	assert.equal(headers[0].hasClass("plain-memo-list-summary"), true);
 	assert.equal(headers[0].getText(), "3 memos were written on this day");
-	assert.equal(headers[1].hasClass("knomo-list-toolbar"), true);
-	const headerSummaryTexts = headerRoot.findAll(".knomo-list-summary").map((item) => item.getText());
+	assert.equal(headers[1].hasClass("plain-memo-list-toolbar"), true);
+	const headerSummaryTexts = headerRoot.findAll(".plain-memo-list-summary").map((item) => item.getText());
 	assert.deepEqual(headerSummaryTexts, [
 		"3 memos were written on this day",
 		"2 memos found for a random revisit",
@@ -82,16 +82,16 @@ test("renders feed summary, toolbar, load more buttons, and empty states", async
 		firstMemoTime: "09:00",
 		lastMemoTime: "10:00",
 	});
-	assert.equal(shuffleHeader.hasClass("knomo-shuffle-day-header"), true);
-	assert.equal(shuffleHeader.find(".knomo-shuffle-day-date")?.getText(), "Jun 2, 2026 · Tuesday");
-	assert.equal(shuffleHeader.find(".knomo-shuffle-day-summary")?.getText(), "2 memos · 5 words · 1 tag · 1 link");
+	assert.equal(shuffleHeader.hasClass("plain-memo-shuffle-day-header"), true);
+	assert.equal(shuffleHeader.find(".plain-memo-shuffle-day-date")?.getText(), "Jun 2, 2026 · Tuesday");
+	assert.equal(shuffleHeader.find(".plain-memo-shuffle-day-summary")?.getText(), "2 memos · 5 words · 1 tag · 1 link");
 
 	const sentinel = renderKnomoLoadMoreButton(root.asHtml(), {
 		remainingCount: 12,
 		action: "load-more",
 		sentinel: true,
 	});
-	assert.equal(sentinel.hasClass("knomo-load-more"), true);
+	assert.equal(sentinel.hasClass("plain-memo-load-more"), true);
 	assert.equal(sentinel.getAttr("data-action"), "load-more");
 	assert.equal(sentinel.getAttr("data-load-more-sentinel"), "true");
 	assert.equal(sentinel.getText(), "Load more (12 remaining)");
@@ -99,20 +99,20 @@ test("renders feed summary, toolbar, load more buttons, and empty states", async
 	const mobileMore = renderKnomoLoadMoreButton(root.asHtml(), {
 		remainingCount: 2,
 		action: "load-more-mobile-search",
-		extraClass: "knomo-mobile-search-more",
+		extraClass: "plain-memo-mobile-search-more",
 	});
-	assert.equal(mobileMore.hasClass("knomo-load-more"), true);
-	assert.equal(mobileMore.hasClass("knomo-mobile-search-more"), true);
+	assert.equal(mobileMore.hasClass("plain-memo-load-more"), true);
+	assert.equal(mobileMore.hasClass("plain-memo-mobile-search-more"), true);
 	assert.equal(mobileMore.getAttr("data-action"), "load-more-mobile-search");
 	assert.equal(mobileMore.getAttr("data-load-more-sentinel"), null);
 
 	const emptyState = renderKnomoEmptyState(root.asHtml(), "No memos", "Try a different filter");
-	assert.equal(emptyState.find(".knomo-empty-title")?.getText(), "No memos");
-	assert.equal(emptyState.find(".knomo-empty-description")?.getText(), "Try a different filter");
+	assert.equal(emptyState.find(".plain-memo-empty-title")?.getText(), "No memos");
+	assert.equal(emptyState.find(".plain-memo-empty-description")?.getText(), "Try a different filter");
 
 	const defaultEmptyState = renderKnomoEmptyState(root.asHtml());
-	assert.equal(defaultEmptyState.find(".knomo-empty-title")?.getText(), "Nothing here yet");
-	assert.equal(defaultEmptyState.find(".knomo-empty-description"), null);
+	assert.equal(defaultEmptyState.find(".plain-memo-empty-title")?.getText(), "Nothing here yet");
+	assert.equal(defaultEmptyState.find(".plain-memo-empty-description"), null);
 });
 
 interface CreateElementOptions {

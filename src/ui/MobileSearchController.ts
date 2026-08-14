@@ -190,7 +190,7 @@ export class MobileSearchController {
 
 	syncPage(): void {
 		const shouldOpen = this.options.isMobileLayout() && this.open;
-		this.options.getDocument().body.toggleClass("knomo-mobile-search-active", shouldOpen);
+		this.options.getDocument().body.toggleClass("plain-memo-mobile-search-active", shouldOpen);
 		if (!this.options.isMobileLayout()) {
 			this.open = false;
 			this.recordStatsFilter = null;
@@ -314,14 +314,14 @@ export class MobileSearchController {
 			&& this.dateFilter === null
 			&& this.recordStatsFilter === null
 		) {
-			resultsEl.createDiv({ cls: "knomo-mobile-search-empty", text: t("search.emptyPrompt") });
+			resultsEl.createDiv({ cls: "plain-memo-mobile-search-empty", text: t("search.emptyPrompt") });
 			this.options.restoreElementScrollTop(resultsEl, scrollTop);
 			return;
 		}
 		const memos = this.getMatchedMemos(normalizedQuery);
 		if (memos.length === 0) {
 			resultsEl.createDiv({
-				cls: "knomo-mobile-search-empty",
+				cls: "plain-memo-mobile-search-empty",
 				text: formatMobileSearchEmptyTitle(query, this.dateFilter, this.recordStatsFilter),
 			});
 			this.options.restoreElementScrollTop(resultsEl, scrollTop);
@@ -339,7 +339,7 @@ export class MobileSearchController {
 			renderKnomoLoadMoreButton(resultsEl, {
 				remainingCount: memos.length - visibleMemos.length,
 				action: "load-more-mobile-search",
-				extraClass: "knomo-mobile-search-more",
+				extraClass: "plain-memo-mobile-search-more",
 			});
 		}
 		this.options.restoreElementScrollTop(resultsEl, scrollTop);

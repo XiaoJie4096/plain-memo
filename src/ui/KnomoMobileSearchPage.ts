@@ -22,19 +22,19 @@ export function renderKnomoMobileSearchPage(
 	options: RenderMobileSearchPageOptions,
 ): MobileSearchPageElements {
 	const pageEl = container.createDiv({
-		cls: "knomo-mobile-search-page",
+		cls: "plain-memo-mobile-search-page",
 		attr: {
 			"aria-hidden": "true",
 			inert: "",
 		},
 	});
-	pageEl.createDiv({ cls: "knomo-mobile-search-surface", attr: { "aria-hidden": "true" } });
-	const header = pageEl.createDiv({ cls: "knomo-mobile-search-header" });
-	const searchWrap = header.createDiv({ cls: "knomo-mobile-search-wrap" });
-	setIcon(searchWrap.createSpan({ cls: "knomo-search-icon" }), KNOMO_SEARCH_ICON);
+	pageEl.createDiv({ cls: "plain-memo-mobile-search-surface", attr: { "aria-hidden": "true" } });
+	const header = pageEl.createDiv({ cls: "plain-memo-mobile-search-header" });
+	const searchWrap = header.createDiv({ cls: "plain-memo-mobile-search-wrap" });
+	setIcon(searchWrap.createSpan({ cls: "plain-memo-search-icon" }), KNOMO_SEARCH_ICON);
 	const searchLabelId = options.createHiddenText(searchWrap, "mobile-search-label", t("search.label"));
 	const inputEl = searchWrap.createEl("input", {
-		cls: "knomo-search-input",
+		cls: "plain-memo-search-input",
 		attr: {
 			type: "search",
 			placeholder: t("search.label"),
@@ -42,7 +42,7 @@ export function renderKnomoMobileSearchPage(
 		},
 	});
 	const closeButtonEl = header.createEl("button", {
-		cls: "knomo-mobile-search-close",
+		cls: "plain-memo-mobile-search-close",
 		attr: {
 			type: "button",
 			"aria-label": t("search.close"),
@@ -51,14 +51,14 @@ export function renderKnomoMobileSearchPage(
 	});
 	setIcon(closeButtonEl, "x");
 
-	const contentEl = pageEl.createDiv({ cls: "knomo-mobile-search-content" });
-	const quickSection = contentEl.createDiv({ cls: "knomo-mobile-search-quick" });
-	quickSection.createDiv({ cls: "knomo-mobile-search-section-title", text: t("search.quick") });
-	const quickListEl = quickSection.createDiv({ cls: "knomo-mobile-search-chip-list" });
+	const contentEl = pageEl.createDiv({ cls: "plain-memo-mobile-search-content" });
+	const quickSection = contentEl.createDiv({ cls: "plain-memo-mobile-search-quick" });
+	quickSection.createDiv({ cls: "plain-memo-mobile-search-section-title", text: t("search.quick") });
+	const quickListEl = quickSection.createDiv({ cls: "plain-memo-mobile-search-chip-list" });
 	for (const option of SEARCH_DATE_OPTIONS) {
-		renderSearchDateButton(quickListEl, option, "knomo-mobile-search-chip", option.mobileLabel ?? option.label);
+		renderSearchDateButton(quickListEl, option, "plain-memo-mobile-search-chip", option.mobileLabel ?? option.label);
 	}
-	const resultsEl = contentEl.createDiv({ cls: "knomo-mobile-search-results" });
+	const resultsEl = contentEl.createDiv({ cls: "plain-memo-mobile-search-results" });
 
 	return {
 		pageEl,

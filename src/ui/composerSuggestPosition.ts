@@ -11,20 +11,20 @@ export function getTextareaCharacterRect(inputEl: HTMLTextAreaElement, index: nu
 	}
 	const inputRect = inputEl.getBoundingClientRect();
 	const computed = win.getComputedStyle(inputEl);
-	const mirror = doc.body.createDiv({ cls: "knomo-textarea-mirror" });
+	const mirror = doc.body.createDiv({ cls: "plain-memo-textarea-mirror" });
 	mirror.setCssProps({
-		"--knomo-textarea-mirror-word-break": computed.wordBreak,
-		"--knomo-textarea-mirror-box-sizing": computed.boxSizing,
-		"--knomo-textarea-mirror-width": `${inputRect.width}px`,
-		"--knomo-textarea-mirror-min-height": computed.minHeight,
-		"--knomo-textarea-mirror-padding": computed.padding,
-		"--knomo-textarea-mirror-border": computed.border,
-		"--knomo-textarea-mirror-font": computed.font,
-		"--knomo-textarea-mirror-line-height": computed.lineHeight,
-		"--knomo-textarea-mirror-letter-spacing": computed.letterSpacing,
-		"--knomo-textarea-mirror-text-transform": computed.textTransform,
-		"--knomo-textarea-mirror-left": `${inputRect.left - inputEl.scrollLeft}px`,
-		"--knomo-textarea-mirror-top": `${inputRect.top - inputEl.scrollTop}px`,
+		"--plain-memo-textarea-mirror-word-break": computed.wordBreak,
+		"--plain-memo-textarea-mirror-box-sizing": computed.boxSizing,
+		"--plain-memo-textarea-mirror-width": `${inputRect.width}px`,
+		"--plain-memo-textarea-mirror-min-height": computed.minHeight,
+		"--plain-memo-textarea-mirror-padding": computed.padding,
+		"--plain-memo-textarea-mirror-border": computed.border,
+		"--plain-memo-textarea-mirror-font": computed.font,
+		"--plain-memo-textarea-mirror-line-height": computed.lineHeight,
+		"--plain-memo-textarea-mirror-letter-spacing": computed.letterSpacing,
+		"--plain-memo-textarea-mirror-text-transform": computed.textTransform,
+		"--plain-memo-textarea-mirror-left": `${inputRect.left - inputEl.scrollLeft}px`,
+		"--plain-memo-textarea-mirror-top": `${inputRect.top - inputEl.scrollTop}px`,
 	});
 	mirror.setText(inputEl.value.slice(0, index));
 	const marker = mirror.createSpan({ text: inputEl.value.charAt(index) || "\u200b" });
@@ -67,7 +67,7 @@ export function measureSuggestionContentWidth(
 	if (host === null) {
 		return Math.ceil(container.scrollWidth || container.getBoundingClientRect().width);
 	}
-	host.addClass("knomo-suggest-measure-host");
+	host.addClass("plain-memo-suggest-measure-host");
 	doc.body.appendChild(host);
 	let width = 0;
 	for (const item of items) {
@@ -75,7 +75,7 @@ export function measureSuggestionContentWidth(
 		if (clone === null) {
 			continue;
 		}
-		clone.addClass("knomo-suggest-measure-item");
+		clone.addClass("plain-memo-suggest-measure-item");
 		host.appendChild(clone);
 		width = Math.max(width, clone.getBoundingClientRect().width);
 	}
@@ -112,8 +112,8 @@ function parseCssPixels(value: string): number {
 }
 
 function measureScrollbarWidth(doc: Document): number {
-	const outer = doc.body.createDiv({ cls: "knomo-scrollbar-measure-outer" });
-	outer.createDiv({ cls: "knomo-scrollbar-measure-inner" });
+	const outer = doc.body.createDiv({ cls: "plain-memo-scrollbar-measure-outer" });
+	outer.createDiv({ cls: "plain-memo-scrollbar-measure-inner" });
 	const scrollbarWidth = outer.offsetWidth - outer.clientWidth;
 	outer.detach();
 	return Math.max(0, scrollbarWidth);

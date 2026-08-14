@@ -55,18 +55,18 @@ export function getMemoCardShell(options: MemoCardShellOptions): MemoCardShell {
 	};
 	return {
 		className: options.includeActions && options.activeMenuMemoId === options.memoId
-			? "knomo-card is-menu-open"
-			: "knomo-card",
+			? "plain-memo-card is-menu-open"
+			: "plain-memo-card",
 		attrs,
 	};
 }
 
 export function getTrashMemoCardClass(busyAction: TrashAction | null): string {
-	return busyAction !== null ? "knomo-card knomo-trash-card is-busy" : "knomo-card knomo-trash-card";
+	return busyAction !== null ? "plain-memo-card plain-memo-trash-card is-busy" : "plain-memo-card plain-memo-trash-card";
 }
 
 export function getMemoActionClass(action: MemoAction): string {
-	return action === "delete" ? "knomo-card-action is-danger" : "knomo-card-action";
+	return action === "delete" ? "plain-memo-card-action is-danger" : "plain-memo-card-action";
 }
 
 export function getMemoCardActions(pinned: boolean): MemoCardActionMeta[] {
@@ -78,7 +78,7 @@ export function getMemoCardActions(pinned: boolean): MemoCardActionMeta[] {
 }
 
 export function getTrashActionClass(action: TrashAction): string {
-	return action === "purge" ? "knomo-inline-button is-danger" : "knomo-inline-button";
+	return action === "purge" ? "plain-memo-inline-button is-danger" : "plain-memo-inline-button";
 }
 
 export function getTrashActionState(action: TrashAction, busyAction: TrashAction | null): TrashActionState {

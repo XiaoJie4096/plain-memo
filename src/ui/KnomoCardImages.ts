@@ -93,10 +93,10 @@ export function getMemoPreviewImageKey(memoId: string, image: MemoPreviewImage, 
 
 function prepareImagesElement(container: HTMLElement, imageCount: number, reusedImagesEl: HTMLElement | null): HTMLElement {
 	const imagesEl = reusedImagesEl ?? container.createDiv();
-	imagesEl.removeClass("knomo-card-images--single");
-	imagesEl.removeClass("knomo-card-images--grid");
-	imagesEl.addClass("knomo-card-images");
-	imagesEl.addClass(imageCount === 1 ? "knomo-card-images--single" : "knomo-card-images--grid");
+	imagesEl.removeClass("plain-memo-card-images--single");
+	imagesEl.removeClass("plain-memo-card-images--grid");
+	imagesEl.addClass("plain-memo-card-images");
+	imagesEl.addClass(imageCount === 1 ? "plain-memo-card-images--single" : "plain-memo-card-images--grid");
 	if (reusedImagesEl !== null) {
 		container.appendChild(reusedImagesEl);
 	}
@@ -105,8 +105,8 @@ function prepareImagesElement(container: HTMLElement, imageCount: number, reused
 
 function collectReusableImageItems(imagesEl: HTMLElement): Map<string, HTMLElement> {
 	const items = new Map<string, HTMLElement>();
-	for (const item of imagesEl.findAll(".knomo-card-image-item")) {
-		const imageKey = item.getAttr("data-knomo-image-key");
+	for (const item of imagesEl.findAll(".plain-memo-card-image-item")) {
+		const imageKey = item.getAttr("data-plain-memo-image-key");
 		if (imageKey !== null && !items.has(imageKey)) {
 			items.set(imageKey, item);
 		}
@@ -124,15 +124,15 @@ function renderMemoCardImage(
 	labels: RenderMemoCardImagesLabels,
 ): CardImageLoadItem | null {
 	const item = container.createDiv({
-		cls: "knomo-card-image-item",
-		attr: { "data-knomo-image-key": imageKey },
+		cls: "plain-memo-card-image-item",
+		attr: { "data-plain-memo-image-key": imageKey },
 	});
 	const button = item.createEl("button", {
-		cls: "knomo-card-image-button",
+		cls: "plain-memo-card-image-button",
 		attr: {
 			type: "button",
 			"aria-label": labels.previewLabel,
-			"data-knomo-card-image": "true",
+			"data-plain-memo-card-image": "true",
 			"data-memo-id": memo.id,
 			"data-image-index": String(index),
 		},
@@ -186,7 +186,7 @@ function reuseMemoCardImage(
 	if (image.url === undefined || image.unresolved === true || item.hasClass("is-loading") || item.hasClass("is-error")) {
 		return false;
 	}
-	const button = item.find(".knomo-card-image-button");
+	const button = item.find(".plain-memo-card-image-button");
 	const imageEl = item.find("img");
 	if (
 		button === null
@@ -195,7 +195,7 @@ function reuseMemoCardImage(
 	) {
 		return false;
 	}
-	item.setAttr("data-knomo-image-key", imageKey);
+	item.setAttr("data-plain-memo-image-key", imageKey);
 	button.setAttr("aria-label", labels.previewLabel);
 	button.setAttr("data-memo-id", memo.id);
 	button.setAttr("data-image-index", String(index));
@@ -207,7 +207,7 @@ function reuseMemoCardImage(
 
 function renderMemoCardImagePlaceholder(container: HTMLElement, hiddenCount: number, unavailableLabel: string): void {
 	container.createDiv({
-		cls: "knomo-card-image-placeholder",
+		cls: "plain-memo-card-image-placeholder",
 		text: unavailableLabel,
 	});
 	if (hiddenCount > 0) {
@@ -217,13 +217,13 @@ function renderMemoCardImagePlaceholder(container: HTMLElement, hiddenCount: num
 
 function renderMemoCardImageMore(container: HTMLElement, hiddenCount: number): void {
 	container.createSpan({
-		cls: "knomo-card-image-more",
+		cls: "plain-memo-card-image-more",
 		text: `+${hiddenCount}`,
 	});
 }
 
 function syncMemoCardImageMore(container: HTMLElement, hiddenCount: number): void {
-	for (const moreEl of container.findAll(".knomo-card-image-more")) {
+	for (const moreEl of container.findAll(".plain-memo-card-image-more")) {
 		moreEl.remove();
 	}
 	if (hiddenCount > 0) {

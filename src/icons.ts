@@ -1,12 +1,12 @@
 import { addIcon } from "obsidian";
 
-export const KNOMO_ALL_NOTES_ICON = "knomo-all-notes";
+export const KNOMO_ALL_NOTES_ICON = "plain-memo-all-notes";
 // Use Obsidian's built-in Lucide icon for the PlainMemo ribbon entry.
 export const KNOMO_LOGO_ICON = "square-pen";
 export const KNOMO_SEARCH_ICON = "search";
-export const KNOMO_SIDEBAR_MENU_ICON = "knomo-sidebar-menu";
-export const KNOMO_RANDOM_REUNION_ICON = "knomo-random-reunion";
-export const KNOMO_TIME_BUOY_ICON = "knomo-time-buoy";
+export const KNOMO_SIDEBAR_MENU_ICON = "plain-memo-sidebar-menu";
+export const KNOMO_RANDOM_REUNION_ICON = "plain-memo-random-reunion";
+export const KNOMO_TIME_BUOY_ICON = "plain-memo-time-buoy";
 
 const KNOMO_ICON_SVGS: Record<string, string> = {
 	[KNOMO_ALL_NOTES_ICON]: "<g transform=\"scale(4.1666666667)\"><rect x=\"4\" y=\"4\" width=\"14\" height=\"16\" rx=\"3\" stroke=\"currentColor\" stroke-width=\"2\" fill=\"none\"/><path d=\"M8 9h6M8 13h5\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" fill=\"none\"/><circle cx=\"18\" cy=\"18\" r=\"2.1\" fill=\"currentColor\"/></g>",

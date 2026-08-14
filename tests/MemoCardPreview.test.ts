@@ -160,7 +160,7 @@ test("versions local resource urls with the attachment modification time", () =>
 	const app = createAppStub(["photo.png"], 1_718_438_400_000);
 	const preview = parseMemoCardPreview("![[photo.png]]", "Daily/2026-06-15.md", app);
 
-	assert.equal(preview.images[0].url, "app://photo.png?knomo-mtime=1718438400000");
+	assert.equal(preview.images[0].url, "app://photo.png?plain-memo-mtime=1718438400000");
 	assert.equal(preview.images[0].resourcePath, "photo.png");
 });
 

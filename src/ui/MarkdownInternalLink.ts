@@ -14,7 +14,7 @@ export function getMarkdownInternalLinkInfo(target: EventTarget | null): Markdow
 		return null;
 	}
 	const linktext = linkEl.getAttribute("data-href") ?? linkEl.getAttribute("href");
-	const sourcePath = linkEl.getAttr("data-knomo-source-path");
+	const sourcePath = linkEl.getAttr("data-plain-memo-source-path");
 	if (!linktext || sourcePath === null) {
 		return null;
 	}

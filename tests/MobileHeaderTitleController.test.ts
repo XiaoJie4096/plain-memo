@@ -25,13 +25,13 @@ test("mobile header title renders scope title and reuses existing event registra
 	});
 
 	assert.equal(harness.controller.getAnchor(), harness.title.asHtml());
-	assert.equal(harness.title.hasClass("knomo-mobile-title"), true);
+	assert.equal(harness.title.hasClass("plain-memo-mobile-title"), true);
 	assert.equal(harness.title.getAttr("role"), "button");
 	assert.equal(harness.title.getAttr("aria-haspopup"), "menu");
 	assert.equal(harness.title.getAttr("aria-expanded"), "true");
 	assert.equal(harness.title.getAttr("tabindex"), "0");
 	assert.equal(harness.title.getText(), "Tagged");
-	assert.notEqual(harness.title.find(".knomo-title-chevron"), null);
+	assert.notEqual(harness.title.find(".plain-memo-title-chevron"), null);
 	assert.equal(harness.registrations.length, 2);
 });
 
@@ -62,7 +62,7 @@ test("mobile header title ignores menu events while showing record stats", () =>
 	harness.dispatch("keydown", { key: "Enter" });
 
 	assert.equal(harness.toggleCount, 2);
-	assert.equal(harness.header.hasClass("knomo-record-stats-header"), true);
+	assert.equal(harness.header.hasClass("plain-memo-record-stats-header"), true);
 	assert.equal(harness.title.getAttr("role"), null);
 	assert.equal(harness.title.getAttr("aria-haspopup"), null);
 	assert.equal(harness.title.getAttr("aria-expanded"), null);
@@ -84,8 +84,8 @@ test("mobile header title remove restores the original Obsidian title", () => {
 	harness.controller.remove();
 
 	assert.equal(harness.controller.getAnchor(), null);
-	assert.equal(harness.header.hasClass("knomo-record-stats-header"), false);
-	assert.equal(harness.title.hasClass("knomo-mobile-title"), false);
+	assert.equal(harness.header.hasClass("plain-memo-record-stats-header"), false);
+	assert.equal(harness.title.hasClass("plain-memo-mobile-title"), false);
 	assert.equal(harness.title.getText(), "Knomo");
 	assert.equal(harness.title.getAttr("role"), null);
 	assert.equal(harness.title.getAttr("aria-haspopup"), null);
@@ -116,7 +116,7 @@ test("mobile header title restores old title before binding a replacement elemen
 	});
 
 	assert.equal(harness.title.getText(), "First");
-	assert.equal(harness.title.hasClass("knomo-mobile-title"), false);
+	assert.equal(harness.title.hasClass("plain-memo-mobile-title"), false);
 	assert.equal(nextTitle.getText(), "Review");
 	assert.equal(harness.registrations.length, 4);
 });
@@ -151,7 +151,7 @@ function createHarness(): {
 	const controller = new MobileHeaderTitleController({
 		registerDomEvent,
 		renderChevron: (container) => {
-			container.createSpan({ cls: "knomo-title-chevron" });
+			container.createSpan({ cls: "plain-memo-title-chevron" });
 		},
 		canToggleScopeMenu: () => canToggleScopeMenu,
 		onToggleScopeMenu: () => {

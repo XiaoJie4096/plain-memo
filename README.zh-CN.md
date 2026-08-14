@@ -111,6 +111,10 @@ PlainMemo 设置中还提供“导入 Flomo 数据”：
 
 每条 Flomo memo 都会转换为一个独立的 PlainMemo Markdown 文件。原始正文、第一行、时间、标签和网页链接都会保留。导入的附件保存在 `<目标文件夹>/flomo-attachments`。重复导入时会复用相同内容和附件，避免产生不必要的副本。
 
+## 导出到 Knomo
+
+PlainMemo 可以将独立笔记导出为 Knomo 可导入的 Daily Notes ZIP 压缩包。ZIP 和压缩包外的 `导入说明.md` 会保存到库根目录的 `plainmemo导出到knomo` 文件夹。导出范围和在 Knomo 中的导入步骤见[导入说明](docs/knomo-import.md)。
+
 ## 数据与隐私
 
 所有 memo 都是 Vault 内的普通 Markdown 文件。PlainMemo 不要求账号、不依赖外部服务器，也不会主动上传笔记内容。扫描目录、折叠阈值、置顶标记、随机回顾记录和往日漫游历史保存在 `PlainMemo/data` 中，可以和 Vault 一起同步。每条置顶笔记使用一个独立状态文件，减少多设备同时修改时相互覆盖的风险。

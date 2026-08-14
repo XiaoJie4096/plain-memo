@@ -10,7 +10,7 @@ import {
 test("mobile header metrics align search top to Knomo header action", () => {
 	const header = new TestElement(rect({ top: 20, bottom: 72, width: 400, height: 52 }));
 	const action = new TestElement(rect({ top: 24, bottom: 68, width: 44, height: 44 }));
-	header.setQuery(".view-actions .knomo-mobile-header-action", action);
+	header.setQuery(".view-actions .plain-memo-mobile-header-action", action);
 
 	assert.deepEqual(measureMobileHeaderOffsets(header.asHtml(), 800), {
 		drawerTop: 72,

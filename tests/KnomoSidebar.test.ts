@@ -39,14 +39,14 @@ test("renders the editable subtitle, settings action, trash, stats, tags, and re
 
 	assert.equal(elements.subtitleEl.getText(), "A quiet place for thoughts");
 	assert.equal(elements.subtitleEl.getAttr("contenteditable"), "plaintext-only");
-	assert.equal(sidebar.find("[data-action='open-settings']")?.getAttr("data-icon"), "settings-2");
+	assert.equal(sidebar.find("[data-action='open-settings']")?.getAttr("data-icon"), "settings");
 	assert.equal(elements.statsEl.getAttr("aria-labelledby"), "stats-label");
 	renderSidebarStat(elements.statsEl, "12", "Notes");
-	assert.equal(elements.statsEl.find(".knomo-stat-value")?.getText(), "12");
+	assert.equal(elements.statsEl.find(".plain-memo-stat-value")?.getText(), "12");
 
 	assert.deepEqual(sidebar.findAll("[data-nav]").map((item) => item.getAttr("data-nav")), ["trash"]);
-	assert.equal(sidebar.find(".knomo-time-buoy-count"), null);
-	assert.equal(sidebar.find("[data-nav='trash']")?.hasClass("knomo-trash-nav-button"), true);
+	assert.equal(sidebar.find(".plain-memo-time-buoy-count"), null);
+	assert.equal(sidebar.find("[data-nav='trash']")?.hasClass("plain-memo-trash-nav-button"), true);
 	assert.equal(elements.resizerEl.getAttr("role"), "separator");
 	assert.equal(elements.resizerEl.getAttr("aria-valuemin"), String(SIDEBAR_MIN_WIDTH));
 	assert.equal(elements.resizerEl.getAttr("aria-valuemax"), String(SIDEBAR_MAX_WIDTH));
@@ -59,7 +59,7 @@ test("renders the editable subtitle, settings action, trash, stats, tags, and re
 		expandedTagGroups: new Set<string>(),
 		emptyText: "No tags",
 	});
-	const projectNode = elements.allTagsEl.find(".knomo-tag-node");
+	const projectNode = elements.allTagsEl.find(".plain-memo-tag-node");
 	const projectToggle = elements.allTagsEl.find("[data-tag-toggle='project']");
 	const projectChild = elements.allTagsEl.find("[data-tag-key='project/knomo']");
 	assert.notEqual(projectNode, null);
@@ -97,7 +97,7 @@ test("renders sidebar tag empty state", async () => {
 		emptyText: "No tags",
 	});
 
-	assert.equal(container.find(".knomo-muted-text")?.getText(), "No tags");
+	assert.equal(container.find(".plain-memo-muted-text")?.getText(), "No tags");
 });
 
 interface CreateElementOptions {

@@ -111,6 +111,10 @@ PlainMemo settings also provide **Import Flomo data**:
 
 Each Flomo memo becomes a standalone PlainMemo Markdown file. The original body, first line, timestamp, tags, and web links are preserved. Imported attachments are stored under `<destination>/flomo-attachments`. Repeated imports reuse matching content and attachments instead of creating unnecessary duplicates.
 
+## Export to Knomo
+
+PlainMemo can export its standalone memo files as a ZIP archive of Knomo-compatible Daily Notes. The ZIP and an external import-instructions Markdown file are saved in the Vault-root `plainmemo-export-to-knomo` folder. See [the Knomo import guide](docs/knomo-import.md) for the export scope and the import steps in Knomo.
+
 ## Data and privacy
 
 Every memo is an ordinary Markdown file in your Vault. PlainMemo requires no account, relies on no external service, and does not actively upload note content. Scan folders, collapse thresholds, pin markers, random-review records, and shuffle-day history are stored under `PlainMemo/data` so they can synchronize with the Vault. Each pinned memo uses a separate state file to reduce cross-device overwrite conflicts.

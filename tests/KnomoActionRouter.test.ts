@@ -70,7 +70,7 @@ test("routes generic actions, random cards, composer tools, and outside clicks",
 		} = await import("../src/ui/KnomoActionRouter");
 
 		const toolButton = new TestElement("button", {
-			cls: "knomo-tool-button",
+			cls: "plain-memo-tool-button",
 			attr: { "data-action": "insert-tag", "data-memo-id": "memo-3" },
 		});
 		const toolChild = toolButton.createChild("span");
@@ -106,25 +106,25 @@ test("routes generic actions, random cards, composer tools, and outside clicks",
 		});
 
 		const collapsedCard = new TestElement("article", {
-			cls: "knomo-card has-collapsed-memo",
+			cls: "plain-memo-card has-collapsed-memo",
 			attr: { "data-memo-id": "memo-collapsed" },
 		});
-		const collapsedBody = collapsedCard.createChild("div", { cls: "knomo-card-body" });
+		const collapsedBody = collapsedCard.createChild("div", { cls: "plain-memo-card-body" });
 		assert.deepEqual(pickRoute(getRootClickRoute(collapsedBody.asElement(), false)), {
 			type: "memo-card-expand",
 			memoId: "memo-collapsed",
 		});
 		const expandedCard = new TestElement("article", {
-			cls: "knomo-card has-expanded-memo",
+			cls: "plain-memo-card has-expanded-memo",
 			attr: { "data-memo-id": "memo-expanded" },
 		});
 		assert.equal(
-			getRootClickRoute(expandedCard.createChild("div", { cls: "knomo-card-body" }).asElement(), false).type,
+			getRootClickRoute(expandedCard.createChild("div", { cls: "plain-memo-card-body" }).asElement(), false).type,
 			"outside",
 		);
 
 		const randomCard = new TestElement("article", {
-			cls: "knomo-card",
+			cls: "plain-memo-card",
 			attr: { "data-memo-id": "memo-5" },
 		});
 		const randomContent = randomCard.createChild("div");
@@ -146,15 +146,15 @@ test("routes generic actions, random cards, composer tools, and outside clicks",
 		const linkInRandomCard = randomCard.createChild("a");
 		assert.equal(getMemoCardOpenRoute(linkInRandomCard.asElement()), null);
 		const imageBlank = randomCard
-			.createChild("div", { cls: "knomo-card-body" })
-			.createChild("div", { cls: "knomo-card-images" });
+			.createChild("div", { cls: "plain-memo-card-body" })
+			.createChild("div", { cls: "plain-memo-card-images" });
 		assert.deepEqual(getMemoCardEditRoute(imageBlank.asElement()), {
 			element: randomCard.asElement(),
 			memoId: "memo-5",
 		});
 		assert.equal(
 			getMemoCardEditRoute(imageBlank.createChild("button", {
-				attr: { "data-knomo-card-image": "true" },
+				attr: { "data-plain-memo-card-image": "true" },
 			}).asElement()),
 			null,
 		);
@@ -173,7 +173,7 @@ test("routes generic actions, random cards, composer tools, and outside clicks",
 			closeCompactSearch: true,
 		});
 
-		const scopePopover = new TestElement("div", { cls: "knomo-scope-popover" });
+		const scopePopover = new TestElement("div", { cls: "plain-memo-scope-popover" });
 		const scopeChild = scopePopover.createChild("span");
 		assert.deepEqual(pickRoute(getRootClickRoute(scopeChild.asElement(), false)), {
 			type: "outside",
@@ -217,11 +217,11 @@ test("does not open memo cards from interactive card regions", async () => {
 			{ tagName: "a", attr: { "data-tag": "project" } },
 			{ tagName: "button", attr: { "data-tag-toggle": "project" } },
 			{ tagName: "a", cls: "tag" },
-			{ tagName: "div", cls: "knomo-card-actions" },
-			{ tagName: "button", cls: "knomo-card-menu" },
-			{ tagName: "div", cls: "knomo-card-images" },
-			{ tagName: "button", cls: "knomo-card-image-button" },
-			{ tagName: "input", cls: "knomo-task-checkbox" },
+			{ tagName: "div", cls: "plain-memo-card-actions" },
+			{ tagName: "button", cls: "plain-memo-card-menu" },
+			{ tagName: "div", cls: "plain-memo-card-images" },
+			{ tagName: "button", cls: "plain-memo-card-image-button" },
+			{ tagName: "input", cls: "plain-memo-task-checkbox" },
 			{ tagName: "input", cls: "task-list-item-checkbox" },
 		];
 

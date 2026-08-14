@@ -33,27 +33,27 @@ export class KnomoConfirmModal extends Modal {
 	}
 
 	onOpen(): void {
-		this.modalEl.addClass("knomo-confirm-modal");
+		this.modalEl.addClass("plain-memo-confirm-modal");
 		removeKnomoConfirmCloseButton(this.modalEl);
 		this.titleEl.setText(this.options.title ?? t("confirm.title"));
 		this.contentEl.empty();
 
 		this.contentEl.createDiv({
-			cls: "knomo-confirm-message",
+			cls: "plain-memo-confirm-message",
 			text: this.options.message,
 		});
 		const actions = this.contentEl.createDiv({
-			cls: "modal-button-container knomo-confirm-actions",
+			cls: "modal-button-container plain-memo-confirm-actions",
 		});
 		const cancelButton = actions.createEl("button", {
-			cls: "knomo-confirm-button",
+			cls: "plain-memo-confirm-button",
 			text: this.options.cancelLabel ?? t("confirm.cancel"),
 			attr: { type: "button" },
 		});
 		const confirmButton = actions.createEl("button", {
 			cls: this.options.danger === true
-				? "knomo-confirm-button mod-warning"
-				: "knomo-confirm-button mod-cta",
+				? "plain-memo-confirm-button mod-warning"
+				: "plain-memo-confirm-button mod-cta",
 			text: this.options.confirmLabel ?? t("confirm.confirm"),
 			attr: { type: "button" },
 		});

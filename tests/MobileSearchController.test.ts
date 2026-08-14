@@ -37,7 +37,7 @@ test("mobile search opens, syncs the page, and closes from Escape", async () => 
 	const input = controller.input as unknown as TestElement;
 	const results = controller.results as unknown as TestElement;
 	assert.equal(controller.isOpen, true);
-	assert.equal(root.find(".knomo-mobile-search-page"), page);
+	assert.equal(root.find(".plain-memo-mobile-search-page"), page);
 	assert.equal(input.value, "alpha");
 	assert.equal(input.focusCount, 1);
 	assert.deepEqual(state.pausedStates, [true]);
@@ -49,7 +49,7 @@ test("mobile search opens, syncs the page, and closes from Escape", async () => 
 	assert.equal(page.hasClass("is-open"), true);
 	assert.equal(page.getAttr("aria-hidden"), "false");
 	assert.equal(page.getAttr("inert"), null);
-	assert.deepEqual(state.bodyToggleCalls, [{ cls: "knomo-mobile-search-active", active: true }]);
+	assert.deepEqual(state.bodyToggleCalls, [{ cls: "plain-memo-mobile-search-active", active: true }]);
 
 	const event = createKeyboardEvent("Escape");
 	dispatch(input, "keydown", event);
@@ -187,7 +187,7 @@ function createControllerHarness(
 		},
 		renderMemoCard: (container, memo) => {
 			state.renderedMemoIds.push(memo.id);
-			container.createDiv({ cls: "knomo-card", text: memo.id, attr: { "data-memo-id": memo.id } });
+			container.createDiv({ cls: "plain-memo-card", text: memo.id, attr: { "data-memo-id": memo.id } });
 		},
 		clearMarkdown: () => undefined,
 		clearImages: () => undefined,

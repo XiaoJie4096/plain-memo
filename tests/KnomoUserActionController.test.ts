@@ -67,14 +67,14 @@ test("sidebar layer interactions keep underlying popup chrome open", async () =>
 		assert.deepEqual(closeDrawer.calls, ["close-drawer", "sync-chrome", "sync-card-menu"]);
 
 		const drawerSidebar = createHarness({ drawerOpen: true, outsideHandled: true });
-		const sidebar = new TestElement("aside", { cls: "knomo-sidebar" });
+		const sidebar = new TestElement("aside", { cls: "plain-memo-sidebar" });
 		const blankSidebarTarget = sidebar.createChild("div");
 		await drawerSidebar.controller.handleRootClick(createMouseEvent(blankSidebarTarget));
 		assert.deepEqual(drawerSidebar.calls, []);
 
 		const drawerBackdrop = createHarness({ drawerOpen: true, outsideHandled: true });
 		await drawerBackdrop.controller.handleRootClick(createMouseEvent(new TestElement("div", {
-			cls: "knomo-drawer-backdrop",
+			cls: "plain-memo-drawer-backdrop",
 		})));
 		assert.deepEqual(drawerBackdrop.calls, []);
 	} finally {
@@ -96,10 +96,10 @@ test("root click routes memo, trash, and generic actions", async () => {
 			attr: { "data-action": "record-stats-filter-tag" },
 		})));
 		const collapsedCard = new TestElement("article", {
-			cls: "knomo-card has-collapsed-memo",
+			cls: "plain-memo-card has-collapsed-memo",
 			attr: { "data-memo-id": "memo-collapsed" },
 		});
-		await actions.controller.handleRootClick(createMouseEvent(collapsedCard.createChild("div", { cls: "knomo-card-body" })));
+		await actions.controller.handleRootClick(createMouseEvent(collapsedCard.createChild("div", { cls: "plain-memo-card-body" })));
 		assert.deepEqual(actions.calls, [
 			"memo:edit:memo-1",
 			"trash:restore:memo-2",
@@ -129,7 +129,7 @@ test("mobile pointer down only intercepts popups on mobile layout", () => {
 		assert.deepEqual(mobileDrawerAction.calls, []);
 
 		const mobileOpenDrawer = createHarness({ mobile: true, drawerOpen: true });
-		const sidebar = new TestElement("aside", { cls: "knomo-sidebar" });
+		const sidebar = new TestElement("aside", { cls: "plain-memo-sidebar" });
 		mobileOpenDrawer.controller.handleRootPointerDown(createPointerEvent(sidebar.createChild("div")));
 		assert.deepEqual(mobileOpenDrawer.calls, []);
 	} finally {
@@ -380,7 +380,7 @@ test("handleAction covers guarded and fallback action branches", async () => {
 	assert.deepEqual(fallbackComposerTool.calls, ["composer-tool:insert-image"]);
 
 	const unknown = createHarness();
-	await unknown.controller.handleAction("not-a-knomo-action", null);
+	await unknown.controller.handleAction("not-a-plain-memo-action", null);
 	assert.deepEqual(unknown.calls, ["render-ui"]);
 
 	const none = createHarness();

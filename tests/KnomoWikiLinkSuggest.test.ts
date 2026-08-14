@@ -184,8 +184,8 @@ test("positions WikiLink popover at the current textarea cursor", () => {
 	const popover = harness.suggest.getPopoverForTest();
 	assert.notEqual(popover, null);
 	const style = (popover as unknown as FakeElement).style.values;
-	assert.equal(style.get("--knomo-suggest-left"), "52px");
-	assert.equal(style.get("--knomo-suggest-top"), "318px");
+	assert.equal(style.get("--plain-memo-suggest-left"), "52px");
+	assert.equal(style.get("--plain-memo-suggest-top"), "318px");
 });
 
 interface HarnessOptions {
@@ -202,7 +202,7 @@ interface FileToLinktextCall {
 function createHarness(files: TFile[], options: HarnessOptions = {}) {
 	const win = new FakeWindow();
 	const doc = new FakeDocument(win);
-	const layer = options.mobileLayer ? doc.body.createDiv({ cls: "knomo-mobile-composer-layer" }) : doc.body;
+	const layer = options.mobileLayer ? doc.body.createDiv({ cls: "plain-memo-mobile-composer-layer" }) : doc.body;
 	const input = new FakeTextArea(doc);
 	layer.appendChild(input);
 	const vaultHandlers = new Map<string, Array<() => void>>();
@@ -535,7 +535,7 @@ class FakeElement {
 	closest(selector: string): FakeElement | null {
 		let current: FakeElement | null = this;
 		while (current !== null) {
-			if (selector === ".knomo-mobile-composer-layer" && current.classes.has("knomo-mobile-composer-layer")) {
+			if (selector === ".plain-memo-mobile-composer-layer" && current.classes.has("plain-memo-mobile-composer-layer")) {
 				return current;
 			}
 			current = current.parentElement;

@@ -68,14 +68,14 @@ export class KnomoImagePreviewModal extends Modal {
 
 	onOpen(): void {
 		this.lockCardFlowScroll();
-		this.containerEl.addClass("knomo-image-preview-backdrop");
-		this.containerEl.toggleClass("knomo-image-preview-backdrop--mobile", Platform.isMobile);
-		this.modalEl.addClass("knomo-image-preview-modal");
+		this.containerEl.addClass("plain-memo-image-preview-backdrop");
+		this.containerEl.toggleClass("plain-memo-image-preview-backdrop--mobile", Platform.isMobile);
+		this.modalEl.addClass("plain-memo-image-preview-modal");
 		this.titleEl.setText(t("image.previewLabel"));
 		this.contentEl.empty();
 
 		const closeButton = this.modalEl.createEl("button", {
-			cls: "knomo-image-preview-close",
+			cls: "plain-memo-image-preview-close",
 			attr: {
 				type: "button",
 				"aria-label": t("image.closePreview"),
@@ -84,7 +84,7 @@ export class KnomoImagePreviewModal extends Modal {
 		setIcon(closeButton, "x");
 		closeButton.addEventListener("click", this.handleCloseClick);
 
-		const stage = this.contentEl.createDiv({ cls: "knomo-image-preview-stage" });
+		const stage = this.contentEl.createDiv({ cls: "plain-memo-image-preview-stage" });
 		this.stageEl = stage;
 		stage.addEventListener("click", this.handleStageClick);
 		stage.addEventListener("touchstart", this.handleTouchStart);
@@ -94,7 +94,7 @@ export class KnomoImagePreviewModal extends Modal {
 
 		if (this.images.length > 1) {
 			const previousButton = this.contentEl.createEl("button", {
-				cls: "knomo-image-preview-nav knomo-image-preview-nav--previous",
+				cls: "plain-memo-image-preview-nav plain-memo-image-preview-nav--previous",
 				attr: {
 					type: "button",
 					"aria-label": t("image.previous"),
@@ -104,7 +104,7 @@ export class KnomoImagePreviewModal extends Modal {
 			previousButton.addEventListener("click", this.handlePreviousClick);
 
 			const nextButton = this.contentEl.createEl("button", {
-				cls: "knomo-image-preview-nav knomo-image-preview-nav--next",
+				cls: "plain-memo-image-preview-nav plain-memo-image-preview-nav--next",
 				attr: {
 					type: "button",
 					"aria-label": t("image.next"),
@@ -114,8 +114,8 @@ export class KnomoImagePreviewModal extends Modal {
 			nextButton.addEventListener("click", this.handleNextClick);
 		}
 
-		const footer = this.contentEl.createDiv({ cls: "knomo-image-preview-footer" });
-		this.counterEl = footer.createDiv({ cls: "knomo-image-preview-counter" });
+		const footer = this.contentEl.createDiv({ cls: "plain-memo-image-preview-footer" });
+		this.counterEl = footer.createDiv({ cls: "plain-memo-image-preview-counter" });
 
 		this.containerEl.win.addEventListener("keydown", this.handleKeydown);
 		this.renderCurrentImage();
@@ -158,7 +158,7 @@ export class KnomoImagePreviewModal extends Modal {
 			setImagePreviewLoadingState(stage, true);
 			this.preloadedImageUrls.add(image.url);
 			const img = stage.createEl("img", {
-				cls: "knomo-image-preview-img",
+				cls: "plain-memo-image-preview-img",
 				attr: {
 					alt: image.alt ?? "",
 					decoding: "async",
@@ -189,14 +189,14 @@ export class KnomoImagePreviewModal extends Modal {
 
 	private renderPlaceholder(container: HTMLElement): void {
 		container.createDiv({
-			cls: "knomo-card-image-placeholder knomo-image-preview-placeholder",
+			cls: "plain-memo-card-image-placeholder plain-memo-image-preview-placeholder",
 			text: t("image.unavailable"),
 		});
 	}
 
 	private renderLoadError(container: HTMLElement): void {
 		container.createDiv({
-			cls: "knomo-image-preview-error",
+			cls: "plain-memo-image-preview-error",
 			text: t("image.loadFailed"),
 			attr: {
 				role: "status",

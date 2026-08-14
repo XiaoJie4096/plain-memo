@@ -38,13 +38,13 @@ export class MobileHeaderTitleController {
 			this.originalText = options.titleEl.textContent;
 		}
 		if (this.headerEl !== null && this.headerEl !== options.headerEl) {
-			this.headerEl.removeClass("knomo-record-stats-header");
+			this.headerEl.removeClass("plain-memo-record-stats-header");
 		}
 		this.headerEl = options.headerEl;
 		if (options.isRecordStats) {
-			options.headerEl.addClass("knomo-record-stats-header");
+			options.headerEl.addClass("plain-memo-record-stats-header");
 		} else {
-			options.headerEl.removeClass("knomo-record-stats-header");
+			options.headerEl.removeClass("plain-memo-record-stats-header");
 		}
 		if (this.registeredTitleEl !== options.titleEl) {
 			this.registeredTitleEl = options.titleEl;
@@ -56,12 +56,12 @@ export class MobileHeaderTitleController {
 
 	remove(): void {
 		if (this.titleEl !== null) {
-			this.headerEl?.removeClass("knomo-record-stats-header");
+			this.headerEl?.removeClass("plain-memo-record-stats-header");
 			this.titleEl.empty();
 			if (this.originalText !== null) {
 				this.titleEl.setText(this.originalText);
 			}
-			this.titleEl.removeClass("knomo-mobile-title");
+			this.titleEl.removeClass("plain-memo-mobile-title");
 			this.titleEl.removeAttribute("role");
 			this.titleEl.removeAttribute("aria-haspopup");
 			this.titleEl.removeAttribute("aria-expanded");
@@ -95,7 +95,7 @@ export class MobileHeaderTitleController {
 	private renderTitle(options: MobileHeaderTitleSyncOptions): void {
 		const titleEl = options.titleEl;
 		titleEl.empty();
-		titleEl.addClass("knomo-mobile-title");
+		titleEl.addClass("plain-memo-mobile-title");
 		if (options.isRecordStats) {
 			titleEl.removeAttribute("role");
 			titleEl.removeAttribute("aria-haspopup");

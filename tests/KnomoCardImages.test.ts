@@ -20,7 +20,7 @@ test("renderMemoCardImages skips empty image lists", () => {
 	const rendered = renderMemoCardImages(root.asHtml(), makeMemo(), [], labels);
 
 	assert.equal(rendered, null);
-	assert.equal(root.find(".knomo-card-images"), null);
+	assert.equal(root.find(".plain-memo-card-images"), null);
 });
 
 test("renderMemoCardImages renders a single local image load item", () => {
@@ -34,10 +34,10 @@ test("renderMemoCardImages renders a single local image load item", () => {
 	], labels);
 
 	assertRendered(rendered);
-	assert.equal(rendered.imagesEl.hasClass("knomo-card-images--single"), true);
-	assert.equal(rendered.imagesEl.hasClass("knomo-card-images--grid"), false);
-	assert.equal(root.findAll(".knomo-card-image-button").length, 1);
-	const button = root.find(".knomo-card-image-button");
+	assert.equal(rendered.imagesEl.hasClass("plain-memo-card-images--single"), true);
+	assert.equal(rendered.imagesEl.hasClass("plain-memo-card-images--grid"), false);
+	assert.equal(root.findAll(".plain-memo-card-image-button").length, 1);
+	const button = root.find(".plain-memo-card-image-button");
 	assert.equal(button?.getAttr("aria-label"), "Preview image");
 	assert.equal(button?.getAttr("data-memo-id"), "memo-1");
 	assert.equal(button?.getAttr("data-image-index"), "0");
@@ -49,22 +49,22 @@ test("renderMemoCardImages renders a single local image load item", () => {
 	assert.equal(rendered.loadItems[0].src, "app://local.png");
 	assert.equal(rendered.loadItems[0].resourcePath, "Images/local.png");
 	assert.equal(rendered.loadItems[0].priority, "high");
-	assert.equal(root.find(".knomo-card-image-item")?.hasClass("is-loading"), true);
+	assert.equal(root.find(".plain-memo-card-image-item")?.hasClass("is-loading"), true);
 
 	rendered.loadItems[0].onLoad?.();
-	assert.equal(root.find(".knomo-card-image-item")?.hasClass("is-loading"), false);
+	assert.equal(root.find(".plain-memo-card-image-item")?.hasClass("is-loading"), false);
 });
 
 test("renderMemoCardImages reuses loaded image items with unchanged keys", () => {
 	const root = new TestElement("div");
 	const image = makeImage({
-		url: "app://local.png?knomo-mtime=100",
+		url: "app://local.png?plain-memo-mtime=100",
 		resourcePath: "Images/local.png",
 		mtime: 100,
 	});
 	const rendered = renderMemoCardImages(root.asHtml(), makeMemo(), [image], labels);
 	assertRendered(rendered);
-	const item = root.find(".knomo-card-image-item");
+	const item = root.find(".plain-memo-card-image-item");
 	const imageEl = root.find("img");
 	assert.notEqual(item, null);
 	assert.notEqual(imageEl, null);
@@ -76,9 +76,9 @@ test("renderMemoCardImages reuses loaded image items with unchanged keys", () =>
 	assertRendered(rerendered);
 	assert.equal(rerendered.imagesEl, rendered.imagesEl);
 	assert.equal(rerendered.loadItems.length, 0);
-	assert.equal(root.find(".knomo-card-image-item"), item);
+	assert.equal(root.find(".plain-memo-card-image-item"), item);
 	assert.equal(root.find("img"), imageEl);
-	assert.equal(root.find(".knomo-card-image-item")?.hasClass("is-loading"), false);
+	assert.equal(root.find(".plain-memo-card-image-item")?.hasClass("is-loading"), false);
 });
 
 test("renderMemoCardImages limits visible images and shows the hidden count", () => {
@@ -92,14 +92,14 @@ test("renderMemoCardImages limits visible images and shows the hidden count", ()
 	], labels);
 
 	assertRendered(rendered);
-	assert.equal(rendered.imagesEl.hasClass("knomo-card-images--grid"), true);
-	assert.equal(root.findAll(".knomo-card-image-button").length, 3);
-	assert.deepEqual(root.findAll(".knomo-card-image-button").map((button) => button.getAttr("data-image-index")), [
+	assert.equal(rendered.imagesEl.hasClass("plain-memo-card-images--grid"), true);
+	assert.equal(root.findAll(".plain-memo-card-image-button").length, 3);
+	assert.deepEqual(root.findAll(".plain-memo-card-image-button").map((button) => button.getAttr("data-image-index")), [
 		"0",
 		"1",
 		"2",
 	]);
-	assert.equal(root.find(".knomo-card-image-more")?.getText(), "+2");
+	assert.equal(root.find(".plain-memo-card-image-more")?.getText(), "+2");
 	assert.deepEqual(rendered.loadItems.map((item) => item.priority), ["high", "low", "low"]);
 	assert.equal(root.find("img")?.getAttr("fetchpriority"), "low");
 });
@@ -137,7 +137,7 @@ test("renderMemoCardImages renders placeholders for unresolved images", () => {
 
 	assertRendered(rendered);
 	assert.equal(rendered.loadItems.length, 0);
-	assert.equal(root.find(".knomo-card-image-placeholder")?.getText(), "Image unavailable");
+	assert.equal(root.find(".plain-memo-card-image-placeholder")?.getText(), "Image unavailable");
 	assert.equal(root.find("img"), null);
 });
 
@@ -148,8 +148,8 @@ test("renderMemoCardImages replaces failed loads with placeholders", () => {
 	], labels);
 
 	assertRendered(rendered);
-	const item = root.find(".knomo-card-image-item");
-	const button = root.find(".knomo-card-image-button");
+	const item = root.find(".plain-memo-card-image-item");
+	const button = root.find(".plain-memo-card-image-button");
 	assert.equal(item?.hasClass("is-loading"), true);
 
 	rendered.loadItems[0].onError?.();
@@ -157,7 +157,7 @@ test("renderMemoCardImages replaces failed loads with placeholders", () => {
 	assert.equal(item?.hasClass("is-error"), true);
 	assert.equal(item?.hasClass("is-loading"), false);
 	assert.equal(button?.find("img"), null);
-	assert.equal(button?.find(".knomo-card-image-placeholder")?.getText(), "Image unavailable");
+	assert.equal(button?.find(".plain-memo-card-image-placeholder")?.getText(), "Image unavailable");
 });
 
 test("parseCardImageIndex falls back to the first image for invalid values", () => {

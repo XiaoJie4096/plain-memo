@@ -65,7 +65,7 @@ test("verify core scans only supported source file extensions", async () => {
 
 test("verify core reports forbidden source pattern matches with file and line", async () => {
 	const verifyCore = await loadVerifyCore();
-	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "knomo-verify-"));
+	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "plain-memo-verify-"));
 	const sourceDir = path.join(tempDir, "src");
 	fs.mkdirSync(sourceDir);
 	fs.writeFileSync(path.join(sourceDir, "bad.ts"), "const ok = true;\ninput.style.color = 'red';\n", "utf8");
@@ -90,7 +90,7 @@ test("verify core covers project-specific Obsidian source constraints", async ()
 		"await this.app.vault.trash(file);",
 		"await this.app.vault.delete(file);",
 		"input.style.color = 'red';",
-		"input.style.setProperty('--knomo-color', value);",
+		"input.style.setProperty('--plain-memo-color', value);",
 		"input.setAttribute('style', 'color: red');",
 		"containerEl.createEl('style');",
 		"createEl('link');",
@@ -100,7 +100,7 @@ test("verify core covers project-specific Obsidian source constraints", async ()
 		"myvault.deleteCache();",
 		"previousVault.trashState;",
 		"const color = input.style.color;",
-		"input.setCssProps({ '--knomo-color': value });",
+		"input.setCssProps({ '--plain-memo-color': value });",
 		"file instanceof TFile;",
 		"event instanceof win.InputEvent;",
 	];
@@ -111,6 +111,20 @@ test("verify core covers project-specific Obsidian source constraints", async ()
 	for (const source of allowedSources) {
 		assert.doesNotMatch(source, verifyCore.FORBIDDEN_SOURCE_PATTERN);
 	}
+});
+
+test("PlainMemo UI prefixes stay isolated from the Knomo plugin while data paths remain compatible", () => {
+	const css = fs.readFileSync("styles.css", "utf8");
+	const uiFiles = fs.readdirSync("src/ui", { recursive: true })
+		.filter((entry): entry is string => typeof entry === "string" && entry.endsWith(".ts"));
+
+	assert.doesNotMatch(css, /knomo-/u);
+	for (const file of uiFiles) {
+		const source = fs.readFileSync(path.join("src/ui", file), "utf8");
+		assert.doesNotMatch(source, /knomo-/u, file);
+	}
+	assert.match(fs.readFileSync("src/services/FileMemoOrchestrator.ts", "utf8"), /_knomo-trash/u);
+	assert.match(fs.readFileSync("src/services/KnomoDataImportService.ts", "utf8"), /knomo-import\.json/u);
 });
 
 test("verify core stops checks after the first failure", async () => {

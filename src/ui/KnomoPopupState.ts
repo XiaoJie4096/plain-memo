@@ -107,10 +107,10 @@ export class KnomoPopupState {
 	}
 
 	private isOpenPopupTrigger(target: Element): boolean {
-		return target.closest(".knomo-card-menu") !== null ||
+		return target.closest(".plain-memo-card-menu") !== null ||
 			target.closest("[data-action='toggle-card-menu']") !== null ||
 			target.closest("[data-action='toggle-scope-menu']") !== null ||
-			target.closest(".knomo-mobile-title") !== null;
+			target.closest(".plain-memo-mobile-title") !== null;
 	}
 
 	private getEventElement(target: EventTarget | null): Element | null {
@@ -122,20 +122,20 @@ export class KnomoPopupState {
 		if (this.cardMenuMemoId === null) {
 			return false;
 		}
-		const card = target.closest(".knomo-card");
+		const card = target.closest(".plain-memo-card");
 		if (!card?.instanceOf(HTMLElement) || card.getAttr("data-memo-id") !== this.cardMenuMemoId) {
 			return false;
 		}
-		return target.closest(".knomo-card-actions") !== null || target.closest(".knomo-card-menu") !== null;
+		return target.closest(".plain-memo-card-actions") !== null || target.closest(".plain-memo-card-menu") !== null;
 	}
 
 	private isTargetInOpenScopeMenu(target: Element): boolean {
 		if (!this.scopeOpen) {
 			return false;
 		}
-		return target.closest(".knomo-scope-popover") !== null ||
+		return target.closest(".plain-memo-scope-popover") !== null ||
 			target.closest("[data-action='toggle-scope-menu']") !== null ||
-			target.closest(".knomo-mobile-title") !== null;
+			target.closest(".plain-memo-mobile-title") !== null;
 	}
 
 	private shouldPreserveDefaultForPopupDismiss(target: Element): boolean {

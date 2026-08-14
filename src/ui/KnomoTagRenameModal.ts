@@ -23,15 +23,15 @@ class KnomoTagRenameModal extends Modal {
 	}
 
 	onOpen(): void {
-		this.modalEl.addClass("knomo-tag-rename-modal");
+		this.modalEl.addClass("plain-memo-tag-rename-modal");
 		this.titleEl.setText(t("tags.renameTitle"));
 		this.contentEl.empty();
 		this.contentEl.createEl("p", { text: t("tags.renameDescription") });
 		const input = this.contentEl.createEl("input", {
-			cls: "knomo-tag-rename-input",
+			cls: "plain-memo-tag-rename-input",
 			attr: { type: "text", value: `#${this.sourceTag}`, "aria-label": t("tags.renameInput") },
 		});
-		const error = this.contentEl.createDiv({ cls: "knomo-tag-rename-error" });
+		const error = this.contentEl.createDiv({ cls: "plain-memo-tag-rename-error" });
 		const actions = this.contentEl.createDiv({ cls: "modal-button-container" });
 		const cancel = actions.createEl("button", { text: t("confirm.cancel"), attr: { type: "button" } });
 		const confirm = actions.createEl("button", { cls: "mod-cta", text: t("tags.renameConfirm"), attr: { type: "button" } });
@@ -98,42 +98,42 @@ class MobileTagRenameOverlay {
 			return;
 		}
 		const root = document.createElement("div");
-		root.className = "knomo-tag-rename-overlay";
+		root.className = "plain-memo-tag-rename-overlay";
 		root.setAttribute("role", "presentation");
 		const panel = document.createElement("div");
-		panel.className = "knomo-tag-rename-panel";
+		panel.className = "plain-memo-tag-rename-panel";
 		panel.setAttribute("role", "dialog");
 		panel.setAttribute("aria-modal", "true");
 		panel.setAttribute("aria-label", t("tags.renameTitle"));
 		root.appendChild(panel);
 		const header = document.createElement("div");
-		header.className = "knomo-tag-rename-header";
+		header.className = "plain-memo-tag-rename-header";
 		panel.appendChild(header);
 		const title = document.createElement("div");
-		title.className = "knomo-tag-rename-title";
+		title.className = "plain-memo-tag-rename-title";
 		title.textContent = t("tags.renameTitle");
 		header.appendChild(title);
 		const closeButton = document.createElement("button");
-		closeButton.className = "knomo-tag-rename-close";
+		closeButton.className = "plain-memo-tag-rename-close";
 		closeButton.type = "button";
 		closeButton.setAttribute("aria-label", t("confirm.cancel"));
 		header.appendChild(closeButton);
 		setCloseIcon(closeButton);
 		const description = document.createElement("div");
-		description.className = "knomo-tag-rename-description";
+		description.className = "plain-memo-tag-rename-description";
 		description.textContent = t("tags.renameDescription");
 		panel.appendChild(description);
 		const input = document.createElement("input");
-		input.className = "knomo-tag-rename-input";
+		input.className = "plain-memo-tag-rename-input";
 		input.type = "text";
 		input.value = `#${this.sourceTag}`;
 		input.setAttribute("aria-label", t("tags.renameInput"));
 		panel.appendChild(input);
 		const error = document.createElement("div");
-		error.className = "knomo-tag-rename-error";
+		error.className = "plain-memo-tag-rename-error";
 		panel.appendChild(error);
 		const actions = document.createElement("div");
-		actions.className = "knomo-tag-rename-actions";
+		actions.className = "plain-memo-tag-rename-actions";
 		panel.appendChild(actions);
 		const cancel = document.createElement("button");
 		cancel.type = "button";
