@@ -12,6 +12,7 @@ import { showKnomoConfirmModal } from "./KnomoConfirmModal";
 import { FlomoImportModal } from "./FlomoImportModal";
 import { KnomoDataImportService } from "../services/KnomoDataImportService";
 import { KnomoDataExportService } from "../services/KnomoDataExportService";
+import { FlomoDataExportService } from "../services/FlomoDataExportService";
 
 /** Settings for the standalone file store; no legacy migration is performed. */
 export class KnomoSettingTab extends PluginSettingTab {
@@ -56,6 +57,11 @@ export class KnomoSettingTab extends PluginSettingTab {
 			.addButton((button) => button.setButtonText(t("settings.file.flomoImportAction")).onClick(() => {
 				this.openFlomoImport();
 			}));
+
+		new Setting(containerEl)
+			.setName(t("settings.file.flomoExport"))
+			.setDesc(t("settings.file.flomoExportDescription"))
+			.addButton((button) => button.setButtonText(t("settings.file.flomoExportAction")).onClick(() => { this.beginFlomoExport(button); }));
 
 		new Setting(containerEl)
 			.setName(t("settings.file.knomoImport"))
@@ -200,6 +206,29 @@ export class KnomoSettingTab extends PluginSettingTab {
 				}
 			},
 		}).open();
+	}
+
+	/** Starts exporting PlainMemo files as a Flomo CSV. */
+	private beginFlomoExport(button: { setDisabled: (disabled: boolean) => unknown }): void {
+		const service = new FlomoDataExportService(this.app, () => this.settings.getSettings().memoFolders ?? []);
+		if (!service.hasExportableMemos()) {
+			new Notice(t("settings.file.flomoExportNothing"));
+			return;
+		}
+		void this.exportFlomoData(button, service);
+	}
+
+	/** Writes the Flomo CSV and reports omitted images from the import-template limitation. */
+	private async exportFlomoData(button: { setDisabled: (disabled: boolean) => unknown }, service: FlomoDataExportService): Promise<void> {
+		button.setDisabled(true);
+		try {
+			const result = await service.export();
+			new Notice(result.omittedImageCount === 0
+				? t("settings.file.flomoExportComplete", { memos: result.memoCount, path: result.path })
+				: t("settings.file.flomoExportCompleteWithImages", { memos: result.memoCount, images: result.omittedImageCount, path: result.path }));
+		} catch (error) {
+			new Notice(t("settings.file.flomoExportFailed", { message: error instanceof Error ? error.message : String(error) }));
+		} finally { button.setDisabled(false); }
 	}
 
 	/** Imports recognized Knomo memo blocks and reports duplicates without overwriting files. */
