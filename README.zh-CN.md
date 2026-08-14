@@ -4,7 +4,7 @@
 
 > PlainMemo 基于 [BanyanSo/knomo](https://github.com/BanyanSo/knomo) 的 MIT 许可证继续开发，是非官方 fork。感谢原作者创建 Knomo 并将其以 MIT 许可证发布。
 
-当前稳定版本：[PlainMemo 2.2.3](https://github.com/XiaoJie4096/plain-memo/releases/tag/2.2.3)
+当前稳定版本：[PlainMemo 2.2.4](https://github.com/XiaoJie4096/plain-memo/releases/tag/2.2.4)
 
 PlainMemo 是一款运行在 Obsidian 中的卡片笔记插件，用来快速记录和管理日常想法。每条笔记都以独立、普通的 Markdown 文件保存在你的库中，同时拥有卡片流、标签、搜索、图片、链接和回顾功能：既可以随手记录，也不用把笔记困在插件或专用数据格式里。
 

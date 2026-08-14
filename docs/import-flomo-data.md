@@ -4,7 +4,7 @@ PlainMemo 可以将 Flomo 导出的 HTML 或 ZIP 文件转换为独立 PlainMemo
 
 ## 从 Flomo 导出
 
-<img title="" src="file:///C:/Users/Xiaoku/AppData/Roaming/marktext/images/2026-08-14-17-53-47-image.png" alt="" data-align="left" width="607">
+<img title="" src="../screenshots/flomo-export-guide-zh-CN.png" alt="Flomo 导出入口" data-align="left" width="607">
 
 ## 导入到 PlainMemo
 
