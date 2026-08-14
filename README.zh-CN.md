@@ -2,41 +2,57 @@
 
 [English](./README.md) | 简体中文
 
-> 一个将碎片笔记保存为独立 Markdown 文件的 Obsidian Memos 插件。
+> PlainMemo 基于 [BanyanSo/knomo](https://github.com/BanyanSo/knomo) 的 MIT 许可证继续开发，是非官方 fork。感谢原作者创建 Knomo 并将其以 MIT 许可证发布。
 
-当前稳定版本：[PlainMemo 2.2.3](https://github.com/MMKLN0/plain-memo/releases/tag/2.2.3)
+当前稳定版本：[PlainMemo 2.2.3](https://github.com/XiaoJie4096/plain-memo/releases/tag/2.2.3)
 
-PlainMemo 是 [BanyanSo/knomo](https://github.com/BanyanSo/knomo) 的非官方 fork，基于上游 MIT 许可证继续开发。本仓库不是上游项目的官方发布渠道，也不代表上游作者的观点或支持承诺。
+PlainMemo 是一款运行在 Obsidian 中的卡片笔记插件，用来快速记录和管理日常想法。每条笔记都以独立、普通的 Markdown 文件保存在你的库中，同时拥有卡片流、标签、搜索、图片、链接和回顾功能：既可以随手记录，也不用把笔记困在插件或专用数据格式里。
 
-PlainMemo 的目标是让每张卡片都是一个可独立阅读、可用 Obsidian 以外的软件管理的 Markdown 文件，同时保留 Knomo 的卡片浏览、搜索、标签、链接、回顾和移动端输入体验。
+## 能做什么
 
-## PlainMemo 与上游的区别
+| 场景             | PlainMemo 提供的体验                                               |
+| -------------- | ------------------------------------------------------------- |
+| 快速记录           | 在卡片流中创建、编辑、删除、搜索、筛选和回看笔记；电脑端和手机端都可使用。                         |
+| 普通 Markdown 文件 | 一条笔记就是一个 `.md` 文件，不写 YAML 或插件私有标记，可直接在文件系统和其他 Markdown 工具中使用。 |
+| 标签与关联          | 识别 `#标签` 和 Obsidian WikiLink；侧栏支持层级标签浏览和重命名。                  |
+| Markdown 与图片   | 渲染列表、任务、引用、图片和链接；支持电脑端与手机端粘贴图片，电脑端也可拖入图片。                     |
+| 重新遇见笔记         | 支持置顶、随机重逢、时光浮标和长笔记折叠。                                         |
+| 多文件夹与同步        | 可递归扫描多个库内文件夹；同步后的置顶状态与设置会自动刷新。                                |
+| 数据迁移           | 可整理已有 Markdown 文件名，并支持从 Flomo、Knomo 导入，或导出到 Flomo、Knomo。      |
 
-| 项目 | 上游 Knomo | PlainMemo |
-| --- | --- | --- |
-| 存储单位 | Daily Note 中的 memo，并按月维护汇总文件 | 每张 memo 一个 Markdown 文件 |
-| 文件组织 | 依赖 Daily Notes 与月度 Memos | 递归扫描一个或多个用户配置的文件夹；无需 Daily Notes |
-| 文件名 | 由日记/月度文件承载 | `<正文首行>_YYMMDDHHmm.md`，冲突时加 ` (2)` 等后缀 |
-| 内容格式 | 上游 memo 格式及索引流程 | 整条 memo 都是普通 Markdown；没有独立标题字段、YAML frontmatter 或插件私有标记 |
-| 导入 | 围绕 Daily Notes/月度文件 | 可原地整理已有 Markdown 文件名，也可导入 Flomo HTML/ZIP |
-| 月度归档 | 自动维护 | 已移除 |
+## 界面预览
 
-这是一项有意的存储模型变更。现有上游 Daily Notes / 月度 Memos 不会被自动拆分成独立文件。整理已有数据前，请先备份 Vault。
+### 桌面端
 
-## 功能
+<p align="center">
+  <img src="screenshots/plainmemo-desktop-zh-CN.png" alt="PlainMemo 中文桌面端的卡片流与侧栏" width="100%">
+</p>
 
-- 在卡片流中创建、编辑、删除、搜索、筛选和回看独立 Markdown memo；
-- 递归扫描多个 Vault 相对文件夹，并为新 memo 单独指定默认保存位置；
-- 识别 `#标签` 与 Obsidian WikiLink（如 `[[项目笔记]]`）；
-- 在侧栏浏览层级标签，并可重命名标签路径，将修改同步应用到该标签及其子标签；
-- 渲染 Markdown 列表、任务、引用、图片和链接；支持在电脑端和手机端粘贴图片，并可在电脑端拖入图片文件；
-- 长卡片可按设置的行数阈值折叠；
-- 可将重要 memo 置顶到普通卡片流上方，支持设置数量上限并折叠置顶区域；
-- 将置顶、扫描目录和其他笔记相关状态保存在 Vault 的 `PlainMemo/data` 中，同步后无需重启 Obsidian 即可刷新；
-- 为已有 Markdown 文件补充可识别的创建时间后缀，不改写正文；
-- 导入 Flomo HTML 或 ZIP，并保留时间、标签、网页链接和可选附件；
-- 可选的时光浮标：识别正文中的 `@YYYY-MM-DD`；
-- 提供桌面端和移动端卡片浏览、编辑、标签补全与 WikiLink 插入控件。
+### 移动端
+
+<p align="center">
+  <img src="screenshots/plainmemo-mobile-feed-zh-CN.jpg" alt="PlainMemo 中文移动端卡片流" width="31%">
+  <img src="screenshots/plainmemo-mobile-sidebar-zh-CN.jpg" alt="PlainMemo 中文移动端侧栏与标签" width="31%">
+  <img src="screenshots/plainmemo-mobile-composer-zh-CN.jpg" alt="PlainMemo 中文移动端编辑器" width="31%">
+</p>
+
+## 数据迁移
+
+- [从 Flomo 导入到 PlainMemo](docs/import-flomo-data.md)
+- [从 Knomo 导入到 PlainMemo](docs/import-knomo-data.md)
+- [导出 PlainMemo 数据到 Flomo](docs/flomo-import.md)
+- [导出 PlainMemo 数据到 Knomo](docs/knomo-import.md)
+
+## PlainMemo 与 Knomo
+
+| 项目   | Knomo                         | PlainMemo                               |
+| ---- | ----------------------------- | --------------------------------------- |
+| 笔记存储 | Memo 写在 Daily Notes 中，并维护月度文件 | 一条笔记对应一个普通 Markdown 文件                  |
+| 文件组织 | 依赖 Daily Notes 与月度文件          | 扫描一个或多个库内文件夹，不依赖 Daily Notes            |
+| 内容格式 | 使用 Knomo 的 memo 与索引流程         | 正文就是完整 Markdown，不写 YAML 或插件私有标记         |
+| 迁移方式 | 维护既有 Knomo 数据                 | 可从 Knomo 导入为独立 PlainMemo 文件，也可导出回 Knomo |
+
+两者采用不同的存储模型。已有 Knomo 的 Daily Notes 和月度文件不会自动改写；需要迁移时，请先备份库，再使用上方的导入说明。
 
 ## 文件格式
 
@@ -66,27 +82,26 @@ PlainMemo 目前尚未发布到 Obsidian 社区插件市场。
 ### 使用 BRAT（推荐）
 
 1. 从 Obsidian 社区插件市场安装并启用 [BRAT](https://github.com/TfTHacker/obsidian42-brat)。
-2. 在 BRAT 设置中选择“Add Beta plugin”，输入 `MMKLN0/plain-memo`。
+2. 在 BRAT 设置中选择“Add Beta plugin”，输入 `XiaoJie4096/plain-memo`。
 3. 在 Obsidian 的“第三方插件”中启用 PlainMemo。
 
 BRAT 会从 GitHub 最新的稳定 Release 安装和更新 PlainMemo。
 
 ### 手动安装
 
-1. 从[最新发行版](https://github.com/MMKLN0/plain-memo/releases/latest)下载 `main.js`、`manifest.json` 和 `styles.css`。
+1. 从[最新发行版](https://github.com/XiaoJie4096/plain-memo/releases/latest)下载 `main.js`、`manifest.json` 和 `styles.css`。
 2. 将这三个文件放入 `<Vault>/.obsidian/plugins/plain-memo/`。
 3. 重新加载 Obsidian，然后在“第三方插件”中启用 PlainMemo。
 
-## 首次配置
+## 可选设置
 
-打开 PlainMemo 设置，找到独立 memo 文件设置区域：
+安装并启用后即可直接开始记录，不需要先配置。PlainMemo 会在库根目录创建 `PlainMemo` 文件夹，并将它作为默认新建位置和扫描范围；`PlainMemo/data` 与 `PlainMemo/picture` 由插件自动管理，不会显示为笔记。
 
-1. 插件启动时会创建 `PlainMemo`、`PlainMemo/data` 和 `PlainMemo/picture`，并以 `PlainMemo` 作为初始扫描文件夹和默认新建位置。
-2. 可添加、删除或修改一个或多个扫描文件夹，路径相对于 Vault 根目录，例如 `Memos` 或 `收集箱/卡片`。
-3. 选择“默认新建位置”。新 memo 会写入这里，该文件夹也会自动加入扫描范围。
-4. 按需调整长卡片折叠阈值（最小 6 行）、移动端紧凑布局和时光浮标。
+只有在需要调整使用方式时，再打开 PlainMemo 设置：
 
-默认不预置任何个人路径。PlainMemo 只会把已配置扫描文件夹内的文件视为 memo，并始终排除 `PlainMemo/data` 和 `PlainMemo/picture`。
+1. 添加、删除或修改一个或多个扫描文件夹，路径相对于库根目录，例如 `Memos` 或 `收集箱/卡片`。
+2. 修改“默认新建位置”。新笔记会写入这里，该文件夹也会自动加入扫描范围。
+3. 按需调整长卡片折叠阈值、移动端紧凑布局和时光浮标。
 
 ## 导入已有 Markdown 文件
 
@@ -100,30 +115,11 @@ BRAT 会从 GitHub 最新的稳定 Release 安装和更新 PlainMemo。
 
 也可以手工整理文件名。在配置的文件夹中使用 `<名称>_YYMMDDHHmm.md` 或 `<名称>_YYMMDDHHmm (2).md` 即可。
 
-## 导入 Flomo 数据
-
-PlainMemo 设置中还提供“导入 Flomo 数据”：
-
-1. 选择 Flomo 导出的 `.html` 或 `.zip` 文件。
-2. 选择 Vault 内的目标文件夹。
-3. 默认会跳过 `.m4a` 语音附件；也可以按需要调整语音和图片附件选项。
-4. 查看识别到的 memo 与附件数量，然后开始导入。
-
-每条 Flomo memo 都会转换为一个独立的 PlainMemo Markdown 文件。原始正文、第一行、时间、标签和网页链接都会保留。导入的附件保存在 `<目标文件夹>/flomo-attachments`。重复导入时会复用相同内容和附件，避免产生不必要的副本。
-
-## 导出到 Flomo
-
-PlainMemo 可以将独立笔记导出为 Flomo 可导入的 CSV。CSV 和压缩包外的 `导入说明.md` 会保存到库根目录的 `plainmemo导出到flomo` 文件夹。正文中的 Markdown、换行和 `#标签` 保持不变；由于 Flomo 的 CSV 导入模板不支持图片文件，图片嵌入会被移除。详见[导入说明](docs/flomo-import.md)。
-
-## 导出到 Knomo
-
-PlainMemo 可以将独立笔记导出为 Knomo 可导入的 Daily Notes ZIP 压缩包。ZIP 和压缩包外的 `导入说明.md` 会保存到库根目录的 `plainmemo导出到knomo` 文件夹。导出范围和在 Knomo 中的导入步骤见[导入说明](docs/knomo-import.md)。
-
 ## 数据与隐私
 
 所有 memo 都是 Vault 内的普通 Markdown 文件。PlainMemo 不要求账号、不依赖外部服务器，也不会主动上传笔记内容。扫描目录、折叠阈值、置顶标记、随机回顾记录和往日漫游历史保存在 `PlainMemo/data` 中，可以和 Vault 一起同步。每条置顶笔记使用一个独立状态文件，减少多设备同时修改时相互覆盖的风险。
 
-置顶区折叠状态、桌面侧栏宽度和移动端布局等设备界面状态仍保存在本机插件 `data.json` 中，不参与 PlainMemo 的共享状态同步。当前版本不迁移旧版 `data.json` 中的设置和置顶列表；升级前请自行整理笔记位置，并在新版本中重新设置。
+置顶区折叠状态、桌面侧栏宽度和移动端布局等设备界面状态仍保存在本机插件 `data.json` 中，不参与 PlainMemo 的共享状态同步。
 
 ## 开发
 
@@ -138,4 +134,4 @@ npm run build
 
 ## 致谢与许可证
 
-本仓库基于 [BanyanSo/knomo](https://github.com/BanyanSo/knomo)。感谢上游作者创建 Knomo 并以 MIT 许可证发布。PlainMemo 保留原有版权与许可证声明；详情见 [LICENSE](LICENSE)。
+PlainMemo 将存储模型改为“一条笔记一个 Markdown 文件”：不依赖 Daily Notes 或月度归档，递归扫描用户配置的一个或多个文件夹，并使用 `<正文首行>_YYMMDDHHmm.md` 作为文件名。PlainMemo 保留原有版权与许可证声明；详情见 [LICENSE](LICENSE)。

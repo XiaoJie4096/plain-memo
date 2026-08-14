@@ -15,7 +15,7 @@ PlainMemo 可以将独立 Markdown 笔记导出为 Knomo 能识别的 Daily Note
 2. 将解压出的日期 Markdown 文件复制到 Obsidian 的日记文件夹。Obsidian 默认把日记文件放在库根目录；如果你在“设置 → 核心插件 → 日记 → 新建文件位置”中配置过其他文件夹，就复制到那个文件夹。
 3. 启用 Obsidian 的 Daily Notes 核心插件和 Knomo 插件。
 4. 在 Knomo 设置中选择要导入的部分，运行“导入旧日记 Memos”，先预览候选内容，确认分组后执行导入。
-6. 如卡片未出现或索引异常，在 Knomo 设置中运行“修复 Knomo 数据”。
+5. 如卡片未出现或索引异常，在 Knomo 设置中运行“修复 Knomo 数据”。
 
 ## 数据范围
 
