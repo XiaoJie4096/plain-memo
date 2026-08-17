@@ -113,6 +113,9 @@ export default class KnomoPlugin extends Plugin {
 		this.registerHoverLinkSource(KNOMO_VIEW_TYPE, { display: "PlainMemo", defaultMod: false });
 		this.addRibbonIcon(KNOMO_LOGO_ICON, t("app.openKnomo"), () => { void this.activateView(); });
 		this.addCommand({ id: "open-view", name: t("app.openKnomo"), callback: () => { void this.activateView(); } });
+		this.app.workspace.onLayoutReady(() => {
+			if (this.settingsService.getSettings().openPlainMemoOnStartup) void this.activateView();
+		});
 	}
 
 	onunload(): void {

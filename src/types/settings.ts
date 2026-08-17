@@ -14,6 +14,8 @@ export interface KnomoSettings {
 	pinnedMemoLimit?: number;
 	trashRetentionDays?: number;
 	timeBuoyEnabled: boolean;
+	/** Opens or reveals PlainMemo after this device restores its workspace. */
+	openPlainMemoOnStartup: boolean;
 	mobileCompactMode: MobileCompactMode;
 	desktopSidebarWidth: number;
 	desktopSidebarCollapsed: boolean;

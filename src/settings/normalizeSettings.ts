@@ -66,6 +66,10 @@ export function normalizeSettings(value: unknown): KnomoSettings {
 			DEFAULT_KNOMO_SETTINGS.trashRetentionDays ?? 30,
 		))),
 		timeBuoyEnabled: booleanOrDefault(saved.timeBuoyEnabled, DEFAULT_KNOMO_SETTINGS.timeBuoyEnabled),
+		openPlainMemoOnStartup: booleanOrDefault(
+			saved.openPlainMemoOnStartup,
+			DEFAULT_KNOMO_SETTINGS.openPlainMemoOnStartup,
+		),
 		mobileCompactMode: isMobileCompactMode(saved.mobileCompactMode)
 			? saved.mobileCompactMode
 			: DEFAULT_KNOMO_SETTINGS.mobileCompactMode,

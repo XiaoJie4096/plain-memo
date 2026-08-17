@@ -328,6 +328,8 @@ export const en: Record<TranslationKey, string> = {
 	"settings.file.defaultFolder": "Default save folder",
 	"settings.file.defaultFolderDescription": "New cards are saved here. This folder is also included in the scan scope.",
 	"settings.file.noDefaultFolder": "Not selected",
+	"settings.file.openOnStartup": "Open PlainMemo on startup",
+	"settings.file.openOnStartupDescription": "Open or reveal PlainMemo after the workspace restores without closing existing tabs. This applies only to this device.",
 	"settings.file.mobileCompact": "Compact mobile layout",
 	"settings.file.mobileAuto": "Auto",
 	"settings.file.mobileOn": "Always",

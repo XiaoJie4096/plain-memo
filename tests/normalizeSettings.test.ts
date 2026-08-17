@@ -12,6 +12,7 @@ test("normalizes the current standalone memo settings", () => {
 		pinnedMemoLimit: 99,
 		trashRetentionDays: 0,
 		timeBuoyEnabled: false,
+		openPlainMemoOnStartup: true,
 		mobileCompactMode: "on",
 		desktopSidebarWidth: 420,
 		desktopSidebarCollapsed: true,
@@ -24,6 +25,7 @@ test("normalizes the current standalone memo settings", () => {
 	assert.equal(settings.pinnedMemoLimit, 20);
 	assert.equal(settings.trashRetentionDays, 1);
 	assert.equal(settings.timeBuoyEnabled, false);
+	assert.equal(settings.openPlainMemoOnStartup, true);
 	assert.equal(settings.mobileCompactMode, "on");
 	assert.equal(settings.desktopSidebarWidth, 420);
 	assert.equal(settings.desktopSidebarCollapsed, true);
@@ -43,6 +45,7 @@ test("uses current defaults for invalid or missing values", () => {
 	assert.equal(settings.pinnedMemoLimit, DEFAULT_KNOMO_SETTINGS.pinnedMemoLimit);
 	assert.equal(settings.trashRetentionDays, DEFAULT_KNOMO_SETTINGS.trashRetentionDays);
 	assert.equal(settings.timeBuoyEnabled, true);
+	assert.equal(settings.openPlainMemoOnStartup, false);
 	assert.equal(settings.mobileCompactMode, "auto");
 });
 

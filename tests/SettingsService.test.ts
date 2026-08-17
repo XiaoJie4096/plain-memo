@@ -20,6 +20,7 @@ test("ignores legacy shared settings in plugin data", async () => {
 
 test("combines synchronized Vault settings with device-local UI settings", async () => {
 	const local = createPluginHarness({ localSettings: {
+		openPlainMemoOnStartup: true,
 		mobileCompactMode: "off",
 		desktopSidebarWidth: 360,
 		desktopSidebarCollapsed: true,
@@ -43,6 +44,7 @@ test("combines synchronized Vault settings with device-local UI settings", async
 	assert.equal(settings.sidebarSubtitle, "Synced subtitle");
 	assert.equal(settings.defaultMemoFolder, "Cards");
 	assert.equal(settings.trashRetentionDays, 45);
+	assert.equal(settings.openPlainMemoOnStartup, true);
 	assert.equal(settings.mobileCompactMode, "off");
 	assert.equal(settings.desktopSidebarWidth, 360);
 	assert.equal(settings.desktopSidebarCollapsed, true);
@@ -60,7 +62,7 @@ test("writes synchronized and local setting patches to separate stores", async (
 		memoCollapseLineThreshold: 12,
 		trashRetentionDays: 60,
 	});
-	await service.updateSettings({ desktopSidebarWidth: 320, desktopSidebarCollapsed: true });
+	await service.updateSettings({ openPlainMemoOnStartup: true, desktopSidebarWidth: 320, desktopSidebarCollapsed: true });
 
 	const synchronized = shared.read(SHARED_SETTINGS_PATH) as Record<string, unknown>;
 	assert.deepEqual(synchronized.memoFolders, ["Archive", "PlainMemo"]);
@@ -71,6 +73,7 @@ test("writes synchronized and local setting patches to separate stores", async (
 	const localData = await local.read() as Record<string, unknown>;
 	assert.equal(localData.unrelated, "keep");
 	assert.deepEqual(localData.localSettings, {
+		openPlainMemoOnStartup: true,
 		mobileCompactMode: "auto",
 		desktopSidebarWidth: 320,
 		desktopSidebarCollapsed: true,

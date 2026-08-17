@@ -326,6 +326,8 @@ export const zhCN = {
 	"settings.file.defaultFolder": "默认新建位置",
 	"settings.file.defaultFolderDescription": "新卡片会保存到这里；该文件夹也会自动加入扫描范围。",
 	"settings.file.noDefaultFolder": "尚未选择",
+	"settings.file.openOnStartup": "启动时打开 PlainMemo",
+	"settings.file.openOnStartupDescription": "工作区恢复完成后，自动打开或切换到 PlainMemo，不会关闭已有标签页。仅在当前设备生效。",
 	"settings.file.mobileCompact": "移动端紧凑布局",
 	"settings.file.mobileAuto": "自动",
 	"settings.file.mobileOn": "始终开启",

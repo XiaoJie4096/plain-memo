@@ -135,6 +135,13 @@ export class KnomoSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
+			.setName(t("settings.file.openOnStartup"))
+			.setDesc(t("settings.file.openOnStartupDescription"))
+			.addToggle((toggle) => toggle.setValue(current.openPlainMemoOnStartup).onChange(async (openPlainMemoOnStartup) => {
+				await this.settings.updateSettings({ openPlainMemoOnStartup });
+			}));
+
+		new Setting(containerEl)
 			.setName(t("settings.file.mobileCompact"))
 			.addDropdown((dropdown) => dropdown.addOptions({
 				auto: t("settings.file.mobileAuto"),

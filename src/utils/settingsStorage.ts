@@ -7,7 +7,7 @@ export type SharedKnomoSettings = Pick<KnomoSettings,
 >;
 
 export type LocalKnomoSettings = Pick<KnomoSettings,
-	"mobileCompactMode" | "desktopSidebarWidth" | "desktopSidebarCollapsed"
+	"openPlainMemoOnStartup" | "mobileCompactMode" | "desktopSidebarWidth" | "desktopSidebarCollapsed"
 >;
 
 const SHARED_SETTING_KEYS: readonly (keyof SharedKnomoSettings)[] = [
@@ -22,6 +22,7 @@ const SHARED_SETTING_KEYS: readonly (keyof SharedKnomoSettings)[] = [
 ];
 
 const LOCAL_SETTING_KEYS: readonly (keyof LocalKnomoSettings)[] = [
+	"openPlainMemoOnStartup",
 	"mobileCompactMode",
 	"desktopSidebarWidth",
 	"desktopSidebarCollapsed",
@@ -44,6 +45,7 @@ export function selectSharedSettings(settings: KnomoSettings): SharedKnomoSettin
 /** Returns only settings that should remain local to one device. */
 export function selectLocalSettings(settings: KnomoSettings): LocalKnomoSettings {
 	return {
+		openPlainMemoOnStartup: settings.openPlainMemoOnStartup,
 		mobileCompactMode: settings.mobileCompactMode,
 		desktopSidebarWidth: settings.desktopSidebarWidth,
 		desktopSidebarCollapsed: settings.desktopSidebarCollapsed,
