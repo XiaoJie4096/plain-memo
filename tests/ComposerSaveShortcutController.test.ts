@@ -6,14 +6,14 @@ import {
 	isComposerSaveShortcut,
 } from "../src/ui/ComposerSaveShortcutController";
 
-test("composer save shortcut handles Mod+Enter from the input", () => {
+test("composer save shortcut handles Mod+Enter from a textarea", () => {
 	const controller = new ComposerSaveShortcutController();
 	const inputEl = {} as HTMLTextAreaElement;
 	const event = createKeyboardEvent({ key: "Enter", code: "Enter", metaKey: true, target: inputEl });
 	let saveCount = 0;
 
 	const handled = controller.handleKeydown(event, {
-		inputEl,
+		composerInputEl: inputEl,
 		activeElement: null,
 		isSaving: false,
 		saveInput: () => {
@@ -28,13 +28,13 @@ test("composer save shortcut handles Mod+Enter from the input", () => {
 	assert.equal(event.immediatePropagationStopped, true);
 });
 
-test("composer save shortcut accepts active input even when the event target differs", () => {
+test("composer save shortcut accepts a focused rich editor even when the event target differs", () => {
 	const controller = new ComposerSaveShortcutController();
-	const inputEl = {} as HTMLTextAreaElement;
+	const inputEl = {} as HTMLDivElement;
 	let saveCount = 0;
 
 	const handled = controller.handleKeydown(createKeyboardEvent({ key: "Enter", code: "Enter", ctrlKey: true }), {
-		inputEl,
+		composerInputEl: inputEl,
 		activeElement: inputEl,
 		isSaving: false,
 		saveInput: () => {
@@ -51,7 +51,7 @@ test("composer save shortcut blocks repeated keydown until keyup releases it", (
 	const inputEl = {} as HTMLTextAreaElement;
 	let saveCount = 0;
 	const request = {
-		inputEl,
+		composerInputEl: inputEl,
 		activeElement: inputEl,
 		isSaving: false,
 		saveInput: () => {
@@ -72,7 +72,7 @@ test("composer save shortcut reset clears repeated keydown protection", () => {
 	const inputEl = {} as HTMLTextAreaElement;
 	let saveCount = 0;
 	const request = {
-		inputEl,
+		composerInputEl: inputEl,
 		activeElement: inputEl,
 		isSaving: false,
 		saveInput: () => {
@@ -93,7 +93,7 @@ test("composer save shortcut suppresses saving while save is already running", (
 	let saveCount = 0;
 
 	const handled = controller.handleKeydown(createKeyboardEvent({ key: "Enter", code: "Enter", ctrlKey: true }), {
-		inputEl,
+		composerInputEl: inputEl,
 		activeElement: inputEl,
 		isSaving: true,
 		saveInput: () => {
@@ -101,7 +101,7 @@ test("composer save shortcut suppresses saving while save is already running", (
 		},
 	});
 	controller.handleKeydown(createKeyboardEvent({ key: "Enter", code: "Enter", ctrlKey: true }), {
-		inputEl,
+		composerInputEl: inputEl,
 		activeElement: inputEl,
 		isSaving: false,
 		saveInput: () => {
@@ -120,7 +120,7 @@ test("composer save shortcut ignores non-composer or non-save key events", () =>
 	let saveCount = 0;
 
 	const outsideHandled = controller.handleKeydown(createKeyboardEvent({ key: "Enter", code: "Enter", metaKey: true, target: outsideTarget }), {
-		inputEl,
+		composerInputEl: inputEl,
 		activeElement: null,
 		isSaving: false,
 		saveInput: () => {
@@ -128,7 +128,7 @@ test("composer save shortcut ignores non-composer or non-save key events", () =>
 		},
 	});
 	const noModHandled = controller.handleKeydown(createKeyboardEvent({ key: "Enter", code: "Enter", target: inputEl }), {
-		inputEl,
+		composerInputEl: inputEl,
 		activeElement: inputEl,
 		isSaving: false,
 		saveInput: () => {
@@ -136,7 +136,7 @@ test("composer save shortcut ignores non-composer or non-save key events", () =>
 		},
 	});
 	const wrongKeyHandled = controller.handleKeydown(createKeyboardEvent({ key: "a", code: "KeyA", metaKey: true, target: inputEl }), {
-		inputEl,
+		composerInputEl: inputEl,
 		activeElement: inputEl,
 		isSaving: false,
 		saveInput: () => {

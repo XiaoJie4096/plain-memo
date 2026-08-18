@@ -11,9 +11,19 @@ import {
 import { applyListFormatToText, getHashInsertionText, getListBoundaryBackspacePatch, getListEnterPatch, getParagraphEnterPatch, type ListFormatType } from "../utils/composerInput";
 
 export interface ComposerRichEditorOptions {
-	onChange: (markdown: string) => void;
+	onChange: (markdown: string, selection: ComposerRichEditorSelection, event?: InputEvent) => void;
+	onSelectionChange?: (markdown: string, selection: ComposerRichEditorSelection) => void;
+	onBeforeInput?: (event: InputEvent) => boolean;
+	onCompositionStart?: () => void;
+	onCompositionEnd?: (event: CompositionEvent, markdown: string, selection: ComposerRichEditorSelection) => void;
 	onShortcut?: (event: KeyboardEvent) => boolean;
 	resolveImageUrl?: (source: string) => string | null;
+	ariaLabelledBy?: string;
+}
+
+export interface ComposerRichEditorSelection {
+	start: number;
+	end: number;
 }
 
 export class ComposerRichEditor {
@@ -30,14 +40,27 @@ export class ComposerRichEditor {
 				contenteditable: "true",
 				role: "textbox",
 				"aria-multiline": "true",
+				"aria-labelledby": this.options.ariaLabelledBy ?? "",
 			},
 		});
-		this.el.addEventListener("input", () => this.handleInput());
-		this.el.addEventListener("mouseup", () => this.rememberSelection());
-		this.el.addEventListener("keyup", () => this.rememberSelection());
-		this.el.addEventListener("focus", () => this.rememberSelection());
+		if (this.options.ariaLabelledBy === undefined) {
+			this.el.removeAttribute("aria-labelledby");
+		}
+		this.el.addEventListener("input", (event) => this.handleInput(event as InputEvent));
+		this.el.addEventListener("mouseup", () => this.notifySelectionChange());
+		this.el.addEventListener("keyup", () => this.notifySelectionChange());
+		this.el.addEventListener("focus", () => this.notifySelectionChange());
+		this.el.addEventListener("compositionstart", () => this.options.onCompositionStart?.());
+		this.el.addEventListener("compositionend", (event) => {
+			if (!this.isRendering) {
+				this.document = serializeEditorDom(this.el, this.document);
+				this.rememberSelection();
+			}
+			this.options.onCompositionEnd?.(event as CompositionEvent, this.getMarkdown(), this.getSelection());
+		});
 		this.el.addEventListener("beforeinput", (event) => {
-			if (this.handleBeforeInput(event)) {
+			const inputEvent = event as InputEvent;
+			if (this.options.onBeforeInput?.(inputEvent) === true || this.handleBeforeInput(inputEvent)) {
 				event.preventDefault();
 			}
 		});
@@ -68,7 +91,7 @@ export class ComposerRichEditor {
 		const replacement = applyListFormatToText(source, selection.start, selection.end, type);
 		this.setMarkdown(replacement.value);
 		this.restoreSelection(replacement.cursor, replacement.cursor);
-		this.options.onChange(replacement.value);
+		this.notifyChange(replacement.value);
 	}
 
 	insertText(text: string): void {
@@ -78,7 +101,7 @@ export class ComposerRichEditor {
 		const value = `${source.slice(0, selection.start)}${insertedText}${source.slice(selection.end)}`;
 		this.setMarkdown(value);
 		this.restoreSelection(selection.start + insertedText.length, selection.start + insertedText.length);
-		this.options.onChange(value);
+		this.notifyChange(value);
 	}
 
 	insertWikiLinkShell(): void {
@@ -90,20 +113,38 @@ export class ComposerRichEditor {
 		this.setMarkdown(value);
 		const cursor = selection.start + 2 + selected.length;
 		this.restoreSelection(cursor, cursor);
-		this.options.onChange(value);
+		this.notifyChange(value);
 	}
 
 	focus(options?: FocusOptions): void {
 		this.el.focus(options);
 	}
 
-	private handleInput(): void {
+	/** Applies externally generated Markdown, such as an input suggestion, without losing the caret. */
+	setMarkdownAndRestoreSelection(markdown: string, start: number, end = start): void {
+		this.setMarkdown(markdown);
+		this.restoreSelection(start, end);
+		this.notifyChange(markdown);
+	}
+
+	getCaretRectAt(offset: number): DOMRect | null {
+		const point = findTextPoint(this.el, offset);
+		if (point === null) return null;
+		const range = this.el.ownerDocument.createRange();
+		range.setStart(point.node, point.offset);
+		range.collapse(true);
+		const rect = range.getBoundingClientRect();
+		if (rect.width > 0 || rect.height > 0) return rect;
+		return range.getClientRects().item(0) ?? null;
+	}
+
+	private handleInput(event: InputEvent): void {
 		if (this.isRendering) {
 			return;
 		}
 		this.document = serializeEditorDom(this.el, this.document);
 		this.rememberSelection();
-		this.options.onChange(serializeComposerMarkdown(this.document));
+		this.notifyChange(serializeComposerMarkdown(this.document), event);
 	}
 
 	private handleBeforeInput(event: InputEvent): boolean {
@@ -138,7 +179,7 @@ export class ComposerRichEditor {
 			?? getParagraphEnterPatch(source, selection.start, selection.end);
 		this.setMarkdown(patch.value);
 		this.restoreSelection(patch.cursor, patch.cursor);
-		this.options.onChange(patch.value);
+		this.notifyChange(patch.value);
 		return true;
 	}
 
@@ -151,7 +192,7 @@ export class ComposerRichEditor {
 		const value = patch.value;
 		this.setMarkdown(value);
 		this.restoreSelection(patch.cursor, patch.cursor);
-		this.options.onChange(value);
+		this.notifyChange(value);
 		return true;
 	}
 
@@ -160,6 +201,14 @@ export class ComposerRichEditor {
 		const selection = this.el.contains(this.el.ownerDocument.activeElement) ? live : this.savedSelection ?? live;
 		this.savedSelection = selection;
 		return selection;
+	}
+
+	private notifyChange(markdown: string, event?: InputEvent): void {
+		this.options.onChange(markdown, this.getSelection(), event);
+	}
+
+	private notifySelectionChange(): void {
+		this.options.onSelectionChange?.(this.getMarkdown(), this.getSelection());
 	}
 
 	/** Saves the current caret before a toolbar button can move focus away from the editor. */
@@ -301,6 +350,8 @@ function renderInline(container: HTMLElement, nodes: readonly ComposerInlineNode
 			const tag = container.createSpan({ cls: "plain-memo-rich-editor-tag", text: node.source });
 			tag.setAttr("data-source", node.source);
 			tag.contentEditable = "false";
+			// Keep an editable caret landing point after non-editable inline tags.
+			container.appendChild(container.ownerDocument.createTextNode(""));
 			continue;
 		}
 		const image = container.createEl("span", { cls: "plain-memo-rich-editor-image" });
@@ -312,6 +363,8 @@ function renderInline(container: HTMLElement, nodes: readonly ComposerInlineNode
 		} else {
 			image.setText(node.source);
 		}
+		// Images are also non-editable inline nodes and need the same caret landing point.
+		container.appendChild(container.ownerDocument.createTextNode(""));
 	}
 }
 

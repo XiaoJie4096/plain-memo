@@ -15,19 +15,27 @@ interface TagSuggestion {
 	result: SearchResult | null;
 }
 
+export interface KnomoTagSuggestOptions {
+	onSuggestionSelected?: (replacement: { value: string; cursor: number }) => void;
+	getAnchorRect?: (offset: number) => DOMRect | null;
+	/** The visible contenteditable host required by Obsidian's suggestion API. */
+	suggestHostEl?: HTMLDivElement;
+}
+
 export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 	private tagsSnapshot: string[] | null = null;
 	private popoverRepositionFrameId: number | null = null;
 	private compositionRefreshFrameId: number | null = null;
-	private isRefreshingAfterInput = false;
+	private emptyPopoverRetryCount = 0;
 	private readonly activationState = new TagSuggestActivationState();
 
 	constructor(
 		app: App,
 		private readonly inputEl: HTMLTextAreaElement,
 		private readonly onInputChanged: () => void,
+		private readonly options: KnomoTagSuggestOptions = {},
 	) {
-		super(app, inputEl as unknown as HTMLInputElement);
+		super(app, options.suggestHostEl ?? inputEl as unknown as HTMLInputElement);
 		this.limit = 0;
 		this.inputEl.addEventListener("beforeinput", (event) => {
 			this.activationState.handleBeforeInput({
@@ -45,6 +53,7 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 	}
 
 	open(): void {
+		this.emptyPopoverRetryCount = 0;
 		super.open();
 		this.hidePopoverUntilPositioned();
 		this.queuePopoverReposition();
@@ -56,6 +65,7 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 		this.showPositionedPopover();
 		super.close();
 		this.tagsSnapshot = null;
+		this.emptyPopoverRetryCount = 0;
 	}
 
 	reset(): void {
@@ -63,14 +73,54 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 		this.close();
 	}
 
-	openForCurrentTrigger(): void {
+	/**
+	 * Shows candidates for a manually inserted trigger. Native rich-editor input
+	 * already reaches AbstractInputSuggest's listener, so it must not be refreshed twice.
+	 */
+	openForCurrentTrigger(refreshSuggestions = true): void {
 		this.activationState.enableExplicitly();
-		this.open();
+		if (refreshSuggestions) {
+			this.refreshNativeSuggestions();
+		}
 		this.queuePopoverReposition();
 		const container = this.getSuggestionContainer();
 		if (container !== null) {
 			container.addClass("plain-memo-tag-suggest-popover");
 		}
+	}
+
+	/** Handles navigation when the visible input is the rich editor rather than the hidden textarea. */
+	handleExternalKeydown(event: KeyboardEvent): boolean {
+		const container = this.getSuggestionContainer();
+		const items = container === null
+			? []
+			: Array.from(container.querySelectorAll<HTMLElement>(".suggestion-item"));
+		if (container === null || !container.isConnected) {
+			return false;
+		}
+		if (event.key === "Escape") {
+			this.close();
+			return true;
+		}
+		if (items.length === 0) {
+			return false;
+		}
+		if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+			const selectedIndex = Math.max(0, items.findIndex((item) => item.hasClass("is-selected")));
+			const direction = event.key === "ArrowDown" ? 1 : -1;
+			const nextIndex = (selectedIndex + direction + items.length) % items.length;
+			for (const [index, item] of items.entries()) {
+				item.toggleClass("is-selected", index === nextIndex);
+				item.setAttr("aria-selected", index === nextIndex ? "true" : "false");
+			}
+			return true;
+		}
+		if (event.key === "Enter" || event.key === "Tab") {
+			const selected = items.find((item) => item.hasClass("is-selected")) ?? items[0];
+			selected?.click();
+			return true;
+		}
+		return false;
 	}
 
 	/** Refreshes after an IME commits its final text, which may not emit a later normal input event. */
@@ -92,25 +142,25 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 		});
 	}
 
-	/** Replays the input event after the textarea value has settled on desktop. */
+	/** Refreshes candidates after the hidden Markdown mirror has settled. */
 	private refreshAfterInput(): void {
-		if (this.isRefreshingAfterInput) {
-			return;
-		}
 		if (!this.activationState.isEnabled() || getTagQueryAtCursor(this.inputEl.value, this.inputEl.selectionStart) === null) {
 			this.close();
 			return;
 		}
-		this.isRefreshingAfterInput = true;
-		try {
-			const EventConstructor = (this.inputEl.win as Window & { Event: typeof Event }).Event;
-			this.inputEl.dispatchEvent(new EventConstructor("input", { bubbles: true }));
-		} finally {
-			this.isRefreshingAfterInput = false;
-		}
+		this.refreshNativeSuggestions();
 	}
 
-	protected getSuggestions(): TagSuggestion[] {
+	/**
+	 * Obsidian only gathers candidates from AbstractInputSuggest.onInputChange().
+	 * Calling open() directly merely shows its empty container.
+	 */
+	private refreshNativeSuggestions(): void {
+		const internal = this as unknown as { onInputChange?: () => void };
+		internal.onInputChange?.();
+	}
+
+	protected getSuggestions(_query: string): TagSuggestion[] {
 		if (!this.activationState.isEnabled()) {
 			return [];
 		}
@@ -146,6 +196,11 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 			return;
 		}
 		const next = replaceTagQueryWithSuggestion(this.inputEl.value, range, value.tag);
+		if (this.options.onSuggestionSelected !== undefined) {
+			this.options.onSuggestionSelected(next);
+			this.close();
+			return;
+		}
 		this.inputEl.value = next.value;
 		this.inputEl.setSelectionRange(next.cursor, next.cursor);
 		this.onInputChanged();
@@ -221,10 +276,21 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 		if (range === null) {
 			return;
 		}
-		const anchor = getTextareaCharacterRect(this.inputEl, range.to);
+		const anchor = this.options.getAnchorRect?.(range.to) ?? getTextareaCharacterRect(this.inputEl, range.to);
 		const container = this.getSuggestionContainer();
 		if (anchor === null || container === null) {
 			return;
+		}
+		// AbstractInputSuggest may create the container before it renders its items.
+		// Retry briefly so the first measurement is based on the real candidate width.
+		const suggestionItems = container.querySelectorAll(".suggestion-item");
+		if (suggestionItems.length === 0 && this.emptyPopoverRetryCount < 2) {
+			this.emptyPopoverRetryCount += 1;
+			this.queuePopoverReposition();
+			return;
+		}
+		if (suggestionItems.length > 0) {
+			this.emptyPopoverRetryCount = 0;
 		}
 		const layer = this.inputEl.closest(".plain-memo-mobile-composer-layer");
 		if (layer !== null) {

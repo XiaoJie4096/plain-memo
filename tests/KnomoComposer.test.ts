@@ -36,6 +36,7 @@ test("renders composer input, tools, actions, and reference preview", async () =
 	assert.equal(elements.inputEl.value, "draft memo");
 	assert.equal(elements.inputEl.disabled, true);
 	assert.equal(elements.inputEl.getAttr("aria-labelledby"), "composer-input-label");
+	assert.equal(elements.composerInputLabelId, "composer-input-label");
 	assert.equal(root.find(".plain-memo-composer-markdown-preview"), null);
 	assert.deepEqual(elements.toolsEl.findAll("[data-action]").map((item) => item.getAttr("data-action")), [
 		"insert-tag",
@@ -181,6 +182,43 @@ test("narrows Time buoy input events with the composer window constructor", asyn
 	assert.deepEqual(opened, [{ source: "at-input", triggerStart: 0 }]);
 	assert.equal(view.handleTimeBuoyComposerInput(new ForeignInputEvent() as unknown as Event), false);
 	assert.equal(opened.length, 1);
+});
+
+test("keeps pending textarea content when rich editor only changes selection", async () => {
+	await obsidianStubReady;
+	const { KnomoView } = await import("../src/ui/KnomoView");
+	const fakeInput = {
+		value: "pending edit",
+		selectionStart: 0,
+		selectionEnd: 0,
+		setSelectionRange(start: number, end: number) {
+			this.selectionStart = start;
+			this.selectionEnd = end;
+		},
+	};
+	const view = Object.create(KnomoView.prototype) as {
+		inputEl: HTMLTextAreaElement;
+		syncRichEditorTagSuggest: (markdown: string, selection: { start: number; end: number }) => void;
+		wikiLinkSuggest: { refreshForCursor: () => void };
+		closeTimeBuoyPickerIfTriggerMoved: () => void;
+		handleRichEditorSelectionChange: (markdown: string, selection: { start: number; end: number }) => void;
+	};
+	let tagSyncCount = 0;
+	let wikiRefreshCount = 0;
+	let buoyCloseCount = 0;
+	view.inputEl = fakeInput as unknown as HTMLTextAreaElement;
+	view.syncRichEditorTagSuggest = () => { tagSyncCount += 1; };
+	view.wikiLinkSuggest = { refreshForCursor: () => { wikiRefreshCount += 1; } };
+	view.closeTimeBuoyPickerIfTriggerMoved = () => { buoyCloseCount += 1; };
+
+	view.handleRichEditorSelectionChange("stale editor content", { start: 3, end: 3 });
+
+	assert.equal(fakeInput.value, "pending edit");
+	assert.equal(fakeInput.selectionStart, 3);
+	assert.equal(fakeInput.selectionEnd, 3);
+	assert.equal(tagSyncCount, 1);
+	assert.equal(wikiRefreshCount, 1);
+	assert.equal(buoyCloseCount, 1);
 });
 
 test("renders retry action for a Time buoy load error", async () => {

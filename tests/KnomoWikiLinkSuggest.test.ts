@@ -31,6 +31,25 @@ test("selects a candidate with fileToLinktext", () => {
 	assert.deepEqual(harness.fileToLinktextCalls, [{ file, sourcePath: "Daily/2026-06-05.md", omitMdExtension: true }]);
 });
 
+test("writes generated WikiLink patches through the rich-editor adapter", () => {
+	const patches: Array<{ value: string; cursor: number }> = [];
+	const harness = createHarness([makeFile("Projects/Alpha.md")], {
+		onExternalPatch: (patch, input) => {
+			patches.push(patch);
+			input.value = patch.value;
+			input.setSelectionRange(patch.cursor, patch.cursor);
+		},
+	});
+	harness.input.value = "【【";
+	harness.input.setSelectionRange(2, 2);
+	assert.equal(harness.suggest.handleInput(), true);
+	assert.deepEqual(patches, [{ value: "[[]]", cursor: 2 }]);
+	assert.equal(harness.input.value, "[[]]");
+
+	assert.equal(harness.suggest.handleExternalKeydown(createKeyboardEvent("Enter")), true);
+	assert.deepEqual(patches[1], { value: "[[Projects/Alpha]]", cursor: 18 });
+});
+
 test("handles ArrowUp ArrowDown Enter Tab and Escape", () => {
 	const harness = createHarness([
 		makeFile("Projects/Alpha.md"),
@@ -191,6 +210,7 @@ test("positions WikiLink popover at the current textarea cursor", () => {
 interface HarnessOptions {
 	fileToLinktext?: (file: TFile, sourcePath: string, omitMdExtension?: boolean) => string;
 	mobileLayer?: boolean;
+	onExternalPatch?: (patch: { value: string; cursor: number }, input: FakeTextArea) => void;
 }
 
 interface FileToLinktextCall {
@@ -240,6 +260,9 @@ function createHarness(files: TFile[], options: HarnessOptions = {}) {
 			closeTagSuggestCount += 1;
 		},
 		registerVaultEvent: () => undefined,
+		onExternalPatch: options.onExternalPatch === undefined
+			? undefined
+			: (patch) => options.onExternalPatch?.(patch, input),
 	});
 	return {
 		win,

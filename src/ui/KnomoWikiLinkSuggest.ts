@@ -21,6 +21,8 @@ interface KnomoWikiLinkSuggestOptions {
 	onInputChanged: () => void;
 	closeTagSuggest: () => void;
 	registerVaultEvent: (eventRef: EventRef) => void;
+	onExternalPatch?: (patch: TextReplacement) => void;
+	getAnchorRect?: (offset: number) => DOMRect | null;
 }
 
 type WikiLinkSuggestion = WikiLinkSuggestionMatch<TFile>;
@@ -168,6 +170,11 @@ export class KnomoWikiLinkSuggest {
 		return false;
 	}
 
+	/** Handles the visible rich editor without making the hidden textarea receive focus. */
+	handleExternalKeydown(event: KeyboardEvent): boolean {
+		return this.handleKeydown(event);
+	}
+
 	openForCurrentRange(): void {
 		const range = getWikiLinkRangeAtCursor(this.inputEl.value, this.inputEl.selectionStart);
 		if (range === null) {
@@ -308,6 +315,10 @@ export class KnomoWikiLinkSuggest {
 	}
 
 	private applyPatch(patch: TextReplacement): void {
+		if (this.options.onExternalPatch !== undefined) {
+			this.options.onExternalPatch(patch);
+			return;
+		}
 		this.inputEl.value = patch.value;
 		this.focusInput();
 		this.inputEl.setSelectionRange(patch.cursor, patch.cursor);
@@ -389,7 +400,8 @@ export class KnomoWikiLinkSuggest {
 		}
 		const doc = this.inputEl.ownerDocument;
 		const win = doc.defaultView;
-		const anchor = getTextareaCharacterRect(this.inputEl, this.inputEl.selectionStart);
+		const anchor = this.options.getAnchorRect?.(this.inputEl.selectionStart)
+			?? getTextareaCharacterRect(this.inputEl, this.inputEl.selectionStart);
 		if (anchor === null) {
 			return;
 		}

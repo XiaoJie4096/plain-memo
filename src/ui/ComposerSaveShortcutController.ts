@@ -1,5 +1,5 @@
 interface ComposerSaveShortcutRequest {
-	inputEl: HTMLTextAreaElement | null;
+	composerInputEl: HTMLElement | null;
 	activeElement: Element | null;
 	isSaving: boolean;
 	saveInput: () => void;
@@ -9,10 +9,10 @@ export class ComposerSaveShortcutController {
 	private shortcutDown = false;
 
 	handleKeydown(event: KeyboardEvent, request: ComposerSaveShortcutRequest): boolean {
-		if (request.inputEl === null || !isComposerSaveShortcut(event)) {
+		if (request.composerInputEl === null || !isComposerSaveShortcut(event)) {
 			return false;
 		}
-		const isComposerEvent = event.target === request.inputEl || request.activeElement === request.inputEl;
+		const isComposerEvent = event.target === request.composerInputEl || request.activeElement === request.composerInputEl;
 		if (!isComposerEvent) {
 			return false;
 		}

@@ -6,6 +6,7 @@ import { t } from "../i18n";
 export interface KnomoComposerElements {
 	composerEl: HTMLElement;
 	inputEl: HTMLTextAreaElement;
+	composerInputLabelId: string;
 	richEditorHostEl: HTMLElement;
 	tagChipListEl: HTMLElement;
 	referencePreviewEl: HTMLElement;
@@ -114,6 +115,7 @@ export function renderKnomoComposer(container: HTMLElement, options: RenderKnomo
 	return {
 		composerEl,
 		inputEl,
+		composerInputLabelId,
 		richEditorHostEl,
 		tagChipListEl,
 		referencePreviewEl,
