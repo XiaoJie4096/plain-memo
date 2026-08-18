@@ -84,6 +84,7 @@ export function renderKnomoComposer(container: HTMLElement, options: RenderKnomo
 		: null;
 	options.createIconButton(toolsEl, "list", t("composer.insertList"), "plain-memo-tool-button", "insert-list", false);
 	options.createIconButton(toolsEl, "list-ordered", t("composer.insertNumberedList"), "plain-memo-tool-button", "insert-numbered-list", false);
+	options.createIconButton(toolsEl, "square-check", t("composer.insertTaskList"), "plain-memo-tool-button", "insert-task-list", false);
 
 	const actions = composerBarEl.createDiv({ cls: "plain-memo-composer-actions" });
 	const cancelEditButtonEl = actions.createEl("button", {

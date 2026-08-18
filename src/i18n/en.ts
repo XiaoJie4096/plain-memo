@@ -44,6 +44,7 @@ export const en: Record<TranslationKey, string> = {
 	"composer.addTimeBuoy": "Add Time buoy",
 	"composer.insertList": "Insert list",
 	"composer.insertNumberedList": "Insert numbered list",
+	"composer.insertTaskList": "Insert task list",
 	"composer.cancelEdit": "Cancel edit",
 	"composer.send": "Send",
 	"composer.saving": "Saving",

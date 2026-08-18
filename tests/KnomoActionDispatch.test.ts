@@ -52,7 +52,12 @@ test("classifies composer tool actions", () => {
 		type: "composer-tool",
 		action: "insert-numbered-list",
 	});
+	assert.deepEqual(getKnomoActionDispatch("insert-task-list"), {
+		type: "composer-tool",
+		action: "insert-task-list",
+	});
 	assert.equal(isComposerToolAction("insert-tag"), true);
+	assert.equal(isComposerToolAction("insert-task-list"), true);
 	assert.equal(isComposerToolAction("save-input"), false);
 });
 

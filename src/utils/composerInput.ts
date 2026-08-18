@@ -16,7 +16,15 @@ export interface NativeListInputOptions {
 	allowInsertedMarkerCorrection?: boolean;
 }
 
-export type ListFormatType = "bullet" | "ordered";
+export type ListFormatType = "bullet" | "ordered" | "task";
+
+export interface TaskListShortcutEvent {
+	key: string;
+	ctrlKey: boolean;
+	metaKey: boolean;
+	altKey: boolean;
+	shiftKey: boolean;
+}
 
 export function getHashInsertionText(value: string, cursor: number): string {
 	if (cursor <= 0) {
@@ -24,6 +32,13 @@ export function getHashInsertionText(value: string, cursor: number): string {
 	}
 	const previousChar = value.charAt(cursor - 1);
 	return /\s/.test(previousChar) ? "#" : " #";
+}
+
+export function isTaskListShortcut(event: TaskListShortcutEvent): boolean {
+	return (event.ctrlKey || event.metaKey)
+		&& !event.altKey
+		&& !event.shiftKey
+		&& event.key.toLowerCase() === "l";
 }
 
 export function getTagQueryAtCursor(value: string, cursor: number): TagQueryRange | null {
@@ -82,6 +97,13 @@ export function applyListFormatToText(value: string, start: number, end: number,
 		const match = line.match(/^(\s*)(?:[-*+]\s+|\d+[.)]\s+)?(.*)$/);
 		const indent = match?.[1] ?? "";
 		const content = match?.[2] ?? line.replace(/^\s+/, "");
+		if (type === "task") {
+			const taskMatch = line.match(/^(\s*)(?:[-*+]|\d+[.)])\s+\[([ xX-])\]\s*(.*)$/);
+			const taskIndent = taskMatch?.[1] ?? indent;
+			const marker = taskMatch?.[2] ?? " ";
+			const taskContent = taskMatch?.[3] ?? content;
+			return `${taskIndent}- [${marker}] ${taskContent}`;
+		}
 		if (type === "bullet") {
 			return `${indent}- ${content}`;
 		}

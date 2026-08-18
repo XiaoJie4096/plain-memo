@@ -39,6 +39,18 @@ test("does not add hard breaks across Markdown block structures", () => {
 	assert.equal(prepareMemoCardMarkdown(markdown), markdown);
 });
 
+test("ends a task list before the following ordinary paragraph", () => {
+	assert.equal(
+		prepareMemoCardMarkdown("- [ ] task\n退出任务列表\n普通内容"),
+		"- [ ] task\n\n退出任务列表  \n普通内容",
+	);
+});
+
+test("keeps consecutive task and other list items in the same list block", () => {
+	const markdown = "- [ ] task\n- 普通列表项\n普通段落";
+	assert.equal(prepareMemoCardMarkdown(markdown), "- [ ] task\n- 普通列表项\n普通段落");
+});
+
 test("does not rewrite fenced code block contents", () => {
 	const markdown = [
 		"代码如下",

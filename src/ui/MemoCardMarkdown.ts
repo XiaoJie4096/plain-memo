@@ -37,7 +37,35 @@ export function prepareMemoCardMarkdown(value: string): string {
 			lines[index] = `${lines[index]}  `;
 		}
 	}
-	return lines.join("\n");
+	return addTaskListBoundaries(lines).join("\n");
+}
+
+/** Prevents CommonMark lazy continuation from absorbing the paragraph after a task list. */
+function addTaskListBoundaries(lines: string[]): string[] {
+	const result: string[] = [];
+	for (let index = 0; index < lines.length; index += 1) {
+		const line = lines[index] ?? "";
+		const previousLine = lines[index - 1] ?? "";
+		if (
+			index > 0
+			&& isTaskListLine(previousLine)
+			&& line.trim().length > 0
+			&& !isMarkdownListItemLine(line)
+			&& result[result.length - 1] !== ""
+		) {
+			result.push("");
+		}
+		result.push(line);
+	}
+	return result;
+}
+
+function isTaskListLine(line: string): boolean {
+	return /^\s*(?:[-*+]|\d+[.)])\s+\[[ xX-]\](?:\s|$)/.test(line);
+}
+
+function isMarkdownListItemLine(line: string): boolean {
+	return /^\s*(?:[-*+]|\d+[.)])(?:\s|$)/.test(line);
 }
 
 function isPlainParagraphLine(line: string): boolean {

@@ -42,6 +42,7 @@ export const zhCN = {
 	"composer.addTimeBuoy": "添加时光浮标",
 	"composer.insertList": "插入列表",
 	"composer.insertNumberedList": "插入编号列表",
+	"composer.insertTaskList": "插入任务列表",
 	"composer.cancelEdit": "取消编辑",
 	"composer.send": "发送",
 	"composer.saving": "保存中",

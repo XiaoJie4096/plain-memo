@@ -16,7 +16,7 @@ import { TagRenameService } from "../services/TagRenameService";
 import { MOBILE_INITIAL_MEMO_COUNT, type FileMemoOrchestrator } from "../services/FileMemoOrchestrator";
 import type { TimeBuoyMaintenanceOutcome } from "../types/fileMemo";
 import type { MemoMutation, MemoRecord } from "../types/memo";
-import { applyListFormatToText, getHashInsertionText, getListEnterPatch, getListEnterPatchForNativeInput } from "../utils/composerInput";
+import { applyListFormatToText, getHashInsertionText, getListEnterPatch, getListEnterPatchForNativeInput, isTaskListShortcut } from "../utils/composerInput";
 import type { TextReplacement } from "../utils/composerInput";
 import { formatDatePart, formatMonthPeriod } from "../utils/date";
 import { formatTimeBuoyDate, getTimeBuoyCardStatus } from "../utils/timeBuoyDate";
@@ -897,6 +897,11 @@ export class KnomoView extends ItemView {
 				return false;
 			}
 		});
+		this.scope.register(["Mod"], "l", (event) => {
+			if (this.handleComposerTaskListShortcut(event)) {
+				return false;
+			}
+		});
 	}
 
 	private createUserActionController(): KnomoUserActionController {
@@ -1544,6 +1549,9 @@ export class KnomoView extends ItemView {
 		});
 		this.registerDomEvent(this.inputEl, "keydown", (event) => {
 			if (this.handleComposerSaveShortcut(event)) {
+				return;
+			}
+			if (this.handleComposerTaskListShortcut(event)) {
 				return;
 			}
 			if (this.wikiLinkSuggest?.handleKeydown(event)) {
@@ -4591,7 +4599,27 @@ export class KnomoView extends ItemView {
 			this.applyListFormat("ordered");
 			return true;
 		}
+		if (action === "insert-task-list") {
+			this.applyListFormat("task");
+			return true;
+		}
 		return false;
+	}
+
+	private handleComposerTaskListShortcut(event: KeyboardEvent): boolean {
+		if (
+			event.defaultPrevented
+			|| this.currentLayout === "mobile"
+			|| this.inputEl === null
+			|| this.containerEl.doc.activeElement !== this.inputEl
+			|| !isTaskListShortcut(event)
+		) {
+			return false;
+		}
+		event.preventDefault();
+		event.stopPropagation();
+		this.applyListFormat("task");
+		return true;
 	}
 
 	private toggleTimeBuoyPickerFromButton(): void {
@@ -5222,7 +5250,7 @@ export class KnomoView extends ItemView {
 		return true;
 	}
 
-	private applyListFormat(type: "bullet" | "ordered"): void {
+	private applyListFormat(type: "bullet" | "ordered" | "task"): void {
 		if (this.inputEl === null) {
 			return;
 		}

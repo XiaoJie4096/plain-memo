@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { applyListFormatToText, getHashInsertionText, getListEnterPatch, getListEnterPatchAfterNativeNewline, getListEnterPatchForNativeInput, getTagQueryAtCursor, replaceTagQueryWithSuggestion } from "../src/utils/composerInput";
+import { applyListFormatToText, getHashInsertionText, getListEnterPatch, getListEnterPatchAfterNativeNewline, getListEnterPatchForNativeInput, getTagQueryAtCursor, isTaskListShortcut, replaceTagQueryWithSuggestion } from "../src/utils/composerInput";
 import { parseMemoTags } from "../src/utils/markdown";
 
 test("inserts a spaced hash after existing content", () => {
@@ -67,6 +67,20 @@ test("formats selected lines as a Markdown list", () => {
 	assert.deepEqual(applyListFormatToText("a\nb\nc", 0, 5, "ordered"), {
 		value: "1. a\n2. b\n3. c",
 		cursor: 14,
+	});
+});
+
+test("recognizes the desktop Ctrl+L and Cmd+L task-list shortcuts", () => {
+	assert.equal(isTaskListShortcut({ key: "l", ctrlKey: true, metaKey: false, altKey: false, shiftKey: false }), true);
+	assert.equal(isTaskListShortcut({ key: "L", ctrlKey: true, metaKey: false, altKey: false, shiftKey: false }), true);
+	assert.equal(isTaskListShortcut({ key: "l", ctrlKey: false, metaKey: true, altKey: false, shiftKey: false }), true);
+	assert.equal(isTaskListShortcut({ key: "l", ctrlKey: true, metaKey: false, altKey: false, shiftKey: true }), false);
+});
+
+test("formats selected lines as an unchecked task list while preserving task states", () => {
+	assert.deepEqual(applyListFormatToText("a\nb\n- [x] done", 0, 14, "task"), {
+		value: "- [ ] a\n- [ ] b\n- [x] done",
+		cursor: 26,
 	});
 });
 

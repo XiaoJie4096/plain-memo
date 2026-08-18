@@ -44,6 +44,7 @@ test("renders composer input, tools, actions, and reference preview", async () =
 		"insert-time-buoy",
 		"insert-list",
 		"insert-numbered-list",
+		"insert-task-list",
 	]);
 	assert.equal(elements.tagChipListEl.hasClass("plain-memo-composer-tag-chips"), true);
 	assert.equal(elements.timeBuoyButtonEl?.disabled, true);
