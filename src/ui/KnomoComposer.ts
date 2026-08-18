@@ -6,6 +6,7 @@ import { t } from "../i18n";
 export interface KnomoComposerElements {
 	composerEl: HTMLElement;
 	inputEl: HTMLTextAreaElement;
+	richEditorHostEl: HTMLElement;
 	tagChipListEl: HTMLElement;
 	referencePreviewEl: HTMLElement;
 	composerBarEl: HTMLElement;
@@ -50,6 +51,7 @@ export function renderKnomoComposer(container: HTMLElement, options: RenderKnomo
 	});
 	inputEl.disabled = !options.dailyEnabled;
 	inputEl.value = options.draftContent;
+	const richEditorHostEl = inputArea.createDiv({ cls: "plain-memo-rich-editor-host" });
 
 	const referencePreviewEl = inputArea.createDiv({ cls: "plain-memo-reference-preview" });
 	const tagChipListEl = inputArea.createDiv({
@@ -112,6 +114,7 @@ export function renderKnomoComposer(container: HTMLElement, options: RenderKnomo
 	return {
 		composerEl,
 		inputEl,
+		richEditorHostEl,
 		tagChipListEl,
 		referencePreviewEl,
 		composerBarEl,

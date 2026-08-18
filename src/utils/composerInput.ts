@@ -93,6 +93,10 @@ export function applyListFormatToText(value: string, start: number, end: number,
 	const target = value.slice(blockStart, blockEnd);
 	const after = value.slice(blockEnd);
 	const lines = target.split("\n");
+	const collapsedSelection = start === end;
+	const currentLine = lines[0] ?? "";
+	const currentContentStart = getListContentStart(currentLine);
+	const currentContentOffset = Math.max(0, start - blockStart - currentContentStart);
 	const formatted = lines.map((line, index) => {
 		const match = line.match(/^(\s*)(?:[-*+]\s+|\d+[.)]\s+)?(.*)$/);
 		const indent = match?.[1] ?? "";
@@ -110,10 +114,25 @@ export function applyListFormatToText(value: string, start: number, end: number,
 		return `${indent}${index + 1}. ${content}`;
 	});
 	const formattedText = formatted.join("\n");
+	const formattedCursor = collapsedSelection
+		? blockStart + getFormattedListMarkerLength(formatted[0] ?? "") + currentContentOffset
+		: blockStart + formattedText.length;
 	return {
 		value: `${before}${formattedText}${after}`,
-		cursor: blockStart + formattedText.length,
+		cursor: Math.min(blockStart + formattedText.length, formattedCursor),
 	};
+}
+
+function getListContentStart(line: string): number {
+	const task = line.match(/^(\s*)(?:[-*+]|\d+[.)])\s+\[[ xX-]\]\s*/);
+	if (task !== null) return task[0].length;
+	const list = line.match(/^(\s*)(?:[-*+]|\d+[.)])\s+/);
+	return list?.[0].length ?? 0;
+}
+
+function getFormattedListMarkerLength(line: string): number {
+	// Measure the actual generated marker so ordered lists remain correct at 10+.
+	return getListContentStart(line);
 }
 
 export function getListEnterPatch(value: string, start: number, end: number): TextReplacement | null {
@@ -136,7 +155,7 @@ export function getListEnterPatch(value: string, start: number, end: number): Te
 		if (content.trim().length === 0) {
 			const cursor = lineStart + indent.length;
 			return {
-				value: `${value.slice(0, lineStart)}${indent}${value.slice(start)}`,
+				value: `${value.slice(0, lineStart)}${indent}${preserveEmptyListRemainder(value, lineStart, start)}`,
 				cursor,
 			};
 		}
@@ -154,7 +173,7 @@ export function getListEnterPatch(value: string, start: number, end: number): Te
 	if (content.trim().length === 0) {
 		const cursor = lineStart + indent.length;
 		return {
-			value: `${value.slice(0, lineStart)}${indent}${value.slice(start)}`,
+			value: `${value.slice(0, lineStart)}${indent}${preserveEmptyListRemainder(value, lineStart, start)}`,
 			cursor,
 		};
 	}
@@ -166,6 +185,33 @@ export function getListEnterPatch(value: string, start: number, end: number): Te
 		indent,
 		number + 1,
 	);
+}
+
+/** Replaces the current selection with a Markdown paragraph boundary. */
+export function getParagraphEnterPatch(value: string, start: number, end: number): TextReplacement {
+	const insert = "\n";
+	return {
+		value: `${value.slice(0, start)}${insert}${value.slice(end)}`,
+		cursor: start + insert.length,
+	};
+}
+
+/** Removes a list marker at the start of its content without joining the previous line. */
+export function getListBoundaryBackspacePatch(value: string, cursor: number): TextReplacement | null {
+	if (cursor < 0 || cursor > value.length) return null;
+	const lineStart = value.lastIndexOf("\n", Math.max(0, cursor - 1)) + 1;
+	const line = value.slice(lineStart, cursor);
+	const marker = line.match(/^(\s*)(?:[-*+]|\d+[.)])\s+(?:\[[ xX-]\]\s+)?$/);
+	const prefix = line.match(/^(\s*)(?:[-*+]|\d+[.)])\s+(?:\[[ xX-]\]\s+)?/);
+	if (marker === null && prefix === null) return null;
+	const markerLength = prefix?.[0].length ?? 0;
+	if (cursor !== lineStart + markerLength) return null;
+	const remainder = value.slice(cursor);
+	const preservedRemainder = lineStart > 0 && remainder.length === 0 ? "\n" : remainder;
+	return {
+		value: `${value.slice(0, lineStart)}${preservedRemainder}`,
+		cursor: lineStart,
+	};
 }
 
 export function getListEnterPatchAfterNativeNewline(value: string, start: number, end: number): TextReplacement | null {
@@ -189,7 +235,7 @@ export function getListEnterPatchAfterNativeNewline(value: string, start: number
 		if (content.trim().length === 0) {
 			const cursor = lineStart + indent.length;
 			return {
-				value: `${value.slice(0, lineStart)}${indent}${value.slice(start)}`,
+				value: `${value.slice(0, lineStart)}${indent}${preserveEmptyListRemainder(value, lineStart, start)}`,
 				cursor,
 			};
 		}
@@ -207,7 +253,7 @@ export function getListEnterPatchAfterNativeNewline(value: string, start: number
 	if (content.trim().length === 0) {
 		const cursor = lineStart + indent.length;
 		return {
-			value: `${value.slice(0, lineStart)}${indent}${value.slice(start)}`,
+			value: `${value.slice(0, lineStart)}${indent}${preserveEmptyListRemainder(value, lineStart, start)}`,
 			cursor,
 		};
 	}
@@ -323,6 +369,11 @@ function countLineBreaks(value: string): number {
 		}
 	}
 	return count;
+}
+
+function preserveEmptyListRemainder(value: string, lineStart: number, cursor: number): string {
+	const remainder = value.slice(cursor);
+	return lineStart > 0 && remainder.length === 0 ? "\n" : remainder;
 }
 
 function parseBulletListLine(line: string): { indent: string; content: string } | null {

@@ -48,6 +48,7 @@ import {
 import type { CardFlowRenderMode } from "./KnomoCardFlow";
 import { KnomoCardFlowCoordinator } from "./KnomoCardFlowCoordinator";
 import { renderComposerReferencePreview, renderKnomoComposer } from "./KnomoComposer";
+import { ComposerRichEditor } from "./ComposerRichEditor";
 import {
 	getTimeBuoyPickerLeft,
 	renderTimeBuoyDatePicker,
@@ -359,6 +360,7 @@ export class KnomoView extends ItemView {
 	private cardFlowEl: HTMLElement | null = null;
 	private trashCountEls: HTMLElement[] = [];
 	private inputEl: HTMLTextAreaElement | null = null;
+	private richEditor: ComposerRichEditor | null = null;
 	private tagChipListEl: HTMLElement | null = null;
 	private timeBuoyButtonEl: HTMLButtonElement | null = null;
 	private timeBuoyMonthStatusEl: HTMLElement | null = null;
@@ -868,7 +870,7 @@ export class KnomoView extends ItemView {
 			getContainerEl: () => this.containerEl,
 			getRootEl: () => this.rootEl,
 			getComposerEl: () => this.composerEl,
-			getInputEl: () => this.inputEl,
+			getInputEl: () => this.richEditor?.el ?? this.inputEl,
 			getComposerBarEl: () => this.composerBarEl,
 			getReferencePreviewEl: () => this.referencePreviewEl,
 			getLayout: () => this.currentLayout,
@@ -1474,6 +1476,23 @@ export class KnomoView extends ItemView {
 		});
 		this.composerEl = composer.composerEl;
 		this.inputEl = composer.inputEl;
+		this.richEditor = new ComposerRichEditor(composer.richEditorHostEl, this.inputEl.value, {
+			resolveImageUrl: (source) => {
+				const rawPath = getComposerImagePath(source);
+				if (rawPath === null) return null;
+				const sourcePath = this.getComposerSourcePath() ?? "";
+				return this.imageResourceCache.get(sourcePath, rawPath, this.app).url ?? null;
+			},
+			onChange: (markdown) => {
+				if (this.inputEl !== null) this.inputEl.value = markdown;
+				this.syncInputState();
+			},
+			onShortcut: (event) => {
+				if (this.currentLayout === "mobile" || !isTaskListShortcut(event)) return false;
+				this.richEditor?.applyListFormat("task");
+				return true;
+			},
+		});
 		this.tagChipListEl = composer.tagChipListEl;
 		this.timeBuoyButtonEl = composer.timeBuoyButtonEl;
 		this.timeBuoyMonthStatusEl = composer.timeBuoyMonthStatusEl;
@@ -1494,6 +1513,14 @@ export class KnomoView extends ItemView {
 		});
 		this.registerDomEvent(composer.composerEl, "pointerdown", (event) => this.handleMobileComposerActionPointerDown(event));
 		this.registerDomEvent(composer.composerEl, "mousedown", (event) => this.handleMobileComposerActionPointerDown(event));
+		const rememberToolbarSelection = (event: PointerEvent | MouseEvent): void => {
+			const target = event.target as Node | null;
+			if (target?.instanceOf(Element) && target.closest(".plain-memo-tool-button") !== null) {
+				this.richEditor?.rememberSelectionBeforeToolbarAction();
+			}
+		};
+		this.registerDomEvent(composer.composerEl, "pointerdown", rememberToolbarSelection);
+		this.registerDomEvent(composer.composerEl, "mousedown", rememberToolbarSelection);
 		this.tagSuggest = new KnomoTagSuggest(this.app, this.inputEl, () => this.syncInputState());
 		this.wikiLinkSuggest = new KnomoWikiLinkSuggest(this.app, this.inputEl, {
 			listboxId: wikiLinkListboxId,
@@ -1853,6 +1880,9 @@ export class KnomoView extends ItemView {
 		if (this.inputEl !== null) {
 			this.inputEl.disabled = !dailyStatus.enabled;
 		}
+		if (this.richEditor !== null) {
+			this.richEditor.el.contentEditable = dailyStatus.enabled ? "true" : "false";
+		}
 		if (this.isSaving || this.editingMemo !== null || this.quoteSourceMemoId !== null || this.cardFlowError !== null) {
 			return;
 		}
@@ -1860,6 +1890,9 @@ export class KnomoView extends ItemView {
 	}
 
 	private syncComposerMode(): void {
+		if (this.richEditor !== null && this.inputEl !== null && this.richEditor.getMarkdown() !== this.inputEl.value) {
+			this.richEditor.setMarkdown(this.inputEl.value);
+		}
 		if (this.referencePreviewEl !== null) {
 			renderComposerReferencePreview(
 				this.referencePreviewEl,
@@ -4328,6 +4361,12 @@ export class KnomoView extends ItemView {
 	}
 
 	private focusComposerInputNow(shouldResize = true, shouldQueueViewport = true): void {
+		if (this.richEditor !== null) {
+			this.richEditor.focus({ preventScroll: true });
+			if (shouldResize) this.resizeInput();
+			if (shouldQueueViewport && this.currentLayout === "mobile") this.mobileComposerController.queueViewportUpdate();
+			return;
+		}
 		if (this.inputEl === null) {
 			return;
 		}
@@ -5198,6 +5237,10 @@ export class KnomoView extends ItemView {
 	}
 
 	private insertText(text: string, shouldFocus = true): void {
+		if (this.richEditor !== null) {
+			this.richEditor.insertText(text === "#" ? "#" : text);
+			return;
+		}
 		if (this.inputEl === null) {
 			return;
 		}
@@ -5218,6 +5261,10 @@ export class KnomoView extends ItemView {
 	}
 
 	private insertWikiLinkShell(): void {
+		if (this.richEditor !== null) {
+			this.richEditor.insertWikiLinkShell();
+			return;
+		}
 		if (this.inputEl === null) {
 			return;
 		}
@@ -5251,6 +5298,10 @@ export class KnomoView extends ItemView {
 	}
 
 	private applyListFormat(type: "bullet" | "ordered" | "task"): void {
+		if (this.richEditor !== null) {
+			this.richEditor.applyListFormat(type);
+			return;
+		}
 		if (this.inputEl === null) {
 			return;
 		}
@@ -5458,6 +5509,16 @@ export class KnomoView extends ItemView {
 	}
 
 	private resizeInput(): void {
+		if (this.richEditor !== null) {
+			const editor = this.richEditor.el;
+			const minHeight = this.currentLayout === "mobile" ? 150 : 48;
+			const maxHeight = this.currentLayout === "mobile"
+				? this.getMobileMaxInputHeight()
+				: this.editingMemo === null ? 480 : Number.POSITIVE_INFINITY;
+			const nextHeight = Math.min(maxHeight, Math.max(minHeight, editor.scrollHeight));
+			editor.setCssProps({ "--plain-memo-composer-input-height": `${nextHeight}px` });
+			return;
+		}
 		if (this.inputEl === null) {
 			return;
 		}
@@ -6453,6 +6514,13 @@ export class KnomoView extends ItemView {
 function dispatchTextareaInputEvent(input: HTMLTextAreaElement): void {
 	const EventConstructor = (input.win as Window & { Event: typeof Event }).Event;
 	input.dispatchEvent(new EventConstructor("input", { bubbles: true, cancelable: false }));
+}
+
+function getComposerImagePath(source: string): string | null {
+	const wiki = source.match(/^!\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]$/);
+	if (wiki !== null) return wiki[1] ?? null;
+	const markdown = source.match(/^!\[[^\]]*\]\(([^)]+)\)$/);
+	return markdown?.[1]?.trim() ?? null;
 }
 
 function isListEnterInputEvent(event: InputEvent): boolean {

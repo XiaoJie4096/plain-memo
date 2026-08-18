@@ -70,7 +70,7 @@ export interface MobileComposerControllerOptions {
 	getContainerEl: () => HTMLElement;
 	getRootEl: () => HTMLElement | null;
 	getComposerEl: () => HTMLElement | null;
-	getInputEl: () => HTMLTextAreaElement | null;
+	getInputEl: () => HTMLElement | null;
 	getComposerBarEl: () => HTMLElement | null;
 	getReferencePreviewEl: () => HTMLElement | null;
 	getLayout: () => MobileComposerLayoutMode;
@@ -265,7 +265,7 @@ export class MobileComposerController {
 		this.setComposerBottomOffset(0);
 		const inputEl = this.options.getInputEl();
 		if (inputEl !== null) {
-			inputEl.readOnly = false;
+			setInputEditable(inputEl, true);
 		}
 		this.startViewportTracking();
 		this.updateMeasurements();
@@ -289,7 +289,7 @@ export class MobileComposerController {
 		this.mobileComposerLayerEl?.toggleClass("is-closing", true);
 		const inputEl = this.options.getInputEl();
 		if (inputEl !== null) {
-			inputEl.readOnly = true;
+			setInputEditable(inputEl, false);
 			inputEl.blur();
 		}
 		this.queueViewportUpdate();
@@ -988,7 +988,7 @@ export class MobileComposerController {
 		this.clearKeyboardMetrics();
 		const inputEl = this.options.getInputEl();
 		if (inputEl !== null) {
-			inputEl.readOnly = false;
+			setInputEditable(inputEl, true);
 		}
 		this.options.setComposerOpen(false);
 		this.mobileComposerPhase = "closed";
@@ -1139,4 +1139,13 @@ export class MobileComposerController {
 		this.options.getWindow().cancelAnimationFrame(this.mobileToolbarAnchorFrameId);
 		this.mobileToolbarAnchorFrameId = null;
 	}
+}
+
+function setInputEditable(inputEl: HTMLElement, editable: boolean): void {
+	const inputCandidate = inputEl as HTMLElement & { readOnly?: boolean };
+	if ("readOnly" in inputCandidate || inputEl.tagName === "TEXTAREA" || inputEl.tagName === "INPUT") {
+		inputCandidate.readOnly = !editable;
+		return;
+	}
+	inputEl.contentEditable = editable ? "true" : "false";
 }

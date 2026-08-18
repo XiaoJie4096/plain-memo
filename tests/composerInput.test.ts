@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { applyListFormatToText, getHashInsertionText, getListEnterPatch, getListEnterPatchAfterNativeNewline, getListEnterPatchForNativeInput, getTagQueryAtCursor, isTaskListShortcut, replaceTagQueryWithSuggestion } from "../src/utils/composerInput";
+import { applyListFormatToText, getHashInsertionText, getListBoundaryBackspacePatch, getListEnterPatch, getListEnterPatchAfterNativeNewline, getListEnterPatchForNativeInput, getParagraphEnterPatch, getTagQueryAtCursor, isTaskListShortcut, replaceTagQueryWithSuggestion } from "../src/utils/composerInput";
 import { parseMemoTags } from "../src/utils/markdown";
 
 test("inserts a spaced hash after existing content", () => {
@@ -45,6 +45,10 @@ test("replaces current tag query with selected suggestion", () => {
 });
 
 test("formats the current line as a Markdown list", () => {
+	assert.deepEqual(applyListFormatToText("", 0, 0, "task"), {
+		value: "- [ ] ",
+		cursor: 6,
+	});
 	assert.deepEqual(applyListFormatToText("hello", 5, 5, "bullet"), {
 		value: "- hello",
 		cursor: 7,
@@ -55,6 +59,14 @@ test("formats the current line as a Markdown list", () => {
 	});
 	assert.deepEqual(applyListFormatToText("- hello", 7, 7, "ordered"), {
 		value: "1. hello",
+		cursor: 8,
+	});
+	assert.deepEqual(applyListFormatToText("hello", 2, 2, "task"), {
+		value: "- [ ] hello",
+		cursor: 8,
+	});
+	assert.deepEqual(applyListFormatToText("- hello", 4, 4, "task"), {
+		value: "- [ ] hello",
 		cursor: 8,
 	});
 });
@@ -90,7 +102,7 @@ test("continues and exits Markdown bullet lists", () => {
 		cursor: 8,
 	});
 	assert.deepEqual(getListEnterPatch("- abc\n- ", 8, 8), {
-		value: "- abc\n",
+		value: "- abc\n\n",
 		cursor: 6,
 	});
 	assert.deepEqual(getListEnterPatch("- ", 2, 2), {
@@ -111,13 +123,97 @@ test("continues and exits Markdown bullet lists", () => {
 	});
 });
 
+test("splits a bullet item at the actual text cursor", () => {
+	assert.deepEqual(getListEnterPatch("- 任务列表测试123", 6, 6), {
+		value: "- 任务列表\n- 测试123",
+		cursor: 9,
+	});
+	assert.deepEqual(getListEnterPatch("- 任务列表测试123", 8, 8), {
+		value: "- 任务列表测试\n- 123",
+		cursor: 11,
+	});
+});
+
+test("splits task items at the actual text cursor", () => {
+	assert.deepEqual(getListEnterPatch("- [ ] 任务列表测试123", 10, 10), {
+		value: "- [ ] 任务列表\n- [ ] 测试123",
+		cursor: 17,
+	});
+	assert.deepEqual(getListEnterPatch("- [ ] 任务列表测试123", 12, 12), {
+		value: "- [ ] 任务列表测试\n- [ ] 123",
+		cursor: 19,
+	});
+});
+
+test("backspace at a list marker removes only the marker and preserves the line break", () => {
+	assert.deepEqual(getListBoundaryBackspacePatch("- ", 2), {
+		value: "",
+		cursor: 0,
+	});
+	assert.deepEqual(getListBoundaryBackspacePatch("上一行\n- ", 6), {
+		value: "上一行\n\n",
+		cursor: 4,
+	});
+	assert.deepEqual(getListBoundaryBackspacePatch("上一行\n- 内容", 6), {
+		value: "上一行\n内容",
+		cursor: 4,
+	});
+	assert.deepEqual(getListBoundaryBackspacePatch("上一行\n- [ ] ", 10), {
+		value: "上一行\n\n",
+		cursor: 4,
+	});
+	assert.deepEqual(getListBoundaryBackspacePatch("- [ ] ", 6), {
+		value: "",
+		cursor: 0,
+	});
+	assert.equal(getListBoundaryBackspacePatch("- 内容", 3), null);
+});
+
+test("keeps an ordinary paragraph boundary when leaving a task marker at file end", () => {
+	assert.deepEqual(getListBoundaryBackspacePatch("上一行\n- [ ] ", 10), {
+		value: "上一行\n\n",
+		cursor: 4,
+	});
+});
+
+test("turns ordinary Enter into a single Markdown line break", () => {
+	assert.deepEqual(getParagraphEnterPatch("第一段", 0, 0), {
+		value: "\n第一段",
+		cursor: 1,
+	});
+	assert.deepEqual(getParagraphEnterPatch("第一段第二段", 3, 3), {
+		value: "第一段\n第二段",
+		cursor: 4,
+	});
+	assert.deepEqual(getParagraphEnterPatch("第一段", 3, 3), {
+		value: "第一段\n",
+		cursor: 4,
+	});
+	assert.deepEqual(getParagraphEnterPatch("第一段第二段", 2, 4), {
+		value: "第一\n二段",
+		cursor: 3,
+	});
+});
+
+test("inserts a line break on the first Enter after ordinary text input", () => {
+	const firstEnter = getParagraphEnterPatch("刚输入的内容", 6, 6);
+	assert.deepEqual(firstEnter, {
+		value: "刚输入的内容\n",
+		cursor: 7,
+	});
+	assert.deepEqual(getParagraphEnterPatch(firstEnter.value, firstEnter.cursor, firstEnter.cursor), {
+		value: "刚输入的内容\n\n",
+		cursor: 8,
+	});
+});
+
 test("continues and exits Markdown ordered lists", () => {
 	assert.deepEqual(getListEnterPatch("1. abc", 6, 6), {
 		value: "1. abc\n2. ",
 		cursor: 10,
 	});
 	assert.deepEqual(getListEnterPatch("1. abc\n2. ", 10, 10), {
-		value: "1. abc\n",
+		value: "1. abc\n\n",
 		cursor: 7,
 	});
 	assert.deepEqual(getListEnterPatch("2.", 2, 2), {
@@ -178,7 +274,7 @@ test("corrects native newline insertion in Markdown bullet lists", () => {
 		cursor: 8,
 	});
 	assert.deepEqual(getListEnterPatchAfterNativeNewline("- abc\n- \n", 9, 9), {
-		value: "- abc\n",
+		value: "- abc\n\n",
 		cursor: 6,
 	});
 	assert.deepEqual(getListEnterPatchAfterNativeNewline("- \n", 3, 3), {
@@ -194,7 +290,7 @@ test("corrects native newline insertion in Markdown ordered lists", () => {
 		cursor: 10,
 	});
 	assert.deepEqual(getListEnterPatchAfterNativeNewline("1. abc\n2. \n", 11, 11), {
-		value: "1. abc\n",
+		value: "1. abc\n\n",
 		cursor: 7,
 	});
 	assert.equal(getListEnterPatchAfterNativeNewline("1. abc\n", 0, 7), null);
@@ -234,7 +330,7 @@ test("corrects mobile list Enter when candidate confirmation and newline share o
 	assert.deepEqual(getListEnterPatchForNativeInput("- item\n-", "- item\n- \n", 10, 10, {
 		allowTextChangeWithNewline: true,
 	}), {
-		value: "- item\n",
+		value: "- item\n\n",
 		cursor: 7,
 	});
 });

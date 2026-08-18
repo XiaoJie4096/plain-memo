@@ -112,7 +112,7 @@ export function getMarkdownTaskEnterPatch(value: string, start: number, end: num
 	if (isEmptyTask(task)) {
 		const cursor = lineStart + task.indent.length;
 		return {
-			value: `${value.slice(0, lineStart)}${task.indent}${value.slice(start)}`,
+			value: `${value.slice(0, lineStart)}${task.indent}${preserveEmptyTaskRemainder(value, lineStart, start)}`,
 			cursor,
 		};
 	}
@@ -141,7 +141,7 @@ export function getMarkdownTaskEnterPatchAfterNativeNewline(value: string, start
 	if (isEmptyTask(task)) {
 		const cursor = lineStart + task.indent.length;
 		return {
-			value: `${value.slice(0, lineStart)}${task.indent}${value.slice(start)}`,
+			value: `${value.slice(0, lineStart)}${task.indent}${preserveEmptyTaskRemainder(value, lineStart, start)}`,
 			cursor,
 		};
 	}
@@ -173,6 +173,11 @@ function isMarkdownTaskMarker(value: string): value is MarkdownTaskMarker {
 
 function isEmptyTask(task: ParsedMarkdownTaskLine): boolean {
 	return task.body.trim().length === 0;
+}
+
+function preserveEmptyTaskRemainder(value: string, lineStart: number, cursor: number): string {
+	const remainder = value.slice(cursor);
+	return lineStart > 0 && remainder.length === 0 ? "\n" : remainder;
 }
 
 function getNextTaskListMarker(task: ParsedMarkdownTaskLine): string {
