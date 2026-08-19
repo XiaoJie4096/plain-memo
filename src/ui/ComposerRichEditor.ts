@@ -181,7 +181,15 @@ export class ComposerRichEditor {
 		}
 		this.document = serializeEditorDom(this.el, this.document);
 		this.rememberSelection();
-		this.notifyChange(serializeComposerMarkdown(this.document), event);
+		const selection = this.getSelection();
+		const markdown = serializeComposerMarkdown(this.document);
+		if (shouldRefreshInlinePresentation(event, this.document)) {
+			// A typed delimiter completes a tag in the Markdown model. Render it now
+			// so the next character starts from the atomic tag's editable boundary.
+			this.render();
+			this.restoreSelection(selection.start, selection.end);
+		}
+		this.notifyChange(markdown, event);
 	}
 
 	private handleBeforeInput(event: InputEvent): boolean {
@@ -456,6 +464,13 @@ function renderInline(container: HTMLElement, nodes: readonly ComposerInlineNode
 		// Images are also non-editable inline nodes and need the same caret landing point.
 		container.appendChild(container.ownerDocument.createTextNode(INLINE_CARET_ANCHOR));
 	}
+}
+
+function shouldRefreshInlinePresentation(event: InputEvent, document: ComposerMarkdownDocument): boolean {
+	if (event.isComposing || event.inputType !== "insertText" || !/\s/.test(event.data ?? "")) {
+		return false;
+	}
+	return document.blocks.some((block) => block.type === "paragraph" && block.inlines.some((node) => node.type === "tag"));
 }
 
 function serializeEditorDom(root: HTMLElement, previous: ComposerMarkdownDocument): ComposerMarkdownDocument {

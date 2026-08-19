@@ -47,7 +47,6 @@ test("renders composer input, tools, actions, and reference preview", async () =
 		"insert-numbered-list",
 		"insert-task-list",
 	]);
-	assert.equal(elements.tagChipListEl.hasClass("plain-memo-composer-tag-chips"), true);
 	assert.equal(elements.timeBuoyButtonEl?.disabled, true);
 	assert.equal(elements.timeBuoyButtonEl?.getAttr("data-icon"), KNOMO_TIME_BUOY_ICON);
 	assert.equal(elements.timeBuoyButtonEl?.getAttr("aria-haspopup"), "dialog");

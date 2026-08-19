@@ -29,7 +29,7 @@ import {
 	replaceTimeBuoyTrigger,
 } from "../utils/timeBuoyComposer";
 import { stripTrailingWikiLink, withMemoIdAlias } from "../utils/references";
-import { parseMemoImages, parseMemoTags } from "../utils/markdown";
+import { parseMemoImages } from "../utils/markdown";
 import { getMemoVisibleContent } from "../utils/memoFrontmatter";
 import { formatServiceError, formatSettingsText } from "../utils/serviceText";
 import type { MemoAction, TrashAction } from "./KnomoActionDispatch";
@@ -361,7 +361,6 @@ export class KnomoView extends ItemView {
 	private trashCountEls: HTMLElement[] = [];
 	private inputEl: HTMLTextAreaElement | null = null;
 	private richEditor: ComposerRichEditor | null = null;
-	private tagChipListEl: HTMLElement | null = null;
 	private timeBuoyButtonEl: HTMLButtonElement | null = null;
 	private timeBuoyMonthStatusEl: HTMLElement | null = null;
 	private timeBuoyPickerEl: HTMLElement | null = null;
@@ -1532,7 +1531,6 @@ export class KnomoView extends ItemView {
 		this.registerDomEvent(this.richEditor.el, "focus", () => this.handleComposerInputFocus());
 		this.registerDomEvent(this.richEditor.el, "blur", () => this.handleComposerInputBlur());
 		this.registerDomEvent(this.richEditor.el, "keyup", (event) => this.handleComposerKeyup(event));
-		this.tagChipListEl = composer.tagChipListEl;
 		this.timeBuoyButtonEl = composer.timeBuoyButtonEl;
 		this.timeBuoyMonthStatusEl = composer.timeBuoyMonthStatusEl;
 		this.referencePreviewEl = composer.referencePreviewEl;
@@ -1661,7 +1659,6 @@ export class KnomoView extends ItemView {
 			this.wikiLinkSuggest?.refreshForCursor();
 			this.closeTimeBuoyPickerIfTriggerMoved();
 		});
-		this.syncRecognizedTagChips();
 		this.updateSendButtonState();
 	}
 
@@ -3802,7 +3799,6 @@ export class KnomoView extends ItemView {
 			this.clearComposerContext();
 			if (this.inputEl !== null) {
 				this.inputEl.value = this.draftContent;
-				this.syncRecognizedTagChips();
 			}
 			if (isMobileSave) {
 				this.closeMobileComposerKeepingDraft();
@@ -4508,7 +4504,6 @@ export class KnomoView extends ItemView {
 		if (this.inputEl !== null) {
 			this.inputEl.value = this.draftContent;
 		}
-		this.syncRecognizedTagChips();
 		this.resizeInput();
 		this.updateStatus("", false);
 		this.syncUiChrome();
@@ -4538,7 +4533,6 @@ export class KnomoView extends ItemView {
 		if (this.inputEl !== null) {
 			this.inputEl.value = this.draftContent;
 		}
-		this.syncRecognizedTagChips();
 		this.openComposer();
 		this.mountDesktopComposerInEditingCard(memo.id);
 		this.resizeInput();
@@ -4569,7 +4563,6 @@ export class KnomoView extends ItemView {
 		this.quoteReferenceText = referenceText;
 		this.quoteMarkdownText = formatMarkdownQuoteDraft(memo.contentSnapshot);
 		this.openComposer();
-		this.syncRecognizedTagChips();
 		const cursor = this.inputEl?.value.length ?? 0;
 		this.inputEl?.setSelectionRange(cursor, cursor);
 		this.resizeInput();
@@ -5544,7 +5537,6 @@ export class KnomoView extends ItemView {
 			this.draftContent,
 			getComposerMode(this.editingMemo, this.quoteSourceMemoId),
 		);
-		this.syncRecognizedTagChips();
 		this.updateSendButtonState();
 		if (this.currentLayout === "mobile") {
 			this.scheduleMobileComposerResize();
@@ -5568,6 +5560,12 @@ export class KnomoView extends ItemView {
 	): void {
 		this.syncRichEditorInput(markdown, selection);
 		this.syncInputState();
+		// Rich-editor input does not bubble through the hidden textarea where the
+		// suggestion-acceptance suppression is normally cleared. Any real edit
+		// after accepting a candidate must be allowed to activate a new query.
+		if (event !== undefined && !event.isComposing) {
+			this.tagSuggest?.clearAcceptedSuggestionSuppression();
+		}
 		this.syncRichEditorTagSuggest(markdown, selection, event === undefined);
 		if (this.wikiLinkSuggest?.handleInput()) {
 			return;
@@ -5590,6 +5588,9 @@ export class KnomoView extends ItemView {
 		if (event.isComposing || event.inputType !== "insertText" || event.data !== "#") {
 			return false;
 		}
+		// '#' is inserted through the rich-editor's custom path, so there is no
+		// native textarea input event to clear suppression after a prior accept.
+		this.tagSuggest?.clearAcceptedSuggestionSuppression();
 		this.richEditor?.insertText("#");
 		return true;
 	}
@@ -5651,19 +5652,6 @@ export class KnomoView extends ItemView {
 		}
 		this.wikiLinkSuggest?.close();
 		this.tagSuggest.openForCurrentTrigger(refreshSuggestions);
-	}
-
-	private syncRecognizedTagChips(): void {
-		const container = this.tagChipListEl;
-		if (container === null) {
-			return;
-		}
-		const tags = parseMemoTags(this.inputEl?.value ?? "");
-		container.empty();
-		container.toggleClass("is-visible", tags.length > 0);
-		for (const tag of tags) {
-			container.createSpan({ cls: "plain-memo-composer-tag-chip", text: `#${tag}` });
-		}
 	}
 
 	private resizeInput(): void {

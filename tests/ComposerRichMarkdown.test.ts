@@ -48,6 +48,15 @@ test("preserves tags and image source syntax as inline nodes", () => {
 	assert.equal(serializeComposerInline(nodes), source);
 });
 
+test("recognizes a manually completed tag once whitespace follows it", () => {
+	const source = "#项目 ";
+	const nodes = parseComposerInline(source);
+	assert.deepEqual(nodes, [
+		{ type: "tag", value: "项目", source: "#项目" },
+		{ type: "text", value: " " },
+	]);
+});
+
 test("keeps unsupported block Markdown as raw source", () => {
 	const document = parseComposerMarkdown("> 引用\n普通文字");
 	assert.deepEqual(document.blocks[0], { type: "raw", value: "> 引用" });

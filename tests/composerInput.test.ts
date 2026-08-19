@@ -12,6 +12,7 @@ test("keeps hash at the start of text and after whitespace", () => {
 	assert.equal(getHashInsertionText("", 0), "#");
 	assert.equal(getHashInsertionText("今天记录 ", 5), "#");
 	assert.equal(getHashInsertionText("第一行\n", 4), "#");
+	assert.equal(getHashInsertionText("#项目", 3), " #");
 });
 
 test("detects tag query around the cursor", () => {

@@ -128,6 +128,28 @@ test("deactivates the query before mirroring an accepted suggestion", () => {
 	assert.equal((suggest as unknown as { activationState: { isEnabled: () => boolean } }).activationState.isEnabled(), false);
 });
 
+test("allows a new hash query immediately after accepting a suggestion", () => {
+	const input = new FakeTextArea("#pro", 4);
+	let refreshCount = 0;
+	const suggest = new KnomoTagSuggest({} as App, input.asTextArea(), () => undefined, {
+		suggestHostEl: {} as HTMLDivElement,
+	});
+	(suggest as unknown as { onInputChange: () => void }).onInputChange = () => {
+		refreshCount += 1;
+	};
+	const internal = suggest as unknown as {
+		activationState: { enableExplicitly: () => void };
+		selectSuggestion: (value: { tag: string }, event: KeyboardEvent) => void;
+	};
+	internal.activationState.enableExplicitly();
+	internal.selectSuggestion({ tag: "project/knomo" }, {} as KeyboardEvent);
+
+	// This is the state immediately before the rich editor inserts the next '#'.
+	suggest.clearAcceptedSuggestionSuppression();
+	suggest.openForCurrentTrigger();
+	assert.equal(refreshCount, 1);
+});
+
 test("settles an accepted suggestion even when synchronization closes the popover", () => {
 	const frames = new FakeAnimationFrames();
 	const input = new FakeTextArea("#pro", 4, frames.asWindow());
@@ -154,12 +176,17 @@ class FakeTextArea {
 	readonly ownerDocument: { defaultView: Window | null; querySelectorAll: () => never[] };
 	selectionEnd: number;
 
-	constructor(readonly value: string, readonly selectionStart: number, defaultView: Window | null = null) {
+	constructor(readonly value: string, public selectionStart: number, defaultView: Window | null = null) {
 		this.selectionEnd = selectionStart;
 		this.ownerDocument = { defaultView, querySelectorAll: () => [] };
 	}
 
 	addEventListener(): void {}
+
+	setSelectionRange(start: number, end: number): void {
+		this.selectionStart = start;
+		this.selectionEnd = end;
+	}
 
 	asTextArea(): HTMLTextAreaElement {
 		return this as unknown as HTMLTextAreaElement;

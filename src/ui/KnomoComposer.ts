@@ -8,7 +8,6 @@ export interface KnomoComposerElements {
 	inputEl: HTMLTextAreaElement;
 	composerInputLabelId: string;
 	richEditorHostEl: HTMLElement;
-	tagChipListEl: HTMLElement;
 	referencePreviewEl: HTMLElement;
 	composerBarEl: HTMLElement;
 	toolsEl: HTMLElement;
@@ -55,10 +54,6 @@ export function renderKnomoComposer(container: HTMLElement, options: RenderKnomo
 	const richEditorHostEl = inputArea.createDiv({ cls: "plain-memo-rich-editor-host" });
 
 	const referencePreviewEl = inputArea.createDiv({ cls: "plain-memo-reference-preview" });
-	const tagChipListEl = inputArea.createDiv({
-		cls: "plain-memo-composer-tag-chips",
-		attr: { "aria-live": "polite", "aria-atomic": "true" },
-	});
 	const composerBarEl = inputArea.createDiv({ cls: "plain-memo-composer-bar" });
 	const toolsEl = composerBarEl.createDiv({ cls: "plain-memo-tool-group" });
 	options.createIconButton(toolsEl, "hash", t("composer.insertTag"), "plain-memo-tool-button", "insert-tag", false);
@@ -117,7 +112,6 @@ export function renderKnomoComposer(container: HTMLElement, options: RenderKnomo
 		inputEl,
 		composerInputLabelId,
 		richEditorHostEl,
-		tagChipListEl,
 		referencePreviewEl,
 		composerBarEl,
 		toolsEl,
