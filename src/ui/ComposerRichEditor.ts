@@ -10,6 +10,14 @@ import {
 } from "./ComposerRichMarkdown";
 import { applyListFormatToText, getHashInsertionText, getListBoundaryBackspacePatch, getListEnterPatch, getParagraphEnterPatch, type ListFormatType } from "../utils/composerInput";
 
+const INLINE_CARET_ANCHOR = "\u200B";
+const INLINE_PRESERVED_SPACE = "\u00A0";
+
+interface ComposerDomPoint {
+	node: Node;
+	offset: number;
+}
+
 export interface ComposerRichEditorOptions {
 	onChange: (markdown: string, selection: ComposerRichEditorSelection, event?: InputEvent) => void;
 	onSelectionChange?: (markdown: string, selection: ComposerRichEditorSelection) => void;
@@ -66,6 +74,8 @@ export class ComposerRichEditor {
 		});
 		this.el.addEventListener("keydown", (event) => {
 			if (this.handleKeydown(event)) {
+				event.preventDefault();
+				event.stopPropagation();
 				return;
 			}
 			if (this.options.onShortcut?.(event) === true) {
@@ -104,6 +114,10 @@ export class ComposerRichEditor {
 		this.notifyChange(value);
 	}
 
+	insertParagraph(): void {
+		this.handleEnter();
+	}
+
 	insertWikiLinkShell(): void {
 		const source = this.getMarkdown();
 		const selection = this.getSelection();
@@ -118,6 +132,15 @@ export class ComposerRichEditor {
 
 	focus(options?: FocusOptions): void {
 		this.el.focus(options);
+	}
+
+	/** Restores a caret after an external popover has finished releasing focus. */
+	focusAndRestoreSelection(start: number, end = start): void {
+		this.restoreSelection(start, end);
+		// Suggestion teardown can move focus again during the same frame. Re-apply
+		// the editor focus and caret once the teardown callbacks have completed.
+		const win = this.el.ownerDocument.defaultView;
+		win?.requestAnimationFrame(() => this.restoreSelection(start, end));
 	}
 
 	/** Applies externally generated Markdown, such as an input suggestion, without losing the caret. */
@@ -150,7 +173,9 @@ export class ComposerRichEditor {
 	private handleBeforeInput(event: InputEvent): boolean {
 		if (event.isComposing) return false;
 		if (event.inputType === "deleteContentBackward") {
-			return this.handleListBoundaryBackspace();
+			return this.handleListBoundaryBackspace()
+				|| this.handleTagLineBoundaryBackspace()
+				|| this.handleAtomicBoundaryBackspace();
 		}
 		const isInsertedNewline = event.inputType === "insertText" && event.data === "\n";
 		if (event.inputType !== "insertParagraph" && event.inputType !== "insertLineBreak" && !isInsertedNewline) {
@@ -160,7 +185,11 @@ export class ComposerRichEditor {
 	}
 
 	handleKeydown(event: KeyboardEvent): boolean {
-		if (event.key === "Backspace" && this.handleListBoundaryBackspace()) {
+		if (event.key === "Backspace" && (
+			this.handleListBoundaryBackspace()
+			|| this.handleTagLineBoundaryBackspace()
+			|| this.handleAtomicBoundaryBackspace()
+		)) {
 			event.preventDefault();
 			return true;
 		}
@@ -180,6 +209,9 @@ export class ComposerRichEditor {
 		this.setMarkdown(patch.value);
 		this.restoreSelection(patch.cursor, patch.cursor);
 		this.notifyChange(patch.value);
+		// Closing an active tag popover can move focus after onChange returns.
+		// Restore once more on the next frame so the new line remains editable.
+		this.focusAndRestoreSelection(patch.cursor);
 		return true;
 	}
 
@@ -192,6 +224,48 @@ export class ComposerRichEditor {
 		const value = patch.value;
 		this.setMarkdown(value);
 		this.restoreSelection(patch.cursor, patch.cursor);
+		this.notifyChange(value);
+		return true;
+	}
+
+	/** Removes one newline after a tag, preserving later blank lines and content. */
+	private handleTagLineBoundaryBackspace(): boolean {
+		const selection = this.getSelection();
+		if (selection.start !== selection.end || selection.start <= 0) {
+			return false;
+		}
+		const markdown = this.getMarkdown();
+		const beforeCaret = markdown.slice(0, selection.start);
+		if (!/(?:^|[\s])#[^\s#\n]+(?:\n)+$/.test(beforeCaret)) {
+			return false;
+		}
+		const value = `${markdown.slice(0, selection.start - 1)}${markdown.slice(selection.end)}`;
+		this.setMarkdown(value);
+		this.restoreSelection(selection.start - 1, selection.start - 1);
+		this.notifyChange(value);
+		return true;
+	}
+
+	/** Prevents Chromium from removing a later blank line when Backspace is immediately after an atomic tag or image. */
+	private handleAtomicBoundaryBackspace(): boolean {
+		const selection = this.el.ownerDocument.getSelection();
+		const atomic = getAtomicInlineImmediatelyBeforeCaret(this.el, selection);
+		if (atomic === null) {
+			return false;
+		}
+		const current = this.getSelection();
+		const source = atomic.getAttr("data-source");
+		if (current.start !== current.end || source === null || current.start < source.length) {
+			return false;
+		}
+		const markdown = this.getMarkdown();
+		const tagStart = current.start - source.length;
+		if (markdown.slice(tagStart, current.start) !== source) {
+			return false;
+		}
+		const value = `${markdown.slice(0, tagStart)}${markdown.slice(current.end)}`;
+		this.setMarkdown(value);
+		this.restoreSelection(tagStart, tagStart);
 		this.notifyChange(value);
 		return true;
 	}
@@ -240,6 +314,9 @@ export class ComposerRichEditor {
 	}
 
 	private restoreSelection(start: number, end: number): void {
+		// Chromium may discard a range assigned while a suggestion popover owns
+		// focus. Focus the editor first, then install the range in that document.
+		this.focus({ preventScroll: true });
 		const selection = this.el.ownerDocument.getSelection();
 		if (selection === null) return;
 		const startPoint = findTextPoint(this.el, start);
@@ -251,7 +328,6 @@ export class ComposerRichEditor {
 		selection.removeAllRanges();
 		selection.addRange(range);
 		this.savedSelection = { start, end };
-		this.focus({ preventScroll: true });
 	}
 }
 
@@ -259,15 +335,15 @@ export class ComposerRichEditor {
 function renderTrailingNewline(container: HTMLElement): void {
 	const last = container.lastElementChild;
 	if (last?.matches("p") && (last.textContent ?? "").length > 0) {
-		last.createEl("br");
-		last.appendChild(last.ownerDocument.createTextNode(""));
+		last.createEl("br", { attr: { "data-trailing-line-break": "true" } });
+		last.appendChild(last.ownerDocument.createTextNode(INLINE_CARET_ANCHOR));
 		// Chromium needs a second terminal break to paint the empty final line.
 		last.createEl("br", { attr: { "data-terminal-line-placeholder": "true" } });
 		return;
 	}
 	const paragraph = container.createEl("p", { cls: "plain-memo-rich-editor-paragraph" });
 	paragraph.createEl("br");
-	paragraph.appendChild(paragraph.ownerDocument.createTextNode(""));
+	paragraph.appendChild(paragraph.ownerDocument.createTextNode(INLINE_CARET_ANCHOR));
 }
 
 function renderBlock(container: HTMLElement, block: ComposerBlock, resolveImageUrl?: (source: string) => string | null): void {
@@ -342,7 +418,7 @@ function renderInline(container: HTMLElement, nodes: readonly ComposerInlineNode
 			const parts = node.value.split("\n");
 			for (const [index, part] of parts.entries()) {
 				if (index > 0) container.createEl("br");
-				container.appendChild(container.ownerDocument.createTextNode(part));
+				container.appendChild(container.ownerDocument.createTextNode(toEditableText(part)));
 			}
 			continue;
 		}
@@ -351,7 +427,7 @@ function renderInline(container: HTMLElement, nodes: readonly ComposerInlineNode
 			tag.setAttr("data-source", node.source);
 			tag.contentEditable = "false";
 			// Keep an editable caret landing point after non-editable inline tags.
-			container.appendChild(container.ownerDocument.createTextNode(""));
+			container.appendChild(container.ownerDocument.createTextNode(INLINE_CARET_ANCHOR));
 			continue;
 		}
 		const image = container.createEl("span", { cls: "plain-memo-rich-editor-image" });
@@ -364,7 +440,7 @@ function renderInline(container: HTMLElement, nodes: readonly ComposerInlineNode
 			image.setText(node.source);
 		}
 		// Images are also non-editable inline nodes and need the same caret landing point.
-		container.appendChild(container.ownerDocument.createTextNode(""));
+		container.appendChild(container.ownerDocument.createTextNode(INLINE_CARET_ANCHOR));
 	}
 }
 
@@ -408,7 +484,7 @@ function serializeInlineDom(container: Element, ignored: Element | null = null):
 			if (child.tagName.toLowerCase() === "br") return false;
 			return child.getAttr("data-source") !== null || (child.textContent ?? "").length > 0;
 		}
-		return (child.textContent ?? "").length > 0;
+		return fromEditableText(child.textContent ?? "").length > 0;
 	});
 	if (!hasMeaningfulContent) {
 		return [{ type: "text", value: "" }];
@@ -418,7 +494,8 @@ function serializeInlineDom(container: Element, ignored: Element | null = null):
 			continue;
 		}
 		if (child.nodeType === Node.TEXT_NODE) {
-			nodes.push(...parseComposerInline(child.textContent ?? ""));
+			const text = fromEditableText(child.textContent ?? "");
+			if (text.length > 0) nodes.push(...parseComposerInline(text));
 			continue;
 		}
 		if (!(child instanceof HTMLElement)) continue;
@@ -451,7 +528,7 @@ function getEditorSelection(root: HTMLElement): { start: number; end: number } {
 	};
 }
 
-function findTextPoint(root: HTMLElement, target: number): { node: Text; offset: number } | null {
+function findTextPoint(root: HTMLElement, target: number): ComposerDomPoint | null {
 	let offset = 0;
 	for (const [index, block] of Array.from(root.children).entries()) {
 		const blockLength = getDomBlockMarkdownLength(block);
@@ -468,6 +545,13 @@ function findTextPoint(root: HTMLElement, target: number): { node: Text; offset:
 				}
 			} else {
 				const localTarget = Math.max(0, target - offset);
+				const trailingBreak = block.querySelector<HTMLElement>(":scope > br[data-trailing-line-break]");
+				if (trailingBreak !== null && localTarget === blockLength) {
+					return {
+						node: block,
+						offset: Array.from(block.childNodes).indexOf(trailingBreak) + 1,
+					};
+				}
 				return findTextPointInElement(block, localTarget);
 			}
 		}
@@ -520,7 +604,7 @@ function getElementTextLength(element: Element): number {
 }
 
 function getMarkdownNodeLength(node: Node): number {
-	if (node.nodeType === Node.TEXT_NODE) return node.textContent?.length ?? 0;
+	if (node.nodeType === Node.TEXT_NODE) return (node.textContent ?? "").split(INLINE_CARET_ANCHOR).join("").length;
 	if (node instanceof Element) {
 		if (node.getAttr("data-terminal-line-placeholder") !== null) return 0;
 		if (node.tagName.toLowerCase() === "br") return 1;
@@ -558,18 +642,50 @@ function getDomBlockSeparatorLength(root: HTMLElement, index: number): number {
 	return 1;
 }
 
+function getAtomicInlineImmediatelyBeforeCaret(root: HTMLElement, selection: Selection | null): HTMLElement | null {
+	if (selection === null || selection.rangeCount !== 1 || !selection.isCollapsed) {
+		return null;
+	}
+	const container = selection.anchorNode;
+	if (container === null || !root.contains(container)) {
+		return null;
+	}
+	if (container.nodeType === Node.TEXT_NODE) {
+		return selection.anchorOffset === 0 && isAtomicInline(container.previousSibling)
+			? container.previousSibling
+			: null;
+	}
+	if (!(container instanceof Element) || selection.anchorOffset <= 0) {
+		return null;
+	}
+	const previous = container.childNodes.item(selection.anchorOffset - 1);
+	return isAtomicInline(previous) ? previous : null;
+}
+
+function isAtomicInline(node: Node | null): node is HTMLElement {
+	return node instanceof HTMLElement
+		&& node.contentEditable === "false"
+		&& node.getAttr("data-source") !== null;
+}
+
 function findTextPointInElement(root: Element, target: number): { node: Text; offset: number } | null {
 	const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT);
 	let node = walker.nextNode();
 	let last: Text | null = null;
 	while (node !== null) {
 		const textNode = node as Text;
+		// Never place the caret inside a non-editable tag/image atom. The anchor
+		// text node rendered immediately after it is the editable landing point.
+		if (textNode.parentElement?.contentEditable === "false") {
+			node = walker.nextNode();
+			continue;
+		}
 		last = textNode;
 		const range = root.ownerDocument.createRange();
 		range.selectNodeContents(root);
 		range.setEndBefore(textNode);
 		const start = getMarkdownNodeLength(range.cloneContents());
-		const textLength = textNode.textContent?.length ?? 0;
+		const textLength = (textNode.textContent ?? "").split(INLINE_CARET_ANCHOR).join("").length;
 		if (!Number.isFinite(target) || target <= start + textLength) {
 			return { node: textNode, offset: Math.max(0, Math.min(textLength, target - start)) };
 		}
@@ -586,4 +702,15 @@ function serializeDomText(fragment: DocumentFragment): string {
 	const wrapper = fragment.ownerDocument.createElement("div");
 	wrapper.appendChild(fragment);
 	return wrapper.textContent ?? "";
+}
+
+/** Keeps line-edge spaces editable without storing non-breaking spaces in Markdown. */
+function toEditableText(value: string): string {
+	return value.replace(/^ +| +$/g, (spaces) => INLINE_PRESERVED_SPACE.repeat(spaces.length));
+}
+
+function fromEditableText(value: string): string {
+	return value
+		.split(INLINE_CARET_ANCHOR).join("")
+		.split(INLINE_PRESERVED_SPACE).join(" ");
 }

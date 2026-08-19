@@ -1,7 +1,7 @@
 import { AbstractInputSuggest, getAllTags, prepareFuzzySearch, renderResults } from "obsidian";
 import type { App, SearchResult } from "obsidian";
 
-import { getTagQueryAtCursor, replaceTagQueryWithSuggestion } from "../utils/composerInput";
+import { getTagQueryAtCursor, isExactTagSuggestion, replaceTagQueryWithSuggestion } from "../utils/composerInput";
 import {
 	clamp,
 	getTextareaCharacterRect,
@@ -17,6 +17,7 @@ interface TagSuggestion {
 
 export interface KnomoTagSuggestOptions {
 	onSuggestionSelected?: (replacement: { value: string; cursor: number }) => void;
+	onSuggestionSettled?: (replacement: { value: string; cursor: number }) => void;
 	getAnchorRect?: (offset: number) => DOMRect | null;
 	/** The visible contenteditable host required by Obsidian's suggestion API. */
 	suggestHostEl?: HTMLDivElement;
@@ -27,6 +28,10 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 	private popoverRepositionFrameId: number | null = null;
 	private compositionRefreshFrameId: number | null = null;
 	private emptyPopoverRetryCount = 0;
+	private visibleSuggestions: TagSuggestion[] = [];
+	private selectedSuggestionIndex = 0;
+	private suppressActivationUntilInput = false;
+	private acceptedCloseFrameId: number | null = null;
 	private readonly activationState = new TagSuggestActivationState();
 
 	constructor(
@@ -38,6 +43,9 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 		super(app, options.suggestHostEl ?? inputEl as unknown as HTMLInputElement);
 		this.limit = 0;
 		this.inputEl.addEventListener("beforeinput", (event) => {
+			if (event.isTrusted) {
+				this.suppressActivationUntilInput = false;
+			}
 			this.activationState.handleBeforeInput({
 				value: this.inputEl.value,
 				selectionStart: this.inputEl.selectionStart,
@@ -49,7 +57,12 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 		}, { capture: true });
 		this.inputEl.addEventListener("focus", () => this.reset(), { capture: true });
 		this.inputEl.addEventListener("click", () => this.reset(), { capture: true });
-		this.inputEl.addEventListener("input", () => this.refreshAfterInput());
+		this.inputEl.addEventListener("input", (event) => {
+			if (event.isTrusted) {
+				this.suppressActivationUntilInput = false;
+			}
+			this.refreshAfterInput();
+		});
 	}
 
 	open(): void {
@@ -62,10 +75,19 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 	close(): void {
 		this.clearPopoverReposition();
 		this.clearCompositionRefresh();
-		this.showPositionedPopover();
+		const container = this.getSuggestionContainer();
+		this.showPositionedPopover(container);
 		super.close();
+		// AbstractInputSuggest can leave a detached suggestion container behind
+		// when its host is a contenteditable element rather than a native input.
+		// Remove that stale layer so it cannot keep focus or consume the next key.
+		if (container?.hasClass("plain-memo-tag-suggest-popover") === true) {
+			container.remove();
+		}
 		this.tagsSnapshot = null;
 		this.emptyPopoverRetryCount = 0;
+		this.visibleSuggestions = [];
+		this.selectedSuggestionIndex = 0;
 	}
 
 	reset(): void {
@@ -78,6 +100,10 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 	 * already reaches AbstractInputSuggest's listener, so it must not be refreshed twice.
 	 */
 	openForCurrentTrigger(refreshSuggestions = true): void {
+		if (this.suppressActivationUntilInput) {
+			this.close();
+			return;
+		}
 		this.activationState.enableExplicitly();
 		if (refreshSuggestions) {
 			this.refreshNativeSuggestions();
@@ -89,8 +115,44 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 		}
 	}
 
+	/** Keeps selection synchronization after acceptance from reopening the same query. */
+	markSuggestionAccepted(replacement?: { value: string; cursor: number }): void {
+		if (this.acceptedCloseFrameId !== null) {
+			this.inputEl.ownerDocument.defaultView?.cancelAnimationFrame(this.acceptedCloseFrameId);
+			this.acceptedCloseFrameId = null;
+		}
+		this.suppressActivationUntilInput = true;
+		this.reset();
+		const win = this.inputEl.ownerDocument.defaultView;
+		if (win !== null) {
+			this.acceptedCloseFrameId = win.requestAnimationFrame(() => {
+				this.acceptedCloseFrameId = null;
+				this.close();
+				if (replacement !== undefined && this.options.onSuggestionSettled !== undefined) {
+					this.options.onSuggestionSettled(replacement);
+				} else {
+					this.options.suggestHostEl?.focus({ preventScroll: true });
+				}
+			});
+		}
+	}
+
+	/** Allows the next real rich-editor input to activate suggestions again. */
+	clearAcceptedSuggestionSuppression(): void {
+		this.suppressActivationUntilInput = false;
+	}
+
 	/** Handles navigation when the visible input is the rich editor rather than the hidden textarea. */
 	handleExternalKeydown(event: KeyboardEvent): boolean {
+		if (!this.activationState.isEnabled() || getTagQueryAtCursor(this.inputEl.value, this.inputEl.selectionStart) === null) {
+			// Obsidian keeps detached suggestion items alive. They must not consume
+			// Enter once the caret has already left the active tag query.
+			this.close();
+			return false;
+		}
+		if (this.consumeExactTagEnter(event)) {
+			return false;
+		}
 		const container = this.getSuggestionContainer();
 		const items = container === null
 			? []
@@ -106,9 +168,9 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 			return false;
 		}
 		if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-			const selectedIndex = Math.max(0, items.findIndex((item) => item.hasClass("is-selected")));
 			const direction = event.key === "ArrowDown" ? 1 : -1;
-			const nextIndex = (selectedIndex + direction + items.length) % items.length;
+			const nextIndex = (this.selectedSuggestionIndex + direction + items.length) % items.length;
+			this.selectedSuggestionIndex = nextIndex;
 			for (const [index, item] of items.entries()) {
 				item.toggleClass("is-selected", index === nextIndex);
 				item.setAttr("aria-selected", index === nextIndex ? "true" : "false");
@@ -116,11 +178,28 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 			return true;
 		}
 		if (event.key === "Enter" || event.key === "Tab") {
-			const selected = items.find((item) => item.hasClass("is-selected")) ?? items[0];
-			selected?.click();
+			const selected = this.visibleSuggestions[this.selectedSuggestionIndex] ?? this.visibleSuggestions[0];
+			if (selected === undefined) {
+				return false;
+			}
+			this.selectSuggestion(selected, event);
 			return true;
 		}
 		return false;
+	}
+
+	/** Stops Obsidian from accepting an already complete tag when Enter should create a new line. */
+	consumeExactTagEnter(event: KeyboardEvent): boolean {
+		if (event.key !== "Enter" || event.shiftKey || event.isComposing || !this.activationState.isEnabled()) {
+			return false;
+		}
+		const range = getTagQueryAtCursor(this.inputEl.value, this.inputEl.selectionStart);
+		const selected = this.visibleSuggestions[this.selectedSuggestionIndex] ?? this.visibleSuggestions[0];
+		if (range === null || selected === undefined || !isExactTagSuggestion(range.query, selected.tag)) {
+			return false;
+		}
+		this.reset();
+		return true;
 	}
 
 	/** Refreshes after an IME commits its final text, which may not emit a later normal input event. */
@@ -169,9 +248,19 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 			return [];
 		}
 		const tags = this.getTagsSnapshot();
+		// Once the query already names an existing tag, Enter belongs to the
+		// editor as a paragraph break. Keeping the identical suggestion open lets
+		// AbstractInputSuggest consume Enter before the contenteditable receives it.
+		if (range.query.length > 0 && tags.some((tag) => isExactTagSuggestion(range.query, tag))) {
+			this.visibleSuggestions = [];
+			this.selectedSuggestionIndex = 0;
+			return [];
+		}
 		const suggestions = range.query.length === 0
 			? tags.map((tag) => ({ tag, result: null }))
 			: this.getFuzzySuggestions(tags, range.query);
+		this.visibleSuggestions = suggestions;
+		this.selectedSuggestionIndex = 0;
 		if (suggestions.length > 0) {
 			this.queuePopoverReposition();
 		}
@@ -196,15 +285,16 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 			return;
 		}
 		const next = replaceTagQueryWithSuggestion(this.inputEl.value, range, value.tag);
+		// Stop the active query before notifying the rich editor. The callback may
+		// synchronously mirror the replacement and move the caret for one frame.
+		this.markSuggestionAccepted(next);
 		if (this.options.onSuggestionSelected !== undefined) {
 			this.options.onSuggestionSelected(next);
-			this.close();
 			return;
 		}
 		this.inputEl.value = next.value;
 		this.inputEl.setSelectionRange(next.cursor, next.cursor);
 		this.onInputChanged();
-		this.close();
 	}
 
 	private hidePopoverUntilPositioned(): void {

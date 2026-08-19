@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { applyListFormatToText, getHashInsertionText, getListBoundaryBackspacePatch, getListEnterPatch, getListEnterPatchAfterNativeNewline, getListEnterPatchForNativeInput, getParagraphEnterPatch, getTagQueryAtCursor, isTaskListShortcut, replaceTagQueryWithSuggestion } from "../src/utils/composerInput";
+import { applyListFormatToText, getHashInsertionText, getListBoundaryBackspacePatch, getListEnterPatch, getListEnterPatchAfterNativeNewline, getListEnterPatchForNativeInput, getParagraphEnterPatch, getTagQueryAtCursor, isExactTagSuggestion, isTaskListShortcut, replaceTagQueryWithSuggestion } from "../src/utils/composerInput";
 import { parseMemoTags } from "../src/utils/markdown";
 
 test("inserts a spaced hash after existing content", () => {
@@ -42,6 +42,12 @@ test("replaces current tag query with selected suggestion", () => {
 		value: "今天 #project/knomo 明天",
 		cursor: 18,
 	});
+});
+
+test("distinguishes a completed tag from a partial suggestion query", () => {
+	assert.equal(isExactTagSuggestion("project/knomo", "project/knomo"), true);
+	assert.equal(isExactTagSuggestion("Project/Knomo", "#project/knomo"), true);
+	assert.equal(isExactTagSuggestion("pro", "project/knomo"), false);
 });
 
 test("formats the current line as a Markdown list", () => {

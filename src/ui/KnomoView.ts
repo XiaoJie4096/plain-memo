@@ -1562,6 +1562,9 @@ export class KnomoView extends ItemView {
 			onSuggestionSelected: (replacement) => {
 				this.richEditor?.setMarkdownAndRestoreSelection(replacement.value, replacement.cursor);
 			},
+			onSuggestionSettled: (replacement) => {
+				this.richEditor?.focusAndRestoreSelection(replacement.cursor);
+			},
 			getAnchorRect: (offset) => this.richEditor?.getCaretRectAt(offset) ?? null,
 			suggestHostEl: this.richEditor.el,
 		});
@@ -1626,6 +1629,12 @@ export class KnomoView extends ItemView {
 			this.closeTimeBuoyPickerIfTriggerMoved();
 		});
 		this.registerDomEvent(this.inputEl, "keydown", (event) => {
+			if (this.tagSuggest?.consumeExactTagEnter(event)) {
+				event.preventDefault();
+				event.stopImmediatePropagation();
+				this.richEditor?.insertParagraph();
+				return;
+			}
 			if (this.handleComposerSaveShortcut(event)) {
 				return;
 			}
@@ -5630,6 +5639,9 @@ export class KnomoView extends ItemView {
 	): void {
 		if (this.tagSuggest === null) {
 			return;
+		}
+		if (!refreshSuggestions) {
+			this.tagSuggest.clearAcceptedSuggestionSuppression();
 		}
 		if (getTagQueryAtCursor(markdown, selection.start) === null) {
 			this.tagSuggest.close();

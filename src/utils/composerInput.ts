@@ -85,6 +85,11 @@ export function replaceTagQueryWithSuggestion(value: string, range: TagQueryRang
 	};
 }
 
+/** Lets Enter create a new line once the typed tag already exactly matches the selected suggestion. */
+export function isExactTagSuggestion(query: string, tag: string): boolean {
+	return query.localeCompare(tag.replace(/^#/, ""), undefined, { sensitivity: "accent" }) === 0;
+}
+
 export function applyListFormatToText(value: string, start: number, end: number, type: ListFormatType): TextReplacement {
 	const blockStart = value.lastIndexOf("\n", Math.max(0, start - 1)) + 1;
 	const nextLineBreak = value.indexOf("\n", end);
