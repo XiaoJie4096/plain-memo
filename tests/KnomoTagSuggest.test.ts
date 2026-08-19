@@ -150,6 +150,21 @@ test("allows a new hash query immediately after accepting a suggestion", () => {
 	assert.equal(refreshCount, 1);
 });
 
+test("allows toolbar activation after accepting a suggestion without native input", () => {
+	const input = new FakeTextArea("#project/knomo #", 16);
+	const suggest = new KnomoTagSuggest({} as App, input.asTextArea(), () => undefined, {
+		suggestHostEl: {} as HTMLDivElement,
+	});
+	(suggest as unknown as { onInputChange: () => void }).onInputChange = () => undefined;
+	(suggest as unknown as { activationState: { enableExplicitly: () => void } }).activationState.enableExplicitly();
+	(suggest.markSuggestionAccepted as () => void)();
+
+	// This mirrors the toolbar path, which does not emit a native textarea input.
+	suggest.clearAcceptedSuggestionSuppression();
+	suggest.openForCurrentTrigger();
+	assert.equal((suggest as unknown as { suppressActivationUntilInput: boolean }).suppressActivationUntilInput, false);
+});
+
 test("settles an accepted suggestion even when synchronization closes the popover", () => {
 	const frames = new FakeAnimationFrames();
 	const input = new FakeTextArea("#pro", 4, frames.asWindow());

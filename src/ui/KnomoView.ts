@@ -5522,10 +5522,14 @@ export class KnomoView extends ItemView {
 		if (this.inputEl === null || this.tagSuggest === null) {
 			return;
 		}
+		// Toolbar insertion bypasses the native textarea input event. Clear the
+		// post-acceptance suppression before opening a fresh tag query.
+		this.tagSuggest.clearAcceptedSuggestionSuppression();
 		this.wikiLinkSuggest?.close();
 		const win = this.containerEl.win;
 		win.requestAnimationFrame(() => {
 			this.focusComposerInputNow(false, false);
+			this.tagSuggest?.clearAcceptedSuggestionSuppression();
 			this.tagSuggest?.openForCurrentTrigger();
 		});
 	}

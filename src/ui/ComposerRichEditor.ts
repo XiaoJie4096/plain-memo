@@ -9,6 +9,7 @@ import {
 	type ComposerMarkdownDocument,
 } from "./ComposerRichMarkdown";
 import { applyListFormatToText, getHashInsertionText, getListBoundaryBackspacePatch, getListEnterPatch, getParagraphEnterPatch, type ListFormatType } from "../utils/composerInput";
+import { ComposerRichEnterState } from "./ComposerRichEnterState";
 
 const INLINE_CARET_ANCHOR = "\u200B";
 const INLINE_PRESERVED_SPACE = "\u00A0";
@@ -43,6 +44,7 @@ export class ComposerRichEditor {
 	private document: ComposerMarkdownDocument;
 	private isRendering = false;
 	private savedSelection: { start: number; end: number } | null = null;
+	private readonly enterState = new ComposerRichEnterState();
 
 	constructor(container: HTMLElement, initialMarkdown: string, private readonly options: ComposerRichEditorOptions) {
 		this.document = parseComposerMarkdown(initialMarkdown);
@@ -203,6 +205,9 @@ export class ComposerRichEditor {
 		if (event.inputType !== "insertParagraph" && event.inputType !== "insertLineBreak" && !isInsertedNewline) {
 			return false;
 		}
+		if (this.enterState.consumeDuplicateBeforeInput(this.getEnterSnapshot())) {
+			return true;
+		}
 		return this.handleEnter();
 	}
 
@@ -219,7 +224,12 @@ export class ComposerRichEditor {
 			return false;
 		}
 		event.preventDefault();
-		return this.handleEnter();
+		const handled = this.handleEnter();
+		if (handled) {
+			this.enterState.markHandledKeydown(this.getEnterSnapshot());
+			this.el.ownerDocument.defaultView?.requestAnimationFrame(() => this.enterState.clear());
+		}
+		return handled;
 	}
 
 	/** Creates a Markdown paragraph for ordinary Enter and continues a list when applicable. */
@@ -235,6 +245,15 @@ export class ComposerRichEditor {
 		// Restore once more on the next frame so the new line remains editable.
 		this.focusAndRestoreSelection(patch.cursor);
 		return true;
+	}
+
+	private getEnterSnapshot(): { markdown: string; selectionStart: number; selectionEnd: number } {
+		const selection = this.getSelection();
+		return {
+			markdown: this.getMarkdown(),
+			selectionStart: selection.start,
+			selectionEnd: selection.end,
+		};
 	}
 
 	private handleListBoundaryBackspace(): boolean {
