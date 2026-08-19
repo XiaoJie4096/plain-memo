@@ -22,6 +22,10 @@ export interface ComposerRichEditorOptions {
 	onChange: (markdown: string, selection: ComposerRichEditorSelection, event?: InputEvent) => void;
 	onSelectionChange?: (markdown: string, selection: ComposerRichEditorSelection) => void;
 	onBeforeInput?: (event: InputEvent) => boolean;
+	/** Gives external suggestions first refusal over editor keystrokes. */
+	onKeydown?: (event: KeyboardEvent) => boolean;
+	/** Skips a keyup selection sync when an external suggestion owns navigation. */
+	shouldSkipSelectionChangeOnKeyup?: (event: KeyboardEvent) => boolean;
 	onCompositionStart?: () => void;
 	onCompositionEnd?: (event: CompositionEvent, markdown: string, selection: ComposerRichEditorSelection) => void;
 	onShortcut?: (event: KeyboardEvent) => boolean;
@@ -56,7 +60,12 @@ export class ComposerRichEditor {
 		}
 		this.el.addEventListener("input", (event) => this.handleInput(event as InputEvent));
 		this.el.addEventListener("mouseup", () => this.notifySelectionChange());
-		this.el.addEventListener("keyup", () => this.notifySelectionChange());
+		this.el.addEventListener("keyup", (event) => {
+			if (this.options.shouldSkipSelectionChangeOnKeyup?.(event) === true) {
+				return;
+			}
+			this.notifySelectionChange();
+		});
 		this.el.addEventListener("focus", () => this.notifySelectionChange());
 		this.el.addEventListener("compositionstart", () => this.options.onCompositionStart?.());
 		this.el.addEventListener("compositionend", (event) => {
@@ -73,6 +82,11 @@ export class ComposerRichEditor {
 			}
 		});
 		this.el.addEventListener("keydown", (event) => {
+			if (this.options.onKeydown?.(event) === true) {
+				event.preventDefault();
+				event.stopImmediatePropagation();
+				return;
+			}
 			if (this.handleKeydown(event)) {
 				event.preventDefault();
 				event.stopPropagation();

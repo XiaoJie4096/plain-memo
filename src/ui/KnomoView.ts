@@ -1488,6 +1488,8 @@ export class KnomoView extends ItemView {
 			onSelectionChange: (markdown, selection) => {
 				this.handleRichEditorSelectionChange(markdown, selection);
 			},
+			onKeydown: (event) => this.handleRichEditorSuggestionKeydown(event),
+			shouldSkipSelectionChangeOnKeyup: (event) => this.tagSuggest?.shouldSkipSelectionChangeOnKeyup(event) ?? false,
 			onBeforeInput: (event) => this.handleRichEditorBeforeInput(event),
 			onCompositionStart: () => {
 				this.composerIsComposing = true;
@@ -1568,12 +1570,6 @@ export class KnomoView extends ItemView {
 			getAnchorRect: (offset) => this.richEditor?.getCaretRectAt(offset) ?? null,
 			suggestHostEl: this.richEditor.el,
 		});
-		this.registerDomEvent(this.richEditor.el, "keydown", (event) => {
-			if (this.handleRichEditorKeydown(event)) {
-				event.preventDefault();
-				event.stopImmediatePropagation();
-			}
-		}, { capture: true });
 		this.wikiLinkSuggest = new KnomoWikiLinkSuggest(this.app, this.inputEl, {
 			listboxId: wikiLinkListboxId,
 			getSourcePath: () => this.getWikiLinkSourcePath(),
@@ -5617,6 +5613,12 @@ export class KnomoView extends ItemView {
 		}
 		this.cancelComposerFromEscape();
 		return true;
+	}
+
+	/** Runs before Obsidian's host-level suggestion listener can consume navigation. */
+	private handleRichEditorSuggestionKeydown(event: KeyboardEvent): boolean {
+		return this.tagSuggest?.handleExternalKeydown(event) === true
+			|| this.wikiLinkSuggest?.handleExternalKeydown(event) === true;
 	}
 
 	private removeEmptyRichEditorWikiLinkShell(): boolean {

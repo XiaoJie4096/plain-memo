@@ -30,6 +30,7 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 	private emptyPopoverRetryCount = 0;
 	private visibleSuggestions: TagSuggestion[] = [];
 	private selectedSuggestionIndex = 0;
+	private suggestionQuery: string | null = null;
 	private suppressActivationUntilInput = false;
 	private acceptedCloseFrameId: number | null = null;
 	private readonly activationState = new TagSuggestActivationState();
@@ -88,6 +89,7 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 		this.emptyPopoverRetryCount = 0;
 		this.visibleSuggestions = [];
 		this.selectedSuggestionIndex = 0;
+		this.suggestionQuery = null;
 	}
 
 	reset(): void {
@@ -142,6 +144,14 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 		this.suppressActivationUntilInput = false;
 	}
 
+	/** Keeps the rich editor from rebuilding this popover after suggestion navigation. */
+	shouldSkipSelectionChangeOnKeyup(event: KeyboardEvent): boolean {
+		return getSuggestionArrowDirection(event.key) !== null
+			&& this.activationState.isEnabled()
+			&& this.visibleSuggestions.length > 0
+			&& getTagQueryAtCursor(this.inputEl.value, this.inputEl.selectionStart) !== null;
+	}
+
 	/** Handles navigation when the visible input is the rich editor rather than the hidden textarea. */
 	handleExternalKeydown(event: KeyboardEvent): boolean {
 		if (!this.activationState.isEnabled() || getTagQueryAtCursor(this.inputEl.value, this.inputEl.selectionStart) === null) {
@@ -164,12 +174,12 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 			this.close();
 			return true;
 		}
-		if (items.length === 0) {
+		if (this.visibleSuggestions.length === 0) {
 			return false;
 		}
-		if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-			const direction = event.key === "ArrowDown" ? 1 : -1;
-			const nextIndex = (this.selectedSuggestionIndex + direction + items.length) % items.length;
+		const direction = getSuggestionArrowDirection(event.key);
+		if (direction !== null) {
+			const nextIndex = (this.selectedSuggestionIndex + direction + this.visibleSuggestions.length) % this.visibleSuggestions.length;
 			this.selectedSuggestionIndex = nextIndex;
 			for (const [index, item] of items.entries()) {
 				item.toggleClass("is-selected", index === nextIndex);
@@ -254,13 +264,18 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 		if (range.query.length > 0 && tags.some((tag) => isExactTagSuggestion(range.query, tag))) {
 			this.visibleSuggestions = [];
 			this.selectedSuggestionIndex = 0;
+			this.suggestionQuery = range.query;
 			return [];
 		}
 		const suggestions = range.query.length === 0
 			? tags.map((tag) => ({ tag, result: null }))
 			: this.getFuzzySuggestions(tags, range.query);
+		const previouslySelectedTag = this.suggestionQuery === range.query
+			? this.visibleSuggestions[this.selectedSuggestionIndex]?.tag
+			: undefined;
 		this.visibleSuggestions = suggestions;
-		this.selectedSuggestionIndex = 0;
+		this.suggestionQuery = range.query;
+		this.selectedSuggestionIndex = Math.max(0, suggestions.findIndex((suggestion) => suggestion.tag === previouslySelectedTag));
 		if (suggestions.length > 0) {
 			this.queuePopoverReposition();
 		}
@@ -483,11 +498,17 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 
 	private getSuggestionContainer(): HTMLElement | null {
 		const internal = this as unknown as { suggestEl?: unknown; popover?: unknown };
-		const directContainer = this.asHTMLElement(internal.suggestEl) ?? this.getContainerElement(internal.suggestEl) ?? this.getContainerElement(internal.popover);
-		if (directContainer !== null) {
-			return directContainer;
+		const directContainers = [
+			this.asHTMLElement(internal.suggestEl),
+			this.getContainerElement(internal.suggestEl),
+			this.getContainerElement(internal.popover),
+		];
+		const connectedDirectContainer = directContainers.find((container) => container?.isConnected === true);
+		if (connectedDirectContainer !== undefined) {
+			return connectedDirectContainer;
 		}
-		const containers = Array.from(this.inputEl.ownerDocument.querySelectorAll<HTMLElement>(".suggestion-container"));
+		const containers = Array.from(this.inputEl.ownerDocument.querySelectorAll<HTMLElement>(".suggestion-container"))
+			.filter((container) => container.isConnected);
 		return containers.length > 0 ? containers[containers.length - 1] : null;
 	}
 
@@ -507,4 +528,10 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 		const candidate = value as { instanceOf?: (constructor: typeof HTMLElement) => boolean };
 		return typeof candidate.instanceOf === "function" && candidate.instanceOf(win.HTMLElement) ? value as HTMLElement : null;
 	}
+}
+
+function getSuggestionArrowDirection(key: string): 1 | -1 | null {
+	if (key === "ArrowDown" || key === "Down") return 1;
+	if (key === "ArrowUp" || key === "Up") return -1;
+	return null;
 }

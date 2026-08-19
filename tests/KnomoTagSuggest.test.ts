@@ -56,6 +56,60 @@ test("returns no suggestions once the current query exactly matches an existing 
 	assert.deepEqual(suggestions, []);
 });
 
+test("keeps the selected candidate while the same query is refreshed", () => {
+	const input = new FakeTextArea("#12", 3);
+	const file = { path: "PlainMemo/example.md" };
+	const app = {
+		vault: { getMarkdownFiles: () => [file] },
+		metadataCache: { getFileCache: () => ({ tags: ["#123a", "#123a/123", "#a123"] }) },
+	} as unknown as App;
+	const suggest = new KnomoTagSuggest(app, input.asTextArea(), () => undefined, {
+		suggestHostEl: {} as HTMLDivElement,
+	});
+	(suggest as unknown as { activationState: { enableExplicitly: () => void } }).activationState.enableExplicitly();
+	const internal = suggest as unknown as {
+		getSuggestions: (query: string) => Array<{ tag: string }>;
+		selectedSuggestionIndex: number;
+	};
+
+	const first = internal.getSuggestions("12");
+	internal.selectedSuggestionIndex = 1;
+	const refreshed = internal.getSuggestions("12");
+
+	assert.equal(refreshed[internal.selectedSuggestionIndex]?.tag, first[1]?.tag);
+});
+
+test("suppresses rich-editor keyup synchronization while navigating visible candidates", () => {
+	const input = new FakeTextArea("#12", 3);
+	const file = { path: "PlainMemo/example.md" };
+	const app = {
+		vault: { getMarkdownFiles: () => [file] },
+		metadataCache: { getFileCache: () => ({ tags: ["#123a", "#a123"] }) },
+	} as unknown as App;
+	const suggest = new KnomoTagSuggest(app, input.asTextArea(), () => undefined, {
+		suggestHostEl: {} as HTMLDivElement,
+	});
+	(suggest as unknown as { activationState: { enableExplicitly: () => void } }).activationState.enableExplicitly();
+	(suggest as unknown as { getSuggestions: (query: string) => Array<{ tag: string }> }).getSuggestions("12");
+
+	assert.equal(suggest.shouldSkipSelectionChangeOnKeyup({ key: "ArrowDown" } as KeyboardEvent), true);
+	assert.equal(suggest.shouldSkipSelectionChangeOnKeyup({ key: "Down" } as KeyboardEvent), true);
+	assert.equal(suggest.shouldSkipSelectionChangeOnKeyup({ key: "ArrowLeft" } as KeyboardEvent), false);
+});
+
+test("uses a connected fallback container when Obsidian retains a detached suggest element", () => {
+	const input = new FakeTextArea("#", 1);
+	const detached = { isConnected: false };
+	const connected = { isConnected: true };
+	input.ownerDocument.querySelectorAll = () => [connected] as unknown as never[];
+	const suggest = new KnomoTagSuggest({} as App, input.asTextArea(), () => undefined, {
+		suggestHostEl: {} as HTMLDivElement,
+	});
+	(suggest as unknown as { suggestEl: unknown }).suggestEl = detached;
+
+	assert.equal((suggest as unknown as { getSuggestionContainer: () => unknown }).getSuggestionContainer(), connected);
+});
+
 test("deactivates the query before mirroring an accepted suggestion", () => {
 	const input = new FakeTextArea("#pro", 4);
 	let replacement: { value: string; cursor: number } | null = null;
