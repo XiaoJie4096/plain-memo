@@ -22,7 +22,8 @@ export interface ComposerMarkdownDocument {
 	trailingNewline: boolean;
 }
 
-const TASK_ITEM_REGEX = /^(\s*)([-*+]|\d+[.)])\s+\[([ xX-])\]\s*(.*)$/;
+const TASK_ITEM_REGEX = /^(\s*)([-*+]|\d+[.)])\s+(?:\[([ xX-])\]|\[\]|【】)\s*(.*)$/;
+const BARE_TASK_ITEM_REGEX = /^(\s*)(?:\[([ xX-])\]|\[\]|【】)\s+(.*)$/;
 const LIST_ITEM_REGEX = /^(\s*)([-*+]|\d+[.)])\s+(.*)$/;
 const INLINE_REGEX = /(!(?:\[([^\]]*)\]\([^)]*\)|\[\[([^\]]+)\]\]))|(^|[\s([{])#([^\s#\]]+)/g;
 
@@ -37,23 +38,23 @@ export function parseComposerMarkdown(value: string): ComposerMarkdownDocument {
 	let index = 0;
 	while (index < lines.length) {
 		const line = lines[index] ?? "";
-		const firstTask = line.match(TASK_ITEM_REGEX);
+		const firstTask = matchTaskLine(line);
 		const firstList = line.match(LIST_ITEM_REGEX);
 		if (firstTask !== null || firstList !== null) {
-			const ordered = (firstTask?.[2] ?? firstList?.[2] ?? "").match(/^\d/)! !== null;
+			const ordered = (firstTask?.marker ?? firstList?.[2] ?? "").match(/^\d/)! !== null;
 			const items: ComposerListItem[] = [];
 			while (index < lines.length) {
 				const current = lines[index] ?? "";
-				const task = current.match(TASK_ITEM_REGEX);
+				const task = matchTaskLine(current);
 				const list = current.match(LIST_ITEM_REGEX);
-				const marker = task?.[2] ?? list?.[2] ?? "";
+				const marker = task?.marker ?? list?.[2] ?? "";
 				if (task === null && list === null || (marker.match(/^\d/) !== null) !== ordered) {
 					break;
 				}
 				items.push({
-					indent: task?.[1] ?? list?.[1] ?? "",
-					checked: task?.[3] as ComposerListItem["checked"] ?? null,
-					inlines: parseComposerInline(task?.[4] ?? list?.[3] ?? ""),
+					indent: task?.indent ?? list?.[1] ?? "",
+					checked: task?.checked ?? null,
+					inlines: parseComposerInline(task?.content ?? list?.[3] ?? ""),
 				});
 				index += 1;
 			}
@@ -65,7 +66,7 @@ export function parseComposerMarkdown(value: string): ComposerMarkdownDocument {
 			index += 1;
 			while (index < lines.length) {
 				const nextLine = lines[index] ?? "";
-				if (nextLine.match(TASK_ITEM_REGEX) !== null || nextLine.match(LIST_ITEM_REGEX) !== null || !isSupportedParagraphLine(nextLine)) {
+				if (matchTaskLine(nextLine) !== null || nextLine.match(LIST_ITEM_REGEX) !== null || !isSupportedParagraphLine(nextLine)) {
 					break;
 				}
 				paragraphLines.push(nextLine);
@@ -78,6 +79,26 @@ export function parseComposerMarkdown(value: string): ComposerMarkdownDocument {
 		}
 	}
 	return { blocks, trailingNewline };
+}
+
+function matchTaskLine(line: string): { indent: string; marker: string; checked: ComposerListItem["checked"]; content: string } | null {
+	const marked = line.match(TASK_ITEM_REGEX);
+	if (marked !== null) {
+		return {
+			indent: marked[1] ?? "",
+			marker: marked[2] ?? "",
+			checked: (marked[3] as ComposerListItem["checked"] | undefined) ?? " ",
+			content: marked[4] ?? "",
+		};
+	}
+	const bare = line.match(BARE_TASK_ITEM_REGEX);
+	if (bare === null) return null;
+	return {
+		indent: bare[1] ?? "",
+		marker: "-",
+		checked: (bare[2] as ComposerListItem["checked"] | undefined) ?? " ",
+		content: bare[3] ?? "",
+	};
 }
 
 export function serializeComposerMarkdown(document: ComposerMarkdownDocument): string {

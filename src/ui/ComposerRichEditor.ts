@@ -44,7 +44,9 @@ export class ComposerRichEditor {
 	private document: ComposerMarkdownDocument;
 	private isRendering = false;
 	private savedSelection: { start: number; end: number } | null = null;
+	private selectionRestoreFrame: number | null = null;
 	private readonly enterState = new ComposerRichEnterState();
+	private lastSyncedMarkdown: string;
 
 	constructor(container: HTMLElement, initialMarkdown: string, private readonly options: ComposerRichEditorOptions) {
 		this.document = parseComposerMarkdown(initialMarkdown);
@@ -60,6 +62,7 @@ export class ComposerRichEditor {
 		if (this.options.ariaLabelledBy === undefined) {
 			this.el.removeAttribute("aria-labelledby");
 		}
+		this.lastSyncedMarkdown = initialMarkdown;
 		this.el.addEventListener("input", (event) => this.handleInput(event as InputEvent));
 		this.el.addEventListener("mouseup", () => this.notifySelectionChange());
 		this.el.addEventListener("keyup", (event) => {
@@ -105,6 +108,7 @@ export class ComposerRichEditor {
 	setMarkdown(markdown: string): void {
 		this.document = parseComposerMarkdown(markdown);
 		this.render();
+		this.lastSyncedMarkdown = markdown;
 	}
 
 	getMarkdown(): string {
@@ -152,11 +156,16 @@ export class ComposerRichEditor {
 
 	/** Restores a caret after an external popover has finished releasing focus. */
 	focusAndRestoreSelection(start: number, end = start): void {
+		this.cancelSelectionRestoreFrame();
 		this.restoreSelection(start, end);
 		// Suggestion teardown can move focus again during the same frame. Re-apply
 		// the editor focus and caret once the teardown callbacks have completed.
 		const win = this.el.ownerDocument.defaultView;
-		win?.requestAnimationFrame(() => this.restoreSelection(start, end));
+		if (win === undefined || win === null) return;
+		this.selectionRestoreFrame = win.requestAnimationFrame(() => {
+			this.selectionRestoreFrame = null;
+			this.restoreSelection(start, end);
+		});
 	}
 
 	/** Applies externally generated Markdown, such as an input suggestion, without losing the caret. */
@@ -181,13 +190,20 @@ export class ComposerRichEditor {
 		if (this.isRendering) {
 			return;
 		}
+		this.cancelSelectionRestoreFrame();
+		// A real input means the previous handled-Enter guard was not followed
+		// by a duplicate beforeinput. Do not let that stale guard swallow a later
+		// Enter after the user has continued typing.
+		this.enterState.clear();
 		this.document = serializeEditorDom(this.el, this.document);
 		this.rememberSelection();
 		const selection = this.getSelection();
 		const markdown = serializeComposerMarkdown(this.document);
-		if (shouldRefreshInlinePresentation(event, this.document)) {
+		this.lastSyncedMarkdown = markdown;
+		if (shouldRefreshInlinePresentation(event, this.document, markdown, selection.start)) {
 			// A typed delimiter completes a tag in the Markdown model. Render it now
 			// so the next character starts from the atomic tag's editable boundary.
+			this.document = parseComposerMarkdown(markdown);
 			this.render();
 			this.restoreSelection(selection.start, selection.end);
 		}
@@ -195,6 +211,7 @@ export class ComposerRichEditor {
 	}
 
 	private handleBeforeInput(event: InputEvent): boolean {
+		this.cancelSelectionRestoreFrame();
 		if (event.isComposing) return false;
 		if (event.inputType === "deleteContentBackward") {
 			return this.handleListBoundaryBackspace()
@@ -212,6 +229,9 @@ export class ComposerRichEditor {
 	}
 
 	handleKeydown(event: KeyboardEvent): boolean {
+		// A queued post-Enter restore must never move the caret after a newer
+		// keystroke has started a different edit operation.
+		this.cancelSelectionRestoreFrame();
 		if (event.key === "Backspace" && (
 			this.handleListBoundaryBackspace()
 			|| this.handleTagLineBoundaryBackspace()
@@ -226,8 +246,8 @@ export class ComposerRichEditor {
 		event.preventDefault();
 		const handled = this.handleEnter();
 		if (handled) {
-			this.enterState.markHandledKeydown(this.getEnterSnapshot());
-			this.el.ownerDocument.defaultView?.requestAnimationFrame(() => this.enterState.clear());
+			const snapshot = this.getEnterSnapshot();
+			this.enterState.markHandledKeydown(snapshot);
 		}
 		return handled;
 	}
@@ -311,7 +331,7 @@ export class ComposerRichEditor {
 		return true;
 	}
 
-	private getSelection(): { start: number; end: number } {
+	getSelection(): ComposerRichEditorSelection {
 		const live = getEditorSelection(this.el);
 		const selection = this.el.contains(this.el.ownerDocument.activeElement) ? live : this.savedSelection ?? live;
 		this.savedSelection = selection;
@@ -320,6 +340,11 @@ export class ComposerRichEditor {
 
 	private notifyChange(markdown: string, event?: InputEvent): void {
 		this.options.onChange(markdown, this.getSelection(), event);
+	}
+
+	/** Returns the last Markdown snapshot rendered or emitted by this editor. */
+	getLastSyncedMarkdown(): string {
+		return this.lastSyncedMarkdown;
 	}
 
 	private notifySelectionChange(): void {
@@ -354,6 +379,12 @@ export class ComposerRichEditor {
 		}
 	}
 
+	private cancelSelectionRestoreFrame(): void {
+		if (this.selectionRestoreFrame === null) return;
+		this.el.ownerDocument.defaultView?.cancelAnimationFrame(this.selectionRestoreFrame);
+		this.selectionRestoreFrame = null;
+	}
+
 	private restoreSelection(start: number, end: number): void {
 		// Chromium may discard a range assigned while a suggestion popover owns
 		// focus. Focus the editor first, then install the range in that document.
@@ -374,16 +405,12 @@ export class ComposerRichEditor {
 
 /** Keeps an editable final line in the current paragraph instead of creating a second paragraph. */
 function renderTrailingNewline(container: HTMLElement): void {
-	const last = container.lastElementChild;
-	if (last?.matches("p") && (last.textContent ?? "").length > 0) {
-		last.createEl("br", { attr: { "data-trailing-line-break": "true" } });
-		last.appendChild(last.ownerDocument.createTextNode(INLINE_CARET_ANCHOR));
-		// Chromium needs a second terminal break to paint the empty final line.
-		last.createEl("br", { attr: { "data-terminal-line-placeholder": "true" } });
-		return;
-	}
-	const paragraph = container.createEl("p", { cls: "plain-memo-rich-editor-paragraph" });
-	paragraph.createEl("br");
+	// Keep the final empty line as its own block. Embedding structural breaks in
+	// the previous paragraph makes DOM serialization count the same newline twice.
+	const paragraph = container.createEl("p", {
+		cls: "plain-memo-rich-editor-paragraph",
+		attr: { "data-trailing-line": "true" },
+	});
 	paragraph.appendChild(paragraph.ownerDocument.createTextNode(INLINE_CARET_ANCHOR));
 }
 
@@ -396,7 +423,9 @@ function renderBlock(container: HTMLElement, block: ComposerBlock, resolveImageU
 	if (block.type === "paragraph") {
 		const paragraph = container.createEl("p", { cls: "plain-memo-rich-editor-paragraph" });
 		if (serializeComposerInline(block.inlines).length === 0) {
-			paragraph.createEl("br");
+			// This break only keeps an empty paragraph paintable/editable. It is not
+			// a Markdown character and must not shift selection offsets by one.
+			paragraph.createEl("br", { attr: { "data-terminal-line-placeholder": "true" } });
 			paragraph.appendChild(paragraph.ownerDocument.createTextNode(""));
 		} else {
 			renderInline(paragraph, block.inlines, resolveImageUrl);
@@ -485,17 +514,52 @@ function renderInline(container: HTMLElement, nodes: readonly ComposerInlineNode
 	}
 }
 
-function shouldRefreshInlinePresentation(event: InputEvent, document: ComposerMarkdownDocument): boolean {
-	if (event.isComposing || event.inputType !== "insertText" || !/\s/.test(event.data ?? "")) {
+export function shouldRefreshInlinePresentation(
+	event: InputEvent,
+	document: ComposerMarkdownDocument,
+	markdown: string,
+	selectionStart = markdown.length,
+): boolean {
+	if (event.isComposing || event.inputType !== "insertText" || event.data === "\n" || !/\s/.test(event.data ?? "")) {
 		return false;
 	}
-	return document.blocks.some((block) => block.type === "paragraph" && block.inlines.some((node) => node.type === "tag"));
+	if (document.blocks.some((block) => block.type === "paragraph" && block.inlines.some((node) => node.type === "tag"))) {
+		return true;
+	}
+	// Only promote the line receiving this whitespace. Looking at unrelated
+	// lists elsewhere in the document would redraw ordinary Enter operations.
+	const lineStart = markdown.lastIndexOf("\n", Math.max(0, selectionStart - 1)) + 1;
+	const linePrefix = markdown.slice(lineStart, selectionStart);
+	return /^\s*(?:(?:[-*+]|\d+[.)])\s+|(?:\[[ xX-]\]|\[\]|【】)\s+)$/.test(linePrefix);
 }
 
 function serializeEditorDom(root: HTMLElement, previous: ComposerMarkdownDocument): ComposerMarkdownDocument {
 	const blocks: ComposerBlock[] = [];
 	const children = Array.from(root.children);
+	const lastChild = children[children.length - 1];
+	const trailingElement = lastChild?.getAttr("data-trailing-line") !== null ? lastChild : null;
+	let trailingElementIsEmpty = trailingElement !== null;
 	for (const child of children) {
+		if (child.getAttr("data-trailing-line") !== null && child === children[children.length - 1]) {
+			const inlines = serializeInlineDom(child);
+			trailingElementIsEmpty = serializeComposerInline(inlines).length === 0;
+			if (!trailingElementIsEmpty) {
+				const previous = blocks[blocks.length - 1];
+				if (previous?.type === "paragraph") {
+					// The trailing paragraph is an editable caret landing line created
+					// for a final newline. Once it receives text, it is a soft break
+					// continuation of the preceding paragraph, not a new paragraph.
+					previous.inlines = [
+						...previous.inlines,
+						{ type: "text", value: "\n" },
+						...inlines,
+					];
+				} else {
+					blocks.push({ type: "paragraph", inlines });
+				}
+			}
+			continue;
+		}
 		if (child.matches("ol, ul")) {
 			const ordered = child.tagName.toLowerCase() === "ol";
 			const items: ComposerListItem[] = [];
@@ -517,10 +581,8 @@ function serializeEditorDom(root: HTMLElement, previous: ComposerMarkdownDocumen
 		}
 		blocks.push({ type: "paragraph", inlines: serializeInlineDom(child) });
 	}
-	const lastBlock = blocks[blocks.length - 1];
 	const retainsUntypedTrailingLine = previous.trailingNewline
-		&& lastBlock?.type === "paragraph"
-		&& serializeComposerInline(lastBlock.inlines).length === 0;
+		&& trailingElementIsEmpty;
 	return { blocks, trailingNewline: retainsUntypedTrailingLine };
 }
 
@@ -682,6 +744,9 @@ function getDomBlockMarkdownLength(block: Element): number {
 function getDomBlockSeparatorLength(root: HTMLElement, index: number): number {
 	const current = root.children[index];
 	const next = root.children[index + 1];
+	if (next?.getAttr("data-trailing-line") !== null) {
+		return 1;
+	}
 	if (current?.matches("p") && next?.matches("p")
 		&& (current.textContent?.length ?? 0) > 0
 		&& (next.textContent?.length ?? 0) > 0) {

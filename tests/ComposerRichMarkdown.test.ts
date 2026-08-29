@@ -7,6 +7,7 @@ import {
 	serializeComposerInline,
 	serializeComposerMarkdown,
 } from "../src/ui/ComposerRichMarkdown";
+import { shouldRefreshInlinePresentation } from "../src/ui/ComposerRichEditor";
 
 test("parses and serializes supported list blocks", () => {
 	const document = parseComposerMarkdown("第一段\n- [ ] 一个任务\n- [x] 已完成\n1. 有序项");
@@ -55,6 +56,25 @@ test("recognizes a manually completed tag once whitespace follows it", () => {
 		{ type: "tag", value: "项目", source: "#项目" },
 		{ type: "text", value: " " },
 	]);
+});
+
+test("refreshes list presentation when a marker is completed with whitespace", () => {
+	const event = { isComposing: false, inputType: "insertText", data: " " } as InputEvent;
+	const paragraph = parseComposerMarkdown("1. ");
+	assert.equal(shouldRefreshInlinePresentation(event, paragraph, "1. ", 3), true);
+	assert.equal(shouldRefreshInlinePresentation(event, parseComposerMarkdown("- "), "- ", 2), true);
+	assert.equal(shouldRefreshInlinePresentation(event, parseComposerMarkdown("[] "), "[] ", 3), true);
+	assert.equal(shouldRefreshInlinePresentation(event, parseComposerMarkdown("普通文字 "), "普通文字 ", 5), false);
+	assert.equal(shouldRefreshInlinePresentation(event, parseComposerMarkdown("普通文字\n- 已有列表"), "普通文字\n- 已有列表", 5), false);
+	assert.equal(shouldRefreshInlinePresentation({ ...event, data: "\n" } as InputEvent, parseComposerMarkdown("1.\n"), "1.\n", 4), false);
+});
+
+test("parses bare task markers with halfwidth and fullwidth brackets", () => {
+	for (const source of ["[] 待办", "【】 待办", "- [] 待办", "1. 【】 待办"]) {
+		const document = parseComposerMarkdown(source);
+		assert.equal(document.blocks[0]?.type, "list", source);
+		assert.equal(document.blocks[0]?.type === "list" ? document.blocks[0].items[0]?.checked : null, " ");
+	}
 });
 
 test("keeps unsupported block Markdown as raw source", () => {

@@ -1944,7 +1944,15 @@ export class KnomoView extends ItemView {
 
 	private syncComposerMode(): void {
 		if (this.richEditor !== null && this.inputEl !== null && this.richEditor.getMarkdown() !== this.inputEl.value) {
-			this.richEditor.setMarkdown(this.inputEl.value);
+			// Background card batches can refresh the chrome while a native
+			// contenteditable input event is still in flight. If the editor diverged
+			// from its last rendered snapshot, it contains the newer user input and
+			// must win over the stale hidden textarea mirror.
+			if (this.richEditor.getMarkdown() !== this.richEditor.getLastSyncedMarkdown()) {
+				this.syncRichEditorInput(this.richEditor.getMarkdown(), this.richEditor.getSelection());
+			} else {
+				this.richEditor.setMarkdown(this.inputEl.value);
+			}
 		}
 		if (this.referencePreviewEl !== null) {
 			renderComposerReferencePreview(
