@@ -72,6 +72,27 @@ export async function ensureTextFile(app: App, filePath: string): Promise<TFile>
 	}
 }
 
+/** Creates Android's media-scan marker without requiring Obsidian to index the dotfile. */
+export async function ensureNoMediaFile(app: App, folderPath: string): Promise<void> {
+	await ensureFolder(app, folderPath);
+	const filePath = `${normalizePath(folderPath)}/.nomedia`;
+	const indexed = app.vault.getAbstractFileByPath(filePath);
+	if (indexed instanceof TFile) {
+		return;
+	}
+	if (indexed !== null) {
+		throw new Error(`Path exists and is not a file: ${filePath}`);
+	}
+	const existing = await getVaultAdapterPathType(app, filePath);
+	if (existing === "file") {
+		return;
+	}
+	if (existing === "folder") {
+		throw new Error(`Path exists and is not a file: ${filePath}`);
+	}
+	await app.vault.adapter.write(filePath, "");
+}
+
 export function getParentFolderPath(filePath: string): string | null {
 	const normalizedPath = normalizePath(filePath);
 	const separatorIndex = normalizedPath.lastIndexOf("/");

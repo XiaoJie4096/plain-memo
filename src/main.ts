@@ -25,6 +25,7 @@ import type { MemoMutation } from "./types/memo";
 import { KnomoSettingTab } from "./ui/KnomoSettingTab";
 import { KnomoView } from "./ui/KnomoView";
 import { MobileNavbarCompactController } from "./ui/MobileNavbarCompactController";
+import { ensureNoMediaFile } from "./utils/vault";
 
 const OPEN_VIEWS_REFRESH_DEBOUNCE_MS = 150;
 const DESKTOP_SHARED_STATE_POLL_MS = 2_000;
@@ -60,6 +61,7 @@ export default class KnomoPlugin extends Plugin {
 			await vaultDataStore.ensureFolder(PLAIN_MEMO_FOLDER);
 			await vaultDataStore.ensureFolder(PLAIN_MEMO_DATA_FOLDER);
 			await vaultDataStore.ensureFolder(PLAIN_MEMO_PICTURE_FOLDER);
+			await ensureNoMediaFile(this.app, PLAIN_MEMO_PICTURE_FOLDER);
 		} catch (error) {
 			new Notice(`PlainMemo could not prepare its Vault folders: ${error instanceof Error ? error.message : String(error)}`);
 			throw error;

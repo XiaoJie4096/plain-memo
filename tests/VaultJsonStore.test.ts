@@ -25,6 +25,26 @@ test("accepts folders that exist on disk before the mobile Vault index is ready"
 	assert.equal(harness.createFolderCalls(), 0);
 });
 
+test("creates an Android media-scan marker in the managed picture folder", async () => {
+	await ensureObsidianStub();
+	const { ensureNoMediaFile } = await import("../src/utils/vault");
+	const writes: Array<{ path: string; content: string }> = [];
+	const folders = new Set<string>();
+	const app = {
+		vault: {
+			adapter: {
+				stat: async (path: string) => folders.has(path) ? { type: "folder" } : null,
+				write: async (path: string, content: string) => writes.push({ path, content }),
+			},
+			getAbstractFileByPath: () => null,
+			createFolder: async (path: string) => { folders.add(path); },
+		},
+	} as never;
+
+	await ensureNoMediaFile(app, "PlainMemo/picture");
+	assert.deepEqual(writes, [{ path: "PlainMemo/picture/.nomedia", content: "" }]);
+});
+
 test("reads synchronized JSON before the mobile Vault index catches up", async () => {
 	const harness = await createHarness();
 	harness.addDiskFolder("PlainMemo");
