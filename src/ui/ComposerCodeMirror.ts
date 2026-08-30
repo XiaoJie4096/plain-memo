@@ -127,6 +127,7 @@ class ListMarkerWidget extends WidgetType {
 	toDOM(view: EditorView): HTMLElement {
 		const marker = view.dom.ownerDocument.createElement("span");
 		marker.className = "plain-memo-cm-list-marker-widget";
+		if (this.number !== null) marker.addClass("is-ordered");
 		marker.setAttribute("aria-hidden", "true");
 		marker.textContent = this.number === null ? "•" : `${this.number}.`;
 		return marker;
@@ -148,7 +149,17 @@ export class ComposerCodeMirror {
 			keymap.of([{ key: "Enter", run: insertParagraphCommand }, ...defaultKeymap, ...historyKeymap, indentWithTab]),
 			ViewPlugin.define((view) => new ComposerMarkdownDecorations(view, options.resolveImageUrl), { decorations: (value) => value.decorations }),
 			EditorView.updateListener.of((update) => {
-				if (update.docChanged) { this.lastSyncedMarkdown = update.state.doc.toString(); this.options.onChange(this.lastSyncedMarkdown, this.getSelection()); }
+				if (update.docChanged) {
+					const markdown = update.state.doc.toString();
+					const selection = this.getSelection();
+					const task = getBareTaskNormalization(markdown, selection.start);
+					if (task !== null) {
+						this.view.dispatch({ changes: { from: task.from, to: task.to, insert: "- [ ] " }, selection: { anchor: task.cursor } });
+						return;
+					}
+					this.lastSyncedMarkdown = markdown;
+					this.options.onChange(this.lastSyncedMarkdown, selection);
+				}
 				if (update.selectionSet) this.notifySelectionChange();
 			}),
 		] });
@@ -225,6 +236,15 @@ export class ComposerCodeMirror {
 
 function clampEditorPosition(position: number, length: number): number {
 	return Math.max(0, Math.min(length, Number.isFinite(position) ? Math.trunc(position) : length));
+}
+
+function getBareTaskNormalization(markdown: string, cursor: number): { from: number; to: number; cursor: number } | null {
+	const lineStart = markdown.lastIndexOf("\n", Math.max(0, cursor - 1)) + 1;
+	const linePrefix = markdown.slice(lineStart, cursor);
+	const match = linePrefix.match(/^(\s*)(?:【】|\[\s?\])\s$/);
+	if (match === null) return null;
+	const markerStart = lineStart + match[1].length;
+	return { from: markerStart, to: cursor, cursor: markerStart + 6 };
 }
 
 function insertParagraphCommand(view: EditorView): boolean {

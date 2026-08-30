@@ -1970,8 +1970,30 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-plugin.is-
 	padding: 0;
 	color: var(--text-normal);
 	caret-color: var(--text-normal);
+	outline: none !important;
+	box-shadow: none !important;
 	-webkit-user-select: text;
 	user-select: text;
+}
+
+/* The CodeMirror content node also carries the PlainMemo editor class. Keep
+   the focus outline off that same node; the composer shell supplies the
+   visible focus treatment. */
+.plain-memo-plugin .plain-memo-code-mirror-editor.cm-content,
+.plain-memo-plugin .plain-memo-code-mirror-editor.cm-content:focus,
+.plain-memo-plugin .plain-memo-code-mirror-editor.cm-content:focus-visible {
+	outline: none !important;
+	box-shadow: none !important;
+}
+
+/* CodeMirror puts its default dotted focus outline on the outer shell. */
+.plain-memo-plugin .cm-editor.cm-focused {
+	outline: none !important;
+	box-shadow: none !important;
+}
+
+.plain-memo-plugin .plain-memo-code-mirror-editor .cm-line {
+	outline: none !important;
 }
 
 .plain-memo-plugin .plain-memo-code-mirror-editor .cm-cursor,
@@ -2060,10 +2082,17 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-plugin.is-
 }
 .plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-list-marker-widget {
 	display: inline-block;
-	min-width: 1.5em;
-	margin-right: 0.25em;
-	color: var(--plain-memo-tag-text, #577fc9);
+	min-width: 1.15em;
+	margin-right: 0.2em;
+	color: var(--text-normal);
 	text-align: right;
+}
+.plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-list-marker-widget:not(.is-ordered) {
+	color: var(--text-muted);
+	text-align: center;
+}
+.plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-list-marker-widget.is-ordered {
+	min-width: 1.6em;
 }
 .plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-task-checkbox {
 	margin: 0 0.35em 0 0;
