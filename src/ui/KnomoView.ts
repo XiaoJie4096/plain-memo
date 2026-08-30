@@ -1950,8 +1950,12 @@ export class KnomoView extends ItemView {
 			// must win over the stale hidden textarea mirror.
 			if (this.richEditor.getMarkdown() !== this.richEditor.getLastSyncedMarkdown()) {
 				this.syncRichEditorInput(this.richEditor.getMarkdown(), this.richEditor.getSelection());
-			} else {
-				this.richEditor.setMarkdown(this.inputEl.value);
+			} else if (!this.richEditor.el.contains(this.richEditor.el.ownerDocument.activeElement)) {
+				const selection = {
+					start: this.inputEl.selectionStart ?? this.inputEl.value.length,
+					end: this.inputEl.selectionEnd ?? this.inputEl.value.length,
+				};
+				this.richEditor.setMarkdownAndRestoreSelection(this.inputEl.value, selection.start, selection.end);
 			}
 		}
 		if (this.referencePreviewEl !== null) {

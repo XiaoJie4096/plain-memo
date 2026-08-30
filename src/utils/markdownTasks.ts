@@ -104,16 +104,48 @@ export function getMarkdownTaskEnterPatch(value: string, start: number, end: num
 	if (isOffsetInsideFencedCode(value, lineStart)) {
 		return null;
 	}
+	const lineEnd = value.indexOf("\n", lineStart);
+	const fullLineEnd = lineEnd === -1 ? value.length : lineEnd;
+	const fullTask = parseMarkdownTaskLine(value.slice(lineStart, fullLineEnd));
+	// After a task is rendered at the end of a paragraph, the editor keeps a
+	// trailing empty paragraph for the caret. Enter is then reported one line
+	// after the task, so inspect the immediately preceding line as well.
+	if (fullTask === null && lineStart === value.length && start > 0) {
+		const previousLineEnd = lineStart - 1;
+		const previousLineStart = value.lastIndexOf("\n", Math.max(0, previousLineEnd - 1)) + 1;
+		const previousTask = parseMarkdownTaskLine(value.slice(previousLineStart, previousLineEnd));
+		if (previousTask !== null && isEmptyTask(previousTask)) {
+			const remainder = preserveEmptyTaskRemainder(value, previousLineStart, previousLineEnd);
+			const nextValue = `${value.slice(0, previousLineStart)}${previousTask.indent}${remainder}`;
+			return {
+				value: nextValue,
+				cursor: getEmptyTaskExitCursor(nextValue, previousLineStart, previousTask.indent.length),
+			};
+		}
+	}
+	// The rendered checkbox is non-editable, so Chromium can report a caret
+	// inside the marker rather than after its trailing space. Use the complete
+	// line to recognize and remove an empty task in that case.
+	if (fullTask !== null && isEmptyTask(fullTask)
+		&& start >= lineStart + fullTask.markerStart && start <= fullLineEnd) {
+		const remainder = preserveEmptyTaskRemainder(value, lineStart, fullLineEnd);
+		const nextValue = `${value.slice(0, lineStart)}${fullTask.indent}${remainder}`;
+		return {
+			value: nextValue,
+			cursor: getEmptyTaskExitCursor(nextValue, lineStart, fullTask.indent.length),
+		};
+	}
 	const line = value.slice(lineStart, start);
 	const task = parseMarkdownTaskLine(line);
 	if (task === null) {
 		return null;
 	}
 	if (isEmptyTask(task)) {
-		const cursor = lineStart + task.indent.length;
+		const remainder = preserveEmptyTaskRemainder(value, lineStart, fullLineEnd);
+		const nextValue = `${value.slice(0, lineStart)}${task.indent}${remainder}`;
 		return {
-			value: `${value.slice(0, lineStart)}${task.indent}${preserveEmptyTaskRemainder(value, lineStart, start)}`,
-			cursor,
+			value: nextValue,
+			cursor: getEmptyTaskExitCursor(nextValue, lineStart, task.indent.length),
 		};
 	}
 	const insert = `\n${task.indent}${getNextTaskListMarker(task)} [ ] `;
@@ -139,10 +171,11 @@ export function getMarkdownTaskEnterPatchAfterNativeNewline(value: string, start
 		return null;
 	}
 	if (isEmptyTask(task)) {
-		const cursor = lineStart + task.indent.length;
+		const remainder = preserveEmptyTaskRemainder(value, lineStart, start);
+		const nextValue = `${value.slice(0, lineStart)}${task.indent}${remainder}`;
 		return {
-			value: `${value.slice(0, lineStart)}${task.indent}${preserveEmptyTaskRemainder(value, lineStart, start)}`,
-			cursor,
+			value: nextValue,
+			cursor: getEmptyTaskExitCursor(nextValue, lineStart, task.indent.length),
 		};
 	}
 	const insert = `${task.indent}${getNextTaskListMarker(task)} [ ] `;
@@ -175,9 +208,13 @@ function isEmptyTask(task: ParsedMarkdownTaskLine): boolean {
 	return task.body.trim().length === 0;
 }
 
-function preserveEmptyTaskRemainder(value: string, lineStart: number, cursor: number): string {
-	const remainder = value.slice(cursor);
+function preserveEmptyTaskRemainder(value: string, lineStart: number, lineEnd: number): string {
+	const remainder = value.slice(lineEnd);
 	return lineStart > 0 && remainder.length === 0 ? "\n" : remainder;
+}
+
+function getEmptyTaskExitCursor(value: string, lineStart: number, indentLength: number): number {
+	return value.endsWith("\n") ? value.length : lineStart + indentLength;
 }
 
 function getNextTaskListMarker(task: ParsedMarkdownTaskLine): string {

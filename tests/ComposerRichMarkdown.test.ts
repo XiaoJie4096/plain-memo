@@ -7,7 +7,7 @@ import {
 	serializeComposerInline,
 	serializeComposerMarkdown,
 } from "../src/ui/ComposerRichMarkdown";
-import { shouldRefreshInlinePresentation } from "../src/ui/ComposerRichEditor";
+import { remapSelectionAfterNormalization, shouldRefreshInlinePresentation } from "../src/ui/ComposerRichEditor";
 
 test("parses and serializes supported list blocks", () => {
 	const document = parseComposerMarkdown("第一段\n- [ ] 一个任务\n- [x] 已完成\n1. 有序项");
@@ -69,6 +69,11 @@ test("refreshes list presentation when a marker is completed with whitespace", (
 	assert.equal(shouldRefreshInlinePresentation({ ...event, data: "\n" } as InputEvent, parseComposerMarkdown("1.\n"), "1.\n", 4), false);
 });
 
+test("remaps the caret after normalizing fullwidth task markers", () => {
+	assert.deepEqual(remapSelectionAfterNormalization("【】 ", "- [ ] ", { start: 3, end: 3 }), { start: 6, end: 6 });
+	assert.deepEqual(remapSelectionAfterNormalization("前文 【】 ", "前文 - [ ] ", { start: 6, end: 6 }), { start: 9, end: 9 });
+});
+
 test("parses bare task markers with halfwidth and fullwidth brackets", () => {
 	for (const source of ["[] 待办", "【】 待办", "- [] 待办", "1. 【】 待办"]) {
 		const document = parseComposerMarkdown(source);
@@ -120,6 +125,18 @@ test("keeps adjacent editor paragraphs separated by a blank line", () => {
 	const document = {
 		blocks: [
 			{ type: "paragraph" as const, inlines: [{ type: "text" as const, value: "第一段" }] },
+			{ type: "paragraph" as const, inlines: [{ type: "text" as const, value: "第二段" }] },
+		],
+		trailingNewline: false,
+	};
+	assert.equal(serializeComposerMarkdown(document), "第一段\n\n第二段");
+});
+
+test("keeps typed text after an exited empty task on the correct line", () => {
+	const document = {
+		blocks: [
+			{ type: "paragraph" as const, inlines: [{ type: "text" as const, value: "第一段" }] },
+			{ type: "paragraph" as const, inlines: [{ type: "text" as const, value: "" }] },
 			{ type: "paragraph" as const, inlines: [{ type: "text" as const, value: "第二段" }] },
 		],
 		trailingNewline: false,

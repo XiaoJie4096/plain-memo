@@ -149,6 +149,30 @@ export function getListEnterPatch(value: string, start: number, end: number): Te
 		return task;
 	}
 	const lineStart = value.lastIndexOf("\n", Math.max(0, start - 1)) + 1;
+	const lineEnd = value.indexOf("\n", lineStart);
+	const fullLineEnd = lineEnd === -1 ? value.length : lineEnd;
+	const fullLine = value.slice(lineStart, fullLineEnd);
+	const fullBullet = parseBulletListLine(fullLine);
+	const fullOrdered = parseOrderedListLine(fullLine);
+	// A caret can land inside a rendered checkbox/list marker. Recognize an
+	// empty list from the complete line so Enter exits it without leaving marker
+	// fragments or invisible spaces behind.
+	if (fullBullet !== null && fullBullet.content.trim().length === 0
+		&& start >= lineStart + fullBullet.indent.length && start <= fullLineEnd) {
+		const valueAfterExit = `${value.slice(0, lineStart)}${fullBullet.indent}${preserveEmptyListRemainder(value, lineStart, fullLineEnd)}`;
+		return {
+			value: valueAfterExit,
+			cursor: getEmptyListExitCursor(valueAfterExit, lineStart, fullBullet.indent.length),
+		};
+	}
+	if (fullOrdered !== null && fullOrdered.content.trim().length === 0
+		&& start >= lineStart + fullOrdered.indent.length && start <= fullLineEnd) {
+		const valueAfterExit = `${value.slice(0, lineStart)}${fullOrdered.indent}${preserveEmptyListRemainder(value, lineStart, fullLineEnd)}`;
+		return {
+			value: valueAfterExit,
+			cursor: getEmptyListExitCursor(valueAfterExit, lineStart, fullOrdered.indent.length),
+		};
+	}
 	const line = value.slice(lineStart, start);
 	const bullet = parseBulletListLine(line);
 	const ordered = parseOrderedListLine(line);
@@ -158,10 +182,10 @@ export function getListEnterPatch(value: string, start: number, end: number): Te
 	if (bullet !== null) {
 		const { indent, content } = bullet;
 		if (content.trim().length === 0) {
-			const cursor = lineStart + indent.length;
+			const valueAfterExit = `${value.slice(0, lineStart)}${indent}${preserveEmptyListRemainder(value, lineStart, fullLineEnd)}`;
 			return {
-				value: `${value.slice(0, lineStart)}${indent}${preserveEmptyListRemainder(value, lineStart, start)}`,
-				cursor,
+				value: valueAfterExit,
+				cursor: getEmptyListExitCursor(valueAfterExit, lineStart, indent.length),
 			};
 		}
 		const insert = `\n${indent}- `;
@@ -176,10 +200,10 @@ export function getListEnterPatch(value: string, start: number, end: number): Te
 	}
 	const { indent, number, content } = ordered;
 	if (content.trim().length === 0) {
-		const cursor = lineStart + indent.length;
+		const valueAfterExit = `${value.slice(0, lineStart)}${indent}${preserveEmptyListRemainder(value, lineStart, fullLineEnd)}`;
 		return {
-			value: `${value.slice(0, lineStart)}${indent}${preserveEmptyListRemainder(value, lineStart, start)}`,
-			cursor,
+			value: valueAfterExit,
+			cursor: getEmptyListExitCursor(valueAfterExit, lineStart, indent.length),
 		};
 	}
 	const insert = `\n${indent}${number + 1}. `;
@@ -206,13 +230,27 @@ export function getListBoundaryBackspacePatch(value: string, cursor: number): Te
 	if (cursor < 0 || cursor > value.length) return null;
 	const lineStart = value.lastIndexOf("\n", Math.max(0, cursor - 1)) + 1;
 	const line = value.slice(lineStart, cursor);
-	const marker = line.match(/^(\s*)(?:[-*+]|\d+[.)])\s+(?:\[[ xX-]\]\s+)?$/);
+	const nextLineBreak = value.indexOf("\n", cursor);
+	const fullLine = value.slice(lineStart, nextLineBreak === -1 ? value.length : nextLineBreak);
+	const marker = fullLine.match(/^(\s*)(?:[-*+]|\d+[.)])\s+(?:\[[ xX-]\]\s+)?$/);
 	const prefix = line.match(/^(\s*)(?:[-*+]|\d+[.)])\s+(?:\[[ xX-]\]\s+)?/);
 	if (marker === null && prefix === null) return null;
 	const markerLength = prefix?.[0].length ?? 0;
+	// Native contenteditable can leave the caret inside the non-editable
+	// checkbox marker after a bare task marker is rendered. Treat any caret
+	// position within that empty marker as the list-boundary Backspace so the
+	// whole task row is removed consistently.
+	if (marker !== null && cursor >= lineStart + marker[1].length && cursor <= lineStart + fullLine.length) {
+		const remainder = value.slice(lineStart + fullLine.length);
+		const preservedRemainder = remainder;
+		return {
+			value: `${value.slice(0, lineStart)}${preservedRemainder}`,
+			cursor: lineStart,
+		};
+	}
 	if (cursor !== lineStart + markerLength) return null;
 	const remainder = value.slice(cursor);
-	const preservedRemainder = lineStart > 0 && remainder.length === 0 ? "\n" : remainder;
+	const preservedRemainder = remainder;
 	return {
 		value: `${value.slice(0, lineStart)}${preservedRemainder}`,
 		cursor: lineStart,
@@ -238,10 +276,10 @@ export function getListEnterPatchAfterNativeNewline(value: string, start: number
 	if (bullet !== null) {
 		const { indent, content } = bullet;
 		if (content.trim().length === 0) {
-			const cursor = lineStart + indent.length;
+			const valueAfterExit = `${value.slice(0, lineStart)}${indent}${preserveEmptyListRemainder(value, lineStart, start)}`;
 			return {
-				value: `${value.slice(0, lineStart)}${indent}${preserveEmptyListRemainder(value, lineStart, start)}`,
-				cursor,
+				value: valueAfterExit,
+				cursor: getEmptyListExitCursor(valueAfterExit, lineStart, indent.length),
 			};
 		}
 		const insert = `${indent}- `;
@@ -256,10 +294,10 @@ export function getListEnterPatchAfterNativeNewline(value: string, start: number
 	}
 	const { indent, number, content } = ordered;
 	if (content.trim().length === 0) {
-		const cursor = lineStart + indent.length;
+		const valueAfterExit = `${value.slice(0, lineStart)}${indent}${preserveEmptyListRemainder(value, lineStart, start)}`;
 		return {
-			value: `${value.slice(0, lineStart)}${indent}${preserveEmptyListRemainder(value, lineStart, start)}`,
-			cursor,
+			value: valueAfterExit,
+			cursor: getEmptyListExitCursor(valueAfterExit, lineStart, indent.length),
 		};
 	}
 	const insert = `${indent}${number + 1}. `;
@@ -376,9 +414,13 @@ function countLineBreaks(value: string): number {
 	return count;
 }
 
-function preserveEmptyListRemainder(value: string, lineStart: number, cursor: number): string {
-	const remainder = value.slice(cursor);
+function preserveEmptyListRemainder(value: string, lineStart: number, lineEnd: number): string {
+	const remainder = value.slice(lineEnd);
 	return lineStart > 0 && remainder.length === 0 ? "\n" : remainder;
+}
+
+function getEmptyListExitCursor(value: string, lineStart: number, indentLength: number): number {
+	return value.endsWith("\n") ? value.length : lineStart + indentLength;
 }
 
 function parseBulletListLine(line: string): { indent: string; content: string } | null {

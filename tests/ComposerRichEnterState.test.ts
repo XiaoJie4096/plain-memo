@@ -12,11 +12,11 @@ test("consumes only the duplicate beforeinput following a handled Enter keydown"
 	assert.equal(state.consumeDuplicateBeforeInput(snapshot), false);
 });
 
-test("consumes the follow-up beforeinput even when rendering changed the snapshot", () => {
+test("does not consume a beforeinput for a different Markdown snapshot", () => {
 	const state = new ComposerRichEnterState();
 	state.markHandledKeydown({ markdown: "- item\n- ", selectionStart: 9, selectionEnd: 9 });
 
-	assert.equal(state.consumeDuplicateBeforeInput({ markdown: "- item\n- next", selectionStart: 13, selectionEnd: 13 }), true);
+	assert.equal(state.consumeDuplicateBeforeInput({ markdown: "- item\n- next", selectionStart: 13, selectionEnd: 13 }), false);
 	assert.equal(state.consumeDuplicateBeforeInput({ markdown: "- item\n- next", selectionStart: 13, selectionEnd: 13 }), false);
 });
 

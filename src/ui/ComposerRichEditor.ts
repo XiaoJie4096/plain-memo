@@ -45,6 +45,9 @@ export class ComposerRichEditor {
 	private isRendering = false;
 	private savedSelection: { start: number; end: number } | null = null;
 	private selectionRestoreFrame: number | null = null;
+	private forcedSelection: ComposerRichEditorSelection | null = null;
+	private trailingCaretAfterListExit = false;
+	private suppressNativeInputUntil = 0;
 	private readonly enterState = new ComposerRichEnterState();
 	private lastSyncedMarkdown: string;
 
@@ -66,6 +69,10 @@ export class ComposerRichEditor {
 		this.el.addEventListener("input", (event) => this.handleInput(event as InputEvent));
 		this.el.addEventListener("mouseup", () => this.notifySelectionChange());
 		this.el.addEventListener("keyup", (event) => {
+			// A handled Enter's duplicate beforeinput is dispatched before keyup.
+			// If no duplicate arrived, release the guard so a later real Enter
+			// cannot be mistaken for the event we already handled.
+			this.enterState.clear();
 			if (this.options.shouldSkipSelectionChangeOnKeyup?.(event) === true) {
 				return;
 			}
@@ -190,22 +197,52 @@ export class ComposerRichEditor {
 		if (this.isRendering) {
 			return;
 		}
+		const serializedDocument = serializeEditorDom(this.el, this.document);
+		// A handled Enter can still produce a late native newline input in
+		// Chromium. Ignore only that newline while the guard is active; a real
+		// character typed immediately after Enter must still be accepted.
+		if (this.suppressNativeInputUntil > Date.now()) {
+			const isNativeNewline = event.inputType === "insertParagraph"
+				|| event.inputType === "insertLineBreak"
+				|| (event.inputType === "insertText" && event.data === "\n");
+			this.suppressNativeInputUntil = 0;
+			if (isNativeNewline) {
+				this.render();
+				return;
+			}
+		} else {
+			this.suppressNativeInputUntil = 0;
+		}
+		if (hasEmptyTaskList(serializedDocument)
+			&& !hasListBlock(this.document)
+			&& !(event.inputType === "insertText" && event.data === " ")) {
+			// Reject a stale native event that resurrects an empty task marker after
+			// the editor already converted it back to a paragraph.
+			this.render();
+			return;
+		}
 		this.cancelSelectionRestoreFrame();
+		this.forcedSelection = null;
 		// A real input means the previous handled-Enter guard was not followed
 		// by a duplicate beforeinput. Do not let that stale guard swallow a later
 		// Enter after the user has continued typing.
 		this.enterState.clear();
-		this.document = serializeEditorDom(this.el, this.document);
+		this.document = serializedDocument;
 		this.rememberSelection();
 		const selection = this.getSelection();
-		const markdown = serializeComposerMarkdown(this.document);
+		let markdown = serializeComposerMarkdown(this.document);
 		this.lastSyncedMarkdown = markdown;
 		if (shouldRefreshInlinePresentation(event, this.document, markdown, selection.start)) {
 			// A typed delimiter completes a tag in the Markdown model. Render it now
 			// so the next character starts from the atomic tag's editable boundary.
-			this.document = parseComposerMarkdown(markdown);
+			const normalizedDocument = parseComposerMarkdown(markdown);
+			const normalizedMarkdown = serializeComposerMarkdown(normalizedDocument);
+			const normalizedSelection = remapSelectionAfterNormalization(markdown, normalizedMarkdown, selection);
+			this.document = normalizedDocument;
+			markdown = normalizedMarkdown;
+			this.lastSyncedMarkdown = markdown;
 			this.render();
-			this.restoreSelection(selection.start, selection.end);
+			this.restoreSelection(normalizedSelection.start, normalizedSelection.end);
 		}
 		this.notifyChange(markdown, event);
 	}
@@ -232,6 +269,10 @@ export class ComposerRichEditor {
 		// A queued post-Enter restore must never move the caret after a newer
 		// keystroke has started a different edit operation.
 		this.cancelSelectionRestoreFrame();
+		if ((event.key === "ArrowLeft" || event.key === "Left") && this.handleEmptyParagraphLeft()) {
+			event.preventDefault();
+			return true;
+		}
 		if (event.key === "Backspace" && (
 			this.handleListBoundaryBackspace()
 			|| this.handleTagLineBoundaryBackspace()
@@ -252,12 +293,60 @@ export class ComposerRichEditor {
 		return handled;
 	}
 
+	/** Chromium does not consistently move left out of an empty paragraph that follows a removed list item. */
+	private handleEmptyParagraphLeft(): boolean {
+		const nativeSelection = this.el.ownerDocument.getSelection();
+		if (nativeSelection === null || nativeSelection.rangeCount !== 1 || !nativeSelection.isCollapsed) return false;
+		const container = nativeSelection.anchorNode instanceof Text
+			? nativeSelection.anchorNode.parentElement
+			: nativeSelection.anchorNode instanceof Element ? nativeSelection.anchorNode : null;
+		const paragraph = container?.closest<HTMLElement>("p.plain-memo-rich-editor-paragraph");
+		if (paragraph === null || paragraph === undefined || (paragraph.textContent ?? "").split(INLINE_CARET_ANCHOR).join("").length > 0) return false;
+		const paragraphIndex = Array.from(this.el.children).indexOf(paragraph);
+		if (paragraphIndex <= 0) return false;
+		const previousBlock = this.el.children[paragraphIndex - 1];
+		const point = findEndTextPoint(previousBlock);
+		if (point === null) return false;
+		const currentSelection = this.getSelection();
+		const selection = this.el.ownerDocument.getSelection();
+		if (selection === null) return false;
+		const range = this.el.ownerDocument.createRange();
+		range.setStart(point.node, point.offset);
+		range.collapse(true);
+		selection.removeAllRanges();
+		selection.addRange(range);
+		this.forcedSelection = {
+			start: Math.max(0, currentSelection.start - 1),
+			end: Math.max(0, currentSelection.start - 1),
+		};
+		this.savedSelection = this.forcedSelection;
+		return true;
+	}
+
 	/** Creates a Markdown paragraph for ordinary Enter and continues a list when applicable. */
 	private handleEnter(): boolean {
 		const source = this.getMarkdown();
-		const selection = this.getSelection();
-		const patch = getListEnterPatch(source, selection.start, selection.end)
-			?? getParagraphEnterPatch(source, selection.start, selection.end);
+		const forcedSelection = this.forcedSelection;
+		const selection = this.trailingCaretAfterListExit && source.endsWith("\n")
+			? { start: source.length, end: source.length }
+			: forcedSelection !== null && source.endsWith("\n") && forcedSelection.start < source.length
+			? { start: source.length, end: source.length }
+			: forcedSelection ?? this.getSelection();
+		this.forcedSelection = null;
+		this.trailingCaretAfterListExit = false;
+		const trailingEmptyTask = source.match(/(?:^|\n)([ \t]*)[-*+]\s+\[ \]\s*\n$/);
+		const patch = trailingEmptyTask !== null
+			? {
+				value: `${source.slice(0, (trailingEmptyTask.index ?? 0) + 1)}${trailingEmptyTask[1] ?? ""}\n`,
+				cursor: (trailingEmptyTask.index ?? 0) + 2 + (trailingEmptyTask[1]?.length ?? 0),
+			}
+			: getListEnterPatch(source, selection.start, selection.end)
+				?? getParagraphEnterPatch(source, selection.start, selection.end);
+		// Both keydown and beforeinput can reach this path. Chromium may dispatch
+		// a late native newline input after our custom render in either case.
+		// Chromium can dispatch one native input after this custom render. Keep a
+		// short guard so that event cannot serialize the stale task-list DOM back.
+		this.suppressNativeInputUntil = Date.now() + 150;
 		this.setMarkdown(patch.value);
 		this.restoreSelection(patch.cursor, patch.cursor);
 		this.notifyChange(patch.value);
@@ -285,6 +374,7 @@ export class ComposerRichEditor {
 		const value = patch.value;
 		this.setMarkdown(value);
 		this.restoreSelection(patch.cursor, patch.cursor);
+		this.trailingCaretAfterListExit = value.endsWith("\n");
 		this.notifyChange(value);
 		return true;
 	}
@@ -403,6 +493,17 @@ export class ComposerRichEditor {
 	}
 }
 
+function findEndTextPoint(root: Element): { node: Text; offset: number } | null {
+	const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+	let last: Text | null = null;
+	let node = walker.nextNode();
+	while (node !== null) {
+		if ((node as Text).parentElement?.contentEditable !== "false") last = node as Text;
+		node = walker.nextNode();
+	}
+	return last === null ? null : { node: last, offset: last.data.length };
+}
+
 /** Keeps an editable final line in the current paragraph instead of creating a second paragraph. */
 function renderTrailingNewline(container: HTMLElement): void {
 	// Keep the final empty line as its own block. Embedding structural breaks in
@@ -474,7 +575,14 @@ function renderListItems(
 				thisDocumentInput(container);
 			});
 		}
-		renderInline(listItem, item.inlines, resolveImageUrl);
+		if (serializeComposerInline(item.inlines).length === 0) {
+			// An empty task item still needs a stable editable text node after the
+			// checkbox. Without it Chromium leaves the caret on the input/li
+			// boundary, so the first Backspace, ArrowLeft, or Enter is swallowed.
+			listItem.appendChild(listItem.ownerDocument.createTextNode(INLINE_CARET_ANCHOR));
+		} else {
+			renderInline(listItem, item.inlines, resolveImageUrl);
+		}
 	}
 }
 
@@ -533,6 +641,38 @@ export function shouldRefreshInlinePresentation(
 	return /^\s*(?:(?:[-*+]|\d+[.)])\s+|(?:\[[ xX-]\]|\[\]|【】)\s+)$/.test(linePrefix);
 }
 
+/** Maps a selection through a Markdown presentation rewrite such as `【】 ` -> `- [ ] `. */
+export function remapSelectionAfterNormalization(
+	source: string,
+	target: string,
+	selection: ComposerRichEditorSelection,
+): ComposerRichEditorSelection {
+	if (source === target) return selection;
+	let prefixLength = 0;
+	while (prefixLength < source.length
+		&& prefixLength < target.length
+		&& source.charAt(prefixLength) === target.charAt(prefixLength)) {
+		prefixLength += 1;
+	}
+	let suffixLength = 0;
+	while (suffixLength < source.length - prefixLength
+		&& suffixLength < target.length - prefixLength
+		&& source.charAt(source.length - suffixLength - 1) === target.charAt(target.length - suffixLength - 1)) {
+		suffixLength += 1;
+	}
+	const mapOffset = (offset: number): number => {
+		if (offset <= prefixLength) return offset;
+		if (offset >= source.length - suffixLength) {
+			return target.length - (source.length - offset);
+		}
+		return target.length - suffixLength;
+	};
+	return {
+		start: mapOffset(selection.start),
+		end: mapOffset(selection.end),
+	};
+}
+
 function serializeEditorDom(root: HTMLElement, previous: ComposerMarkdownDocument): ComposerMarkdownDocument {
 	const blocks: ComposerBlock[] = [];
 	const children = Array.from(root.children);
@@ -546,14 +686,30 @@ function serializeEditorDom(root: HTMLElement, previous: ComposerMarkdownDocumen
 			if (!trailingElementIsEmpty) {
 				const previous = blocks[blocks.length - 1];
 				if (previous?.type === "paragraph") {
-					// The trailing paragraph is an editable caret landing line created
-					// for a final newline. Once it receives text, it is a soft break
-					// continuation of the preceding paragraph, not a new paragraph.
-					previous.inlines = [
-						...previous.inlines,
-						{ type: "text", value: "\n" },
-						...inlines,
-					];
+					const previousText = serializeComposerInline(previous.inlines);
+					if (previousText.length === 0) {
+						// After leaving an empty list item, the trailing editable line
+						// follows an already empty paragraph. Keep it as the next block
+						// instead of adding another inline newline.
+						blocks.push({ type: "paragraph", inlines });
+					} else if (previousText.endsWith("\n")) {
+						// The trailing paragraph is the editable continuation of the
+						// paragraph's final line break. Keep it in the same paragraph;
+						// creating a second paragraph would serialize as two newlines and
+						// expose a spurious blank line after task-list exit.
+						previous.inlines = [
+							...previous.inlines,
+							...inlines,
+						];
+					} else {
+						// A single final newline is an editable landing line. Continue
+						// the preceding paragraph with a soft break in that case.
+						previous.inlines = [
+							...previous.inlines,
+							{ type: "text", value: "\n" },
+							...inlines,
+						];
+					}
 				} else {
 					blocks.push({ type: "paragraph", inlines });
 				}
@@ -584,6 +740,16 @@ function serializeEditorDom(root: HTMLElement, previous: ComposerMarkdownDocumen
 	const retainsUntypedTrailingLine = previous.trailingNewline
 		&& trailingElementIsEmpty;
 	return { blocks, trailingNewline: retainsUntypedTrailingLine };
+}
+
+function hasListBlock(document: ComposerMarkdownDocument): boolean {
+	return document.blocks.some((block) => block.type === "list");
+}
+
+function hasEmptyTaskList(document: ComposerMarkdownDocument): boolean {
+	return document.blocks.some((block) => block.type === "list"
+		&& block.items.some((item) => item.checked !== null
+			&& serializeComposerInline(item.inlines).trim().length === 0));
 }
 
 function serializeInlineDom(container: Element, ignored: Element | null = null): ComposerInlineNode[] {
@@ -642,7 +808,11 @@ function findTextPoint(root: HTMLElement, target: number): ComposerDomPoint | nu
 	let offset = 0;
 	for (const [index, block] of Array.from(root.children).entries()) {
 		const blockLength = getDomBlockMarkdownLength(block);
-		if (target <= offset + blockLength) {
+		// At a block boundary, prefer the following block when one exists. Using
+		// `<=` here places a trailing-line caret at the end of the previous
+		// paragraph, which is the first-line cursor jump seen after task exit.
+		const isLastBlock = index === root.children.length - 1;
+		if (target < offset + blockLength || (target === offset + blockLength && isLastBlock)) {
 			if (block.matches("ol, ul")) {
 				let itemOffset = offset;
 				for (const item of Array.from(block.children)) {
@@ -655,6 +825,12 @@ function findTextPoint(root: HTMLElement, target: number): ComposerDomPoint | nu
 				}
 			} else {
 				const localTarget = Math.max(0, target - offset);
+				if (block.getAttr("data-trailing-line") !== null) {
+					// Place the caret at the trailing paragraph element boundary instead
+					// of inside its zero-width anchor. Chromium can normalize a caret
+					// inside that anchor back into the preceding paragraph.
+					return { node: block, offset: block.childNodes.length };
+				}
 				const trailingBreak = block.querySelector<HTMLElement>(":scope > br[data-trailing-line-break]");
 				if (trailingBreak !== null && localTarget === blockLength) {
 					return {
@@ -675,6 +851,11 @@ function getMarkdownPointOffset(root: HTMLElement, container: Node, offset: numb
 	let markdownOffset = 0;
 	for (const [index, block] of Array.from(root.children).entries()) {
 		if (block.contains(container) || block === container) {
+			if (block.getAttr("data-trailing-line") !== null) {
+				// The trailing block represents the final Markdown newline; its
+				// internal zero-width anchor is not part of the source text.
+				return markdownOffset;
+			}
 		if (block.matches("ol, ul")) {
 			if (container === block) {
 				const items = Array.from(block.children);

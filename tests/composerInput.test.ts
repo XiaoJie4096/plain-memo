@@ -110,7 +110,7 @@ test("continues and exits Markdown bullet lists", () => {
 	});
 	assert.deepEqual(getListEnterPatch("- abc\n- ", 8, 8), {
 		value: "- abc\n\n",
-		cursor: 6,
+		cursor: 7,
 	});
 	assert.deepEqual(getListEnterPatch("- ", 2, 2), {
 		value: "",
@@ -158,7 +158,7 @@ test("backspace at a list marker removes only the marker and preserves the line 
 		cursor: 0,
 	});
 	assert.deepEqual(getListBoundaryBackspacePatch("上一行\n- ", 6), {
-		value: "上一行\n\n",
+		value: "上一行\n",
 		cursor: 4,
 	});
 	assert.deepEqual(getListBoundaryBackspacePatch("上一行\n- 内容", 6), {
@@ -166,7 +166,7 @@ test("backspace at a list marker removes only the marker and preserves the line 
 		cursor: 4,
 	});
 	assert.deepEqual(getListBoundaryBackspacePatch("上一行\n- [ ] ", 10), {
-		value: "上一行\n\n",
+		value: "上一行\n",
 		cursor: 4,
 	});
 	assert.deepEqual(getListBoundaryBackspacePatch("- [ ] ", 6), {
@@ -178,9 +178,19 @@ test("backspace at a list marker removes only the marker and preserves the line 
 
 test("keeps an ordinary paragraph boundary when leaving a task marker at file end", () => {
 	assert.deepEqual(getListBoundaryBackspacePatch("上一行\n- [ ] ", 10), {
-		value: "上一行\n\n",
+		value: "上一行\n",
 		cursor: 4,
 	});
+});
+
+test("removes a partially targeted empty task marker without leaving marker text", () => {
+	const value = "上一行\n- [ ] \n下一行";
+	for (const cursor of [5, 6, 7, 8, 9, 10]) {
+		assert.deepEqual(getListBoundaryBackspacePatch(value, cursor), {
+			value: "上一行\n\n下一行",
+			cursor: 4,
+		}, `cursor ${cursor}`);
+	}
 });
 
 test("turns ordinary Enter into a single Markdown line break", () => {
@@ -221,7 +231,7 @@ test("continues and exits Markdown ordered lists", () => {
 	});
 	assert.deepEqual(getListEnterPatch("1. abc\n2. ", 10, 10), {
 		value: "1. abc\n\n",
-		cursor: 7,
+		cursor: 8,
 	});
 	assert.deepEqual(getListEnterPatch("2.", 2, 2), {
 		value: "",
@@ -262,6 +272,33 @@ test("exits empty Markdown task lists", () => {
 		value: "  ",
 		cursor: 2,
 	});
+	assert.deepEqual(getListEnterPatch("上一行\n- [ ] ", 10, 10), {
+		value: "上一行\n\n",
+		cursor: 5,
+	});
+	assert.deepEqual(getListEnterPatch("上一行\n- [ ] \n", 10, 10), {
+		value: "上一行\n\n",
+		cursor: 5,
+	});
+	assert.deepEqual(getListEnterPatch("A\n- [ ] \nC", 8, 8), {
+		value: "A\n\nC",
+		cursor: 2,
+	});
+	for (const cursor of [6, 7, 8]) {
+		assert.deepEqual(getListEnterPatch("A\n- [ ] \nC", cursor, cursor), {
+			value: "A\n\nC",
+			cursor: 2,
+		}, `empty task cursor ${cursor}`);
+	}
+	assert.deepEqual(getListEnterPatch("A\n- [ ] ", 6, 6), {
+		value: "A\n\n",
+		cursor: 3,
+	});
+	const middleExit = getListEnterPatch("A\n- [ ] \nC", 8, 8);
+	assert.deepEqual(middleExit === null ? null : getParagraphEnterPatch(middleExit.value, middleExit.cursor, middleExit.cursor), {
+		value: "A\n\n\nC",
+		cursor: 3,
+	});
 });
 
 test("continues nested and ordered Markdown task lists", () => {
@@ -282,7 +319,7 @@ test("corrects native newline insertion in Markdown bullet lists", () => {
 	});
 	assert.deepEqual(getListEnterPatchAfterNativeNewline("- abc\n- \n", 9, 9), {
 		value: "- abc\n\n",
-		cursor: 6,
+		cursor: 7,
 	});
 	assert.deepEqual(getListEnterPatchAfterNativeNewline("- \n", 3, 3), {
 		value: "",
@@ -298,7 +335,7 @@ test("corrects native newline insertion in Markdown ordered lists", () => {
 	});
 	assert.deepEqual(getListEnterPatchAfterNativeNewline("1. abc\n2. \n", 11, 11), {
 		value: "1. abc\n\n",
-		cursor: 7,
+		cursor: 8,
 	});
 	assert.equal(getListEnterPatchAfterNativeNewline("1. abc\n", 0, 7), null);
 });
@@ -338,7 +375,7 @@ test("corrects mobile list Enter when candidate confirmation and newline share o
 		allowTextChangeWithNewline: true,
 	}), {
 		value: "- item\n\n",
-		cursor: 7,
+		cursor: 8,
 	});
 });
 
