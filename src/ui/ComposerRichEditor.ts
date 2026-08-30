@@ -119,6 +119,15 @@ export class ComposerRichEditor {
 	}
 
 	getMarkdown(): string {
+		if (!this.isRendering && this.el.isConnected) {
+			const serializedDocument = serializeEditorDom(this.el, this.document);
+			const markdown = serializeComposerMarkdown(serializedDocument);
+			if (markdown !== serializeComposerMarkdown(this.document)) {
+				this.document = serializedDocument;
+				this.lastSyncedMarkdown = markdown;
+			}
+			return markdown;
+		}
 		return serializeComposerMarkdown(this.document);
 	}
 

@@ -5713,12 +5713,15 @@ export class KnomoView extends ItemView {
 			return;
 		}
 		const composerValue = this.richEditor?.getMarkdown() ?? this.inputEl.value;
+		const composerDisabled = this.richEditor !== null
+			? this.richEditor.el.contentEditable === "false"
+			: this.inputEl.disabled;
 		this.sendButtonEl.disabled =
-			this.isSaving || this.inputEl.disabled || composerValue.trim().length === 0;
+			this.isSaving || composerDisabled || composerValue.trim().length === 0;
 		const label = this.isSaving ? t("composer.saving") : t("composer.send");
 		this.sendButtonEl.setAttr("aria-label", label);
 		if (this.timeBuoyButtonEl !== null) {
-			this.timeBuoyButtonEl.disabled = this.isSaving || this.inputEl.disabled;
+			this.timeBuoyButtonEl.disabled = this.isSaving || composerDisabled;
 		}
 	}
 
