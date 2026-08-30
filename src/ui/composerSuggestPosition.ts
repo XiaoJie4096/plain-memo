@@ -3,7 +3,11 @@ export interface SuggestContentWidthOptions {
 	extraWidth?: number;
 }
 
-export function getTextareaCharacterRect(inputEl: HTMLTextAreaElement, index: number): DOMRect | null {
+interface ComposerTextSurface extends HTMLElement {
+	value: string;
+}
+
+export function getTextareaCharacterRect(inputEl: ComposerTextSurface, index: number): DOMRect | null {
 	const doc = inputEl.ownerDocument;
 	const win = doc.defaultView;
 	if (win === null) {
@@ -33,7 +37,7 @@ export function getTextareaCharacterRect(inputEl: HTMLTextAreaElement, index: nu
 	return rect;
 }
 
-export function measureSuggestionContentHeight(inputEl: HTMLTextAreaElement, container: HTMLElement, itemSelector: string): number {
+export function measureSuggestionContentHeight(inputEl: ComposerTextSurface, container: HTMLElement, itemSelector: string): number {
 	const win = inputEl.ownerDocument.defaultView;
 	if (win === null) {
 		return Math.ceil(container.scrollHeight || container.getBoundingClientRect().height);
@@ -53,7 +57,7 @@ export function measureSuggestionContentHeight(inputEl: HTMLTextAreaElement, con
 }
 
 export function measureSuggestionContentWidth(
-	inputEl: HTMLTextAreaElement,
+	inputEl: ComposerTextSurface,
 	container: HTMLElement,
 	itemSelector: string,
 	options: SuggestContentWidthOptions = {},

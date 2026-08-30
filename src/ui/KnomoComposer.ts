@@ -5,7 +5,6 @@ import { t } from "../i18n";
 
 export interface KnomoComposerElements {
 	composerEl: HTMLElement;
-	inputEl: HTMLTextAreaElement;
 	composerInputLabelId: string;
 	richEditorHostEl: HTMLElement;
 	referencePreviewEl: HTMLElement;
@@ -42,15 +41,6 @@ export function renderKnomoComposer(container: HTMLElement, options: RenderKnomo
 	const composerEl = container.createDiv({ cls: "plain-memo-composer" });
 	const inputArea = composerEl.createDiv({ cls: "plain-memo-composer-input-area" });
 	const composerInputLabelId = options.createHiddenText(inputArea, "composer-input-label", t("composer.inputLabel"));
-	const inputEl = inputArea.createEl("textarea", {
-		cls: "plain-memo-composer-input",
-		attr: {
-			placeholder: t("composer.placeholder"),
-			"aria-labelledby": composerInputLabelId,
-		},
-	});
-	inputEl.disabled = !options.dailyEnabled;
-	inputEl.value = options.draftContent;
 	const richEditorHostEl = inputArea.createDiv({ cls: "plain-memo-rich-editor-host" });
 
 	const referencePreviewEl = inputArea.createDiv({ cls: "plain-memo-reference-preview" });
@@ -109,7 +99,6 @@ export function renderKnomoComposer(container: HTMLElement, options: RenderKnomo
 
 	return {
 		composerEl,
-		inputEl,
 		composerInputLabelId,
 		richEditorHostEl,
 		referencePreviewEl,

@@ -7,7 +7,7 @@ import {
 	serializeComposerInline,
 	serializeComposerMarkdown,
 } from "../src/ui/ComposerRichMarkdown";
-import { remapSelectionAfterNormalization, shouldRefreshInlinePresentation } from "../src/ui/ComposerRichEditor";
+import { remapSelectionAfterNormalization, shouldRefreshInlinePresentation } from "../src/ui/ComposerEditorPresentation";
 
 test("parses and serializes supported list blocks", () => {
 	const document = parseComposerMarkdown("第一段\n- [ ] 一个任务\n- [x] 已完成\n1. 有序项");

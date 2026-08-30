@@ -9,6 +9,7 @@ import {
 	measureSuggestionContentWidth,
 } from "./composerSuggestPosition";
 import { TagSuggestActivationState } from "./TagSuggestActivationState";
+import type { ComposerInputSurface } from "./ComposerCodeMirror";
 
 interface TagSuggestion {
 	tag: string;
@@ -37,7 +38,7 @@ export class KnomoTagSuggest extends AbstractInputSuggest<TagSuggestion> {
 
 	constructor(
 		app: App,
-		private readonly inputEl: HTMLTextAreaElement,
+		private readonly inputEl: ComposerInputSurface,
 		private readonly onInputChanged: () => void,
 		private readonly options: KnomoTagSuggestOptions = {},
 	) {

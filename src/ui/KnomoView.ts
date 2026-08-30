@@ -16,8 +16,7 @@ import { TagRenameService } from "../services/TagRenameService";
 import { MOBILE_INITIAL_MEMO_COUNT, type FileMemoOrchestrator } from "../services/FileMemoOrchestrator";
 import type { TimeBuoyMaintenanceOutcome } from "../types/fileMemo";
 import type { MemoMutation, MemoRecord } from "../types/memo";
-import { applyListFormatToText, getHashInsertionText, getListEnterPatch, getListEnterPatchForNativeInput, getTagQueryAtCursor, isTaskListShortcut } from "../utils/composerInput";
-import type { TextReplacement } from "../utils/composerInput";
+import { getHashInsertionText, getTagQueryAtCursor, isTaskListShortcut } from "../utils/composerInput";
 import { formatDatePart, formatMonthPeriod } from "../utils/date";
 import { formatTimeBuoyDate, getTimeBuoyCardStatus } from "../utils/timeBuoyDate";
 import { extractTimeBuoyDates } from "../utils/timeBuoyParser";
@@ -48,7 +47,7 @@ import {
 import type { CardFlowRenderMode } from "./KnomoCardFlow";
 import { KnomoCardFlowCoordinator } from "./KnomoCardFlowCoordinator";
 import { renderComposerReferencePreview, renderKnomoComposer } from "./KnomoComposer";
-import { ComposerRichEditor, type ComposerRichEditorSelection } from "./ComposerRichEditor";
+import { ComposerCodeMirror, type ComposerEditorSelection, type ComposerInputSurface } from "./ComposerCodeMirror";
 import {
 	getTimeBuoyPickerLeft,
 	renderTimeBuoyDatePicker,
@@ -65,8 +64,6 @@ import {
 	shouldDismissBlankCreateComposer,
 } from "./ComposerDraft";
 import { getPreferredComposerSourcePath } from "./ComposerSourcePath";
-import { ComposerListEnterState } from "./ComposerListEnterState";
-import type { PendingListEnterCorrection } from "./ComposerListEnterState";
 import { ComposerSaveShortcutController } from "./ComposerSaveShortcutController";
 import { getTextareaCharacterRect } from "./composerSuggestPosition";
 import { ImagePreviewScrollLock } from "./ImagePreviewScrollLock";
@@ -359,8 +356,8 @@ export class KnomoView extends ItemView {
 	private allTagsEl: HTMLElement | null = null;
 	private cardFlowEl: HTMLElement | null = null;
 	private trashCountEls: HTMLElement[] = [];
-	private inputEl: HTMLTextAreaElement | null = null;
-	private richEditor: ComposerRichEditor | null = null;
+	private inputEl: ComposerInputSurface | null = null;
+	private richEditor: ComposerCodeMirror | null = null;
 	private timeBuoyButtonEl: HTMLButtonElement | null = null;
 	private timeBuoyMonthStatusEl: HTMLElement | null = null;
 	private timeBuoyPickerEl: HTMLElement | null = null;
@@ -407,6 +404,7 @@ export class KnomoView extends ItemView {
 	private createDraftContent = "";
 	private readonly pendingComposerAttachmentPaths = new Set<string>();
 	private isSaving = false;
+	private composerSaveError = false;
 	private isManualRefreshing = false;
 	private lastKnownLocalDate = formatTimeBuoyDate(new Date());
 	private currentLayout: LayoutMode = "desktop-wide";
@@ -419,7 +417,6 @@ export class KnomoView extends ItemView {
 	private readonly searchQueryDebounce: SearchQueryDebounce;
 	private readonly dateChangeWatcher: DateChangeWatcher;
 	private readonly desktopSidebarStateController = new DesktopSidebarStateController();
-	private readonly composerListEnterState: ComposerListEnterState;
 	private readonly composerSaveShortcutController = new ComposerSaveShortcutController();
 	private readonly imagePreviewScrollLock = new ImagePreviewScrollLock();
 	private readonly mobileHandledToolPointer: MobileHandledToolPointer;
@@ -616,10 +613,6 @@ export class KnomoView extends ItemView {
 			() => this.syncFloatingCollapseControls(),
 		);
 		this.popupState = new KnomoPopupState(() => this.containerEl.win);
-		this.composerListEnterState = new ComposerListEnterState({
-			scheduleTask: (callback, delayMs) => this.containerEl.win.setTimeout(callback, delayMs),
-			cancelTask: (taskId) => this.containerEl.win.clearTimeout(taskId),
-		});
 		this.searchQueryDebounce = new SearchQueryDebounce({
 			scheduleTask: (callback, delayMs) => this.containerEl.win.setTimeout(callback, delayMs),
 			cancelTask: (taskId) => this.containerEl.win.clearTimeout(taskId),
@@ -1115,7 +1108,6 @@ export class KnomoView extends ItemView {
 		this.cardImageLoadQueue.dispose();
 		this.memoCardPreviewCache.clear();
 		this.imageResourceCache.clear();
-		this.composerListEnterState.clear();
 		this.clearHandledMobileToolPointer();
 		this.nativeImagePickerController.dispose();
 		this.clearMobileImagePickerFocusGuard();
@@ -1474,8 +1466,7 @@ export class KnomoView extends ItemView {
 			},
 		});
 		this.composerEl = composer.composerEl;
-		this.inputEl = composer.inputEl;
-		this.richEditor = new ComposerRichEditor(composer.richEditorHostEl, this.inputEl.value, {
+		this.richEditor = new ComposerCodeMirror(composer.richEditorHostEl, this.draftContent, {
 			ariaLabelledBy: composer.composerInputLabelId,
 			resolveImageUrl: (source) => {
 				const rawPath = getComposerImagePath(source);
@@ -1484,12 +1475,17 @@ export class KnomoView extends ItemView {
 				return this.imageResourceCache.get(sourcePath, rawPath, this.app).url ?? null;
 			},
 			onChange: (markdown, selection, event) => this.handleRichEditorChange(markdown, selection, event),
+			onInput: (event) => {
+				if (this.handleTimeBuoyComposerInput(event)) this.syncInputState();
+			},
 			onSelectionChange: (markdown, selection) => {
 				this.handleRichEditorSelectionChange(markdown, selection);
 			},
-			onKeydown: (event) => this.handleRichEditorSuggestionKeydown(event),
+			onKeydown: (event) => this.handleRichEditorKeydown(event)
+				|| this.handleRichEditorSuggestionKeydown(event)
+				|| this.handleComposerKeydown(event),
 			shouldSkipSelectionChangeOnKeyup: (event) => this.tagSuggest?.shouldSkipSelectionChangeOnKeyup(event) ?? false,
-			onBeforeInput: (event) => this.handleRichEditorBeforeInput(event),
+			onBeforeInput: (event) => this.handleComposerBeforeInput(event),
 			onCompositionStart: () => {
 				this.composerIsComposing = true;
 				this.wikiLinkSuggest?.handleCompositionStart();
@@ -1507,6 +1503,7 @@ export class KnomoView extends ItemView {
 				return true;
 			},
 		});
+		this.inputEl = this.richEditor.getInputSurface();
 		this.registerDomEvent(this.richEditor.el, "paste", (event) => {
 			this.richEditor?.rememberSelectionBeforeToolbarAction();
 			this.handleComposerPaste(event);
@@ -1563,7 +1560,11 @@ export class KnomoView extends ItemView {
 				this.richEditor?.setMarkdownAndRestoreSelection(replacement.value, replacement.cursor);
 			},
 			onSuggestionSettled: (replacement) => {
-				this.richEditor?.focusAndRestoreSelection(replacement.cursor);
+				// The callback runs on the next animation frame. If the user has
+				// already typed again, the replacement belongs to an older document.
+				if (this.richEditor?.getMarkdown() === replacement.value) {
+					this.richEditor.focusAndRestoreSelection(replacement.cursor);
+				}
 			},
 			getAnchorRect: (offset) => this.richEditor?.getCaretRectAt(offset) ?? null,
 			suggestHostEl: this.richEditor.el,
@@ -1576,88 +1577,6 @@ export class KnomoView extends ItemView {
 			registerVaultEvent: (eventRef) => this.registerEvent(eventRef),
 			onExternalPatch: (patch) => this.richEditor?.setMarkdownAndRestoreSelection(patch.value, patch.cursor),
 			getAnchorRect: (offset) => this.richEditor?.getCaretRectAt(offset) ?? null,
-		});
-		this.registerDomEvent(this.inputEl, "beforeinput", (event: InputEvent) => {
-			this.handleComposerBeforeInput(event);
-		});
-		this.registerDomEvent(this.inputEl, "input", (event) => {
-			this.handleComposerInput(event);
-		});
-		this.registerDomEvent(this.inputEl, "paste", (event) => {
-			this.handleComposerPaste(event);
-		});
-		this.registerDomEvent(this.inputEl, "dragover", (event) => {
-			const dataTransfer = event.dataTransfer;
-			if (this.currentLayout !== "mobile" && dataTransfer !== null && hasFileDragPayload(dataTransfer)) {
-				event.preventDefault();
-				dataTransfer.dropEffect = "copy";
-			}
-		});
-		this.registerDomEvent(this.inputEl, "drop", (event) => {
-			if (this.currentLayout === "mobile" || !hasFileDragPayload(event.dataTransfer)) {
-				return;
-			}
-			event.preventDefault();
-			event.stopPropagation();
-			const files = getImageFiles(event.dataTransfer);
-			if (files.length > 0) void this.insertImageFiles(files);
-		});
-		this.registerDomEvent(this.inputEl, "focus", () => {
-			this.handleComposerInputFocus();
-		});
-		this.registerDomEvent(this.inputEl, "blur", () => {
-			this.handleComposerInputBlur();
-		});
-		this.registerDomEvent(this.inputEl, "compositionstart", () => {
-			this.composerIsComposing = true;
-			this.wikiLinkSuggest?.handleCompositionStart();
-		});
-		this.registerDomEvent(this.inputEl, "compositionend", (event: CompositionEvent) => {
-			this.composerIsComposing = false;
-			this.tagSuggest?.handleCompositionEnd();
-			this.wikiLinkSuggest?.handleCompositionEnd();
-			this.handleTimeBuoyCompositionEnd(event);
-		});
-		this.registerDomEvent(this.inputEl, "click", () => {
-			this.wikiLinkSuggest?.refreshForCursor();
-			this.closeTimeBuoyPickerIfTriggerMoved();
-		});
-		this.registerDomEvent(this.inputEl, "keydown", (event) => {
-			if (this.tagSuggest?.consumeExactTagEnter(event)) {
-				event.preventDefault();
-				event.stopImmediatePropagation();
-				this.richEditor?.insertParagraph();
-				return;
-			}
-			if (this.handleComposerSaveShortcut(event)) {
-				return;
-			}
-			if (this.handleComposerTaskListShortcut(event)) {
-				return;
-			}
-			if (this.wikiLinkSuggest?.handleKeydown(event)) {
-				return;
-			}
-			if (event.key === "Backspace" && !event.isComposing && this.removeEmptyWikiLinkShell()) {
-				event.preventDefault();
-				return;
-			}
-			if (this.currentLayout === "mobile") {
-				return;
-			}
-			if (event.key === "Enter" && event.shiftKey && !event.isComposing) {
-				this.markSkipListEnterInputFallback();
-				return;
-			}
-			this.handleListEnterKeydown(event);
-		}, { capture: true });
-		this.registerDomEvent(this.inputEl, "keydown", (event) => {
-			this.handleComposerKeydown(event);
-		});
-		this.registerDomEvent(this.inputEl, "keyup", (event) => {
-			this.handleComposerKeyup(event);
-			this.wikiLinkSuggest?.refreshForCursor();
-			this.closeTimeBuoyPickerIfTriggerMoved();
 		});
 		this.updateSendButtonState();
 	}
@@ -1936,7 +1855,7 @@ export class KnomoView extends ItemView {
 		if (this.richEditor !== null) {
 			this.richEditor.el.contentEditable = dailyStatus.enabled ? "true" : "false";
 		}
-		if (this.isSaving || this.editingMemo !== null || this.quoteSourceMemoId !== null || this.cardFlowError !== null) {
+		if (this.isSaving || this.composerSaveError || this.editingMemo !== null || this.quoteSourceMemoId !== null || this.cardFlowError !== null) {
 			return;
 		}
 		this.updateStatus("", false);
@@ -3809,6 +3728,7 @@ export class KnomoView extends ItemView {
 				this.createDraftContent = "";
 			}
 			this.clearComposerContext();
+			this.composerSaveError = false;
 			if (this.inputEl !== null) {
 				this.inputEl.value = this.draftContent;
 			}
@@ -3831,6 +3751,7 @@ export class KnomoView extends ItemView {
 				this.mobileComposerController.clearOpenScrollTop();
 			}
 		} catch (error) {
+			this.composerSaveError = true;
 			const message = formatServiceError(error, t("error.saveFailed"));
 			this.updateStatus(message, true);
 			new Notice(message);
@@ -4299,7 +4220,7 @@ export class KnomoView extends ItemView {
 			this.openMobileComposerBackGuard();
 			return;
 		}
-		if (shouldDismissBlankCreateComposer(this.inputEl?.value ?? "", this.editingMemo)) {
+		if (shouldDismissBlankCreateComposer(this.getCurrentComposerMarkdown(), this.editingMemo)) {
 			this.closeComposerKeepingDraft();
 			return;
 		}
@@ -4336,7 +4257,7 @@ export class KnomoView extends ItemView {
 
 	private closeComposerKeepingDraft(): void {
 		this.closeTimeBuoyPicker(false);
-		const currentContent = this.inputEl?.value ?? this.draftContent;
+		const currentContent = this.getCurrentComposerMarkdown();
 		const retainedDraft = this.editingMemo !== null ? this.createDraftContent : "";
 		void this.cleanupPendingComposerAttachments(currentContent, false, retainedDraft);
 		if (this.currentLayout === "mobile") {
@@ -4345,7 +4266,7 @@ export class KnomoView extends ItemView {
 		}
 		if (this.inputEl !== null) {
 			this.draftContent = getDraftForComposerClose(
-				this.inputEl.value,
+				currentContent,
 				getComposerMode(this.editingMemo, this.quoteSourceMemoId),
 				this.quoteMarkdownText,
 			);
@@ -4355,6 +4276,7 @@ export class KnomoView extends ItemView {
 				getComposerMode(this.editingMemo, this.quoteSourceMemoId),
 			);
 			this.inputEl.value = this.draftContent;
+			this.richEditor?.setMarkdown(this.draftContent);
 		}
 		this.composerOpen = false;
 		this.mobileComposerController.resetInactiveState();
@@ -4368,7 +4290,7 @@ export class KnomoView extends ItemView {
 		this.closeTimeBuoyPicker(false);
 		if (this.inputEl !== null) {
 			this.draftContent = getDraftForComposerClose(
-				this.inputEl.value,
+				this.getCurrentComposerMarkdown(),
 				getComposerMode(this.editingMemo, this.quoteSourceMemoId),
 				this.quoteMarkdownText,
 			);
@@ -4378,6 +4300,7 @@ export class KnomoView extends ItemView {
 				getComposerMode(this.editingMemo, this.quoteSourceMemoId),
 			);
 			this.inputEl.value = this.draftContent;
+			this.richEditor?.setMarkdown(this.draftContent);
 		}
 		this.mobileComposerController.closeKeepingDraft();
 	}
@@ -4584,51 +4507,29 @@ export class KnomoView extends ItemView {
 		this.updateCancelEditButtonState();
 	}
 
-	private handleComposerBeforeInput(event: InputEvent): void {
+	private handleComposerBeforeInput(event: InputEvent): boolean {
 		if (event.defaultPrevented) {
-			return;
-		}
-		const shouldHandleListEnter =
-			!this.composerListEnterState.shouldSkipInputFallback() &&
-			!event.isComposing &&
-			isListEnterInputEvent(event);
-		if (shouldHandleListEnter && this.handleListEnterBeforeInput(event)) {
-			return;
+			return false;
 		}
 		if (this.wikiLinkSuggest?.handleBeforeInput(event)) {
-			return;
+			return true;
 		}
 		if (event.inputType !== "insertText" || event.data !== "#") {
-			return;
+			return false;
 		}
 		event.preventDefault();
 		this.insertText("#");
 		if (this.currentLayout === "mobile") {
 			this.openTagSuggestAfterHashInsert();
 		}
+		return true;
 	}
 
-	private handleComposerKeydown(event: KeyboardEvent): void {
+	private handleComposerKeydown(event: KeyboardEvent): boolean {
 		if (this.handleComposerSaveShortcut(event)) {
-			return;
+			return true;
 		}
-		if (this.currentLayout !== "mobile") {
-			if (event.key === "Enter" && event.shiftKey && !event.isComposing) {
-				this.markSkipListEnterInputFallback();
-			}
-			if (this.handleListEnterKeydown(event)) {
-				return;
-			}
-		}
-		if (event.key === "Escape") {
-			event.preventDefault();
-			event.stopPropagation();
-			if (this.timeBuoyPickerState !== null) {
-				this.closeTimeBuoyPicker(true);
-				return;
-			}
-			this.cancelComposerFromEscape();
-		}
+		return false;
 	}
 
 	private handleComposerKeyup(event: KeyboardEvent): void {
@@ -5075,14 +4976,8 @@ export class KnomoView extends ItemView {
 			return;
 		}
 		this.suppressTimeBuoyAutoOpen = true;
-		input.value = insertion.value;
-		input.setSelectionRange(insertion.cursor, insertion.cursor);
 		try {
-			if (this.richEditor !== null) {
-				this.richEditor.setMarkdownAndRestoreSelection(insertion.value, insertion.cursor);
-			} else {
-				dispatchTextareaInputEvent(input);
-			}
+			this.richEditor?.setMarkdownAndRestoreSelection(insertion.value, insertion.cursor);
 		} finally {
 			this.suppressTimeBuoyAutoOpen = false;
 		}
@@ -5304,52 +5199,12 @@ export class KnomoView extends ItemView {
 	}
 
 	private insertText(text: string, shouldFocus = true): void {
-		if (this.richEditor !== null) {
-			this.richEditor.insertText(text === "#" ? "#" : text);
-			return;
-		}
-		if (this.inputEl === null) {
-			return;
-		}
-		const start = this.inputEl.selectionStart;
-		const end = this.inputEl.selectionEnd;
-		const insertText = text === "#" ? getHashInsertionText(this.inputEl.value, start) : text;
-		this.inputEl.value = `${this.inputEl.value.slice(0, start)}${insertText}${this.inputEl.value.slice(end)}`;
-		const nextCursor = start + insertText.length;
-		if (shouldFocus) {
-			try {
-				this.inputEl.focus({ preventScroll: true });
-			} catch {
-				this.inputEl.focus();
-			}
-		}
-		this.inputEl.setSelectionRange(nextCursor, nextCursor);
-		dispatchTextareaInputEvent(this.inputEl);
+		this.richEditor?.insertText(text === "#" ? "#" : text);
+		if (shouldFocus) this.richEditor?.focus({ preventScroll: true });
 	}
 
 	private insertWikiLinkShell(): void {
-		if (this.richEditor !== null) {
-			this.richEditor.insertWikiLinkShell();
-			return;
-		}
-		if (this.inputEl === null) {
-			return;
-		}
-		const input = this.inputEl;
-		const start = input.selectionStart;
-		const end = input.selectionEnd;
-		const selected = input.value.slice(start, end);
-		const content = selected.length > 0 ? selected : "";
-		const replacement = `[[${content}]]`;
-		input.value = `${input.value.slice(0, start)}${replacement}${input.value.slice(end)}`;
-		const cursor = start + 2 + content.length;
-		try {
-			input.focus({ preventScroll: true });
-		} catch {
-			input.focus();
-		}
-		input.setSelectionRange(cursor, cursor);
-		dispatchTextareaInputEvent(input);
+		this.richEditor?.insertWikiLinkShell();
 	}
 
 	private removeEmptyWikiLinkShell(): boolean {
@@ -5360,174 +5215,12 @@ export class KnomoView extends ItemView {
 		if (patch === null) {
 			return false;
 		}
-		this.applyTextareaPatch(patch);
+		this.richEditor?.setMarkdownAndRestoreSelection(patch.value, patch.cursor);
 		return true;
 	}
 
 	private applyListFormat(type: "bullet" | "ordered" | "task"): void {
-		if (this.richEditor !== null) {
-			this.richEditor.applyListFormat(type);
-			return;
-		}
-		if (this.inputEl === null) {
-			return;
-		}
-		const input = this.inputEl;
-		const replacement = applyListFormatToText(input.value, input.selectionStart, input.selectionEnd, type);
-		input.value = replacement.value;
-		try {
-			input.focus({ preventScroll: true });
-		} catch {
-			input.focus();
-		}
-		input.setSelectionRange(replacement.cursor, replacement.cursor);
-		dispatchTextareaInputEvent(input);
-	}
-
-	private handleComposerInput(event: Event): void {
-		const pendingCorrection = this.composerListEnterState.consumePendingCorrection(this.inputEl?.value ?? null);
-		if (pendingCorrection !== null) {
-			this.applyTextareaPatch(pendingCorrection);
-			return;
-		}
-		if (this.handleListEnterInputFallback(event)) {
-			return;
-		}
-		if (this.handleTimeBuoyComposerInput(event)) {
-			this.syncInputState();
-			return;
-		}
-		if (this.wikiLinkSuggest?.handleInput()) {
-			return;
-		}
-		this.syncInputState();
-	}
-
-	private handleListEnterBeforeInput(event: InputEvent): boolean {
-		if (this.handleListEnterKeydownDuplicateBeforeInput(event)) {
-			return true;
-		}
-		const patch = this.getCurrentListEnterPatch();
-		if (patch === null) {
-			return false;
-		}
-		if (!event.cancelable) {
-			this.composerListEnterState.setPendingCorrection(this.getPendingMobileListEnterCorrection(patch));
-			return false;
-		}
-		event.preventDefault();
-		event.stopPropagation();
-		this.composerListEnterState.setPendingCorrection(null);
-		this.applyTextareaPatch(patch);
-		return true;
-	}
-
-	private handleListEnterInputFallback(event: Event): boolean {
-		if (this.composerListEnterState.shouldSkipInputFallback() || this.inputEl === null) {
-			return false;
-		}
-		const inputEvent = this.asInputEvent(event);
-		if (
-			inputEvent !== null &&
-			(inputEvent.inputType === "insertFromPaste" || inputEvent.inputType === "insertFromDrop")
-		) {
-			return false;
-		}
-		const input = this.inputEl;
-		const patch = getListEnterPatchForNativeInput(this.draftContent, input.value, input.selectionStart, input.selectionEnd, {
-			allowTextChangeWithNewline: this.currentLayout === "mobile",
-			allowInsertedMarkerCorrection: this.currentLayout === "mobile",
-		});
-		if (patch === null) {
-			return false;
-		}
-		this.applyTextareaPatch(patch);
-		return true;
-	}
-
-	private handleListEnterKeydownDuplicateBeforeInput(event: InputEvent): boolean {
-		const patch = this.composerListEnterState.getKeydownPatch();
-		if (patch === null || this.inputEl === null) {
-			return false;
-		}
-		const input = this.inputEl;
-		if (input.value !== patch.value || input.selectionStart !== patch.cursor || input.selectionEnd !== patch.cursor) {
-			return false;
-		}
-		this.clearListEnterKeydownPatch();
-		if (!event.cancelable) {
-			this.composerListEnterState.setPendingCorrection(this.getPendingMobileListEnterCorrection(patch));
-			return true;
-		}
-		event.preventDefault();
-		event.stopPropagation();
-		return true;
-	}
-
-	private handleListEnterKeydown(event: KeyboardEvent): boolean {
-		if (event.key !== "Enter" || event.shiftKey || event.isComposing) {
-			return false;
-		}
-		const patch = this.getCurrentListEnterPatch();
-		if (patch === null) {
-			return false;
-		}
-		event.preventDefault();
-		event.stopPropagation();
-		this.applyTextareaPatch(patch);
-		this.markListEnterKeydownPatch(patch);
-		return true;
-	}
-
-	private markListEnterKeydownPatch(patch: TextReplacement): void {
-		this.composerListEnterState.markKeydownPatch(patch);
-	}
-
-	private clearListEnterKeydownPatch(): void {
-		this.composerListEnterState.clearKeydownPatch();
-	}
-
-	private markSkipListEnterInputFallback(): void {
-		this.composerListEnterState.markSkipInputFallback();
-	}
-
-	private asInputEvent(event: Event): InputEvent | null {
-		const win = this.inputEl?.ownerDocument.defaultView ?? null;
-		if (win === null || typeof win.InputEvent === "undefined") {
-			return null;
-		}
-		return event instanceof win.InputEvent ? event : null;
-	}
-
-	private getCurrentListEnterPatch(): TextReplacement | null {
-		if (this.inputEl === null) {
-			return null;
-		}
-		const input = this.inputEl;
-		return getListEnterPatch(input.value, input.selectionStart, input.selectionEnd);
-	}
-
-	private getPendingMobileListEnterCorrection(patch: TextReplacement): PendingListEnterCorrection | null {
-		if (this.inputEl === null) {
-			return null;
-		}
-		const input = this.inputEl;
-		const start = input.selectionStart;
-		const end = input.selectionEnd;
-		return {
-			patch,
-			nativeValue: `${input.value.slice(0, start)}\n${input.value.slice(end)}`,
-		};
-	}
-
-	private applyTextareaPatch(patch: TextReplacement): void {
-		if (this.inputEl === null) {
-			return;
-		}
-		const input = this.inputEl;
-		input.value = patch.value;
-		input.setSelectionRange(patch.cursor, patch.cursor);
-		dispatchTextareaInputEvent(input);
+		this.richEditor?.applyListFormat(type);
 	}
 
 	private openTagSuggestAfterHashInsert(): void {
@@ -5547,7 +5240,7 @@ export class KnomoView extends ItemView {
 	}
 
 	private syncInputState(): void {
-		this.draftContent = this.inputEl?.value ?? "";
+		this.draftContent = this.getCurrentComposerMarkdown();
 		this.createDraftContent = captureCreateDraft(
 			this.createDraftContent,
 			this.draftContent,
@@ -5561,7 +5254,7 @@ export class KnomoView extends ItemView {
 		this.resizeInput();
 	}
 
-	private syncRichEditorInput(markdown: string, selection: ComposerRichEditorSelection): void {
+	private syncRichEditorInput(markdown: string, selection: ComposerEditorSelection): void {
 		if (this.inputEl === null) {
 			return;
 		}
@@ -5569,11 +5262,16 @@ export class KnomoView extends ItemView {
 		this.inputEl.setSelectionRange(selection.start, selection.end);
 	}
 
+	private getCurrentComposerMarkdown(): string {
+		return this.richEditor?.getMarkdown() ?? this.inputEl?.value ?? this.draftContent;
+	}
+
 	private handleRichEditorChange(
 		markdown: string,
-		selection: ComposerRichEditorSelection,
+		selection: ComposerEditorSelection,
 		event?: InputEvent,
 	): void {
+		this.composerSaveError = false;
 		this.syncRichEditorInput(markdown, selection);
 		this.syncInputState();
 		// Rich-editor input does not bubble through the hidden textarea where the
@@ -5591,7 +5289,7 @@ export class KnomoView extends ItemView {
 		}
 	}
 
-	private handleRichEditorSelectionChange(markdown: string, selection: ComposerRichEditorSelection): void {
+	private handleRichEditorSelectionChange(markdown: string, selection: ComposerEditorSelection): void {
 		if (this.inputEl !== null) {
 			this.inputEl.setSelectionRange(selection.start, selection.end);
 		}
@@ -5609,6 +5307,12 @@ export class KnomoView extends ItemView {
 		this.tagSuggest?.clearAcceptedSuggestionSuppression();
 		this.richEditor?.insertText("#");
 		return true;
+	}
+
+	private asInputEvent(event: Event): InputEvent | null {
+		const win = this.inputEl?.ownerDocument.defaultView ?? null;
+		if (win === null || typeof win.InputEvent === "undefined") return null;
+		return event instanceof win.InputEvent ? event : null;
 	}
 
 	private handleRichEditorKeydown(event: KeyboardEvent): boolean {
@@ -5653,7 +5357,7 @@ export class KnomoView extends ItemView {
 
 	private syncRichEditorTagSuggest(
 		markdown: string,
-		selection: ComposerRichEditorSelection,
+		selection: ComposerEditorSelection,
 		refreshSuggestions = true,
 	): void {
 		if (this.tagSuggest === null) {
@@ -6677,20 +6381,11 @@ export class KnomoView extends ItemView {
 	}
 }
 
-function dispatchTextareaInputEvent(input: HTMLTextAreaElement): void {
-	const EventConstructor = (input.win as Window & { Event: typeof Event }).Event;
-	input.dispatchEvent(new EventConstructor("input", { bubbles: true, cancelable: false }));
-}
-
 function getComposerImagePath(source: string): string | null {
 	const wiki = source.match(/^!\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]$/);
 	if (wiki !== null) return wiki[1] ?? null;
 	const markdown = source.match(/^!\[[^\]]*\]\(([^)]+)\)$/);
 	return markdown?.[1]?.trim() ?? null;
-}
-
-function isListEnterInputEvent(event: InputEvent): boolean {
-	return event.inputType === "insertParagraph" || event.inputType === "insertLineBreak" || (event.inputType === "insertText" && event.data === "\n");
 }
 
 function getMarkdownRenderPriority(renderIndex: number): MarkdownRenderPriority {

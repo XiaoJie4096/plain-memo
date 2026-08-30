@@ -14,6 +14,7 @@ import {
 	measureSuggestionContentHeight,
 	measureSuggestionContentWidth,
 } from "./composerSuggestPosition";
+import type { ComposerInputSurface } from "./ComposerCodeMirror";
 
 interface KnomoWikiLinkSuggestOptions {
 	listboxId: string;
@@ -43,7 +44,7 @@ export class KnomoWikiLinkSuggest {
 
 	constructor(
 		private readonly app: App,
-		private readonly inputEl: HTMLTextAreaElement,
+		private readonly inputEl: ComposerInputSurface,
 		private readonly options: KnomoWikiLinkSuggestOptions,
 	) {
 		this.inputEl.setAttr("aria-autocomplete", "list");

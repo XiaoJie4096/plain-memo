@@ -33,9 +33,7 @@ test("renders composer input, tools, actions, and reference preview", async () =
 		},
 	});
 
-	assert.equal(elements.inputEl.value, "draft memo");
-	assert.equal(elements.inputEl.disabled, true);
-	assert.equal(elements.inputEl.getAttr("aria-labelledby"), "composer-input-label");
+	assert.equal(elements.richEditorHostEl.hasClass("plain-memo-rich-editor-host"), true);
 	assert.equal(elements.composerInputLabelId, "composer-input-label");
 	assert.equal(root.find(".plain-memo-composer-markdown-preview"), null);
 	assert.deepEqual(elements.toolsEl.findAll("[data-action]").map((item) => item.getAttr("data-action")), [

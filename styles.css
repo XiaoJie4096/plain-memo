@@ -1943,11 +1943,45 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-plugin.is-
 	min-height: 44px;
 	max-height: 480px;
 	padding: 0;
+	font-family: var(--font-text);
 	color: var(--text-normal);
-	font-size: 16px;
-	line-height: 1.55;
+	font-size: 15px;
+	font-weight: var(--font-normal);
+	line-height: 1.7;
+	letter-spacing: normal;
+	caret-color: var(--text-normal);
 	overflow-y: auto;
 	outline: 0;
+}
+
+.plain-memo-plugin .plain-memo-code-mirror-editor,
+.plain-memo-plugin .plain-memo-code-mirror-editor .cm-scroller,
+.plain-memo-plugin .plain-memo-code-mirror-editor .cm-content,
+.plain-memo-plugin .plain-memo-code-mirror-editor .cm-line {
+	font-family: var(--font-text);
+	font-size: 15px;
+	font-weight: var(--font-normal);
+	line-height: 1.7;
+	letter-spacing: normal;
+}
+
+.plain-memo-plugin .plain-memo-code-mirror-editor .cm-content {
+	min-height: 44px;
+	padding: 0;
+	color: var(--text-normal);
+	caret-color: var(--text-normal);
+	-webkit-user-select: text;
+	user-select: text;
+}
+
+.plain-memo-plugin .plain-memo-code-mirror-editor .cm-cursor,
+.plain-memo-plugin .plain-memo-code-mirror-editor .cm-dropCursor {
+	border-left-color: var(--text-normal);
+}
+
+.plain-memo-plugin .plain-memo-code-mirror-editor .cm-selectionBackground,
+.plain-memo-plugin .plain-memo-code-mirror-editor .cm-content ::selection {
+	background-color: var(--text-selection);
 }
 
 .plain-memo-plugin .plain-memo-rich-editor-paragraph,
@@ -2024,6 +2058,13 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-plugin.is-
 .plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-task-marker {
 	color: var(--plain-memo-tag-text, #577fc9);
 }
+.plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-list-marker-widget {
+	display: inline-block;
+	min-width: 1.5em;
+	margin-right: 0.25em;
+	color: var(--plain-memo-tag-text, #577fc9);
+	text-align: right;
+}
 .plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-task-checkbox {
 	margin: 0 0.35em 0 0;
 	vertical-align: middle;
@@ -2046,6 +2087,12 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-plugin.is-
 	max-height: var(--plain-memo-composer-input-max-height, 40vh);
 	overflow-y: var(--plain-memo-composer-input-overflow-y, auto);
 	overscroll-behavior: contain;
+}
+
+.plain-memo-plugin.is-layout-mobile .plain-memo-code-mirror-editor .cm-content,
+.plain-memo-plugin.is-layout-mobile .plain-memo-code-mirror-editor .cm-line {
+	font-size: 15px;
+	line-height: 1.7;
 }
 
 /* ---- Composer — desktop-narrow: compact height ---- */
