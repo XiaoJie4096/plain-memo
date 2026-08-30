@@ -1,0 +1,156 @@
+import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
+import { markdown } from "@codemirror/lang-markdown";
+import { EditorSelection, EditorState, RangeSetBuilder } from "@codemirror/state";
+import { Decoration, EditorView, WidgetType, keymap, ViewPlugin, type ViewUpdate } from "@codemirror/view";
+import { applyListFormatToText, getHashInsertionText, getListEnterPatch, type ListFormatType } from "../utils/composerInput";
+
+export interface ComposerRichEditorSelection { start: number; end: number; }
+export interface ComposerCodeMirrorOptions {
+	onChange: (markdown: string, selection: ComposerRichEditorSelection, event?: InputEvent) => void;
+	onSelectionChange?: (markdown: string, selection: ComposerRichEditorSelection) => void;
+	onBeforeInput?: (event: InputEvent) => boolean;
+	onKeydown?: (event: KeyboardEvent) => boolean;
+	shouldSkipSelectionChangeOnKeyup?: (event: KeyboardEvent) => boolean;
+	onCompositionStart?: () => void;
+	onCompositionEnd?: (event: CompositionEvent, markdown: string, selection: ComposerRichEditorSelection) => void;
+	onShortcut?: (event: KeyboardEvent) => boolean;
+	resolveImageUrl?: (source: string) => string | null;
+	ariaLabelledBy?: string;
+}
+
+class ComposerMarkdownDecorations {
+	decorations = Decoration.none;
+	constructor(view: EditorView, private readonly resolveImageUrl?: (source: string) => string | null) { this.decorations = this.build(view); }
+	update(update: ViewUpdate): void { if (update.docChanged || update.viewportChanged) this.decorations = this.build(update.view); }
+	private build(view: EditorView) {
+		const builder = new RangeSetBuilder<Decoration>();
+		const ranges: Array<{ from: number; to: number; decoration: Decoration }> = [];
+		for (const { from, to } of view.visibleRanges) {
+			const text = view.state.doc.sliceString(from, to);
+			const add = (regex: RegExp, className: string) => {
+				let match: RegExpExecArray | null;
+				while ((match = regex.exec(text)) !== null) {
+					const start = from + match.index;
+					ranges.push({ from: start, to: start + match[0].length, decoration: Decoration.mark({ class: className }) });
+					if (match[0].length === 0) regex.lastIndex += 1;
+				}
+			};
+			add(/(^|\s)(#[^\s#]+)(?=\s|$)/gm, "plain-memo-cm-tag");
+			if (this.resolveImageUrl !== undefined) {
+				const imageRegex = /!\[\[[^\]]+\]\]|!\[[^\]]*\]\([^)]*\)/g;
+				let image: RegExpExecArray | null;
+				while ((image = imageRegex.exec(text)) !== null) {
+					const source = image[0];
+					const url = this.resolveImageUrl(source);
+					if (url !== null) ranges.push({ from: from + image.index, to: from + image.index + source.length, decoration: Decoration.replace({ widget: new ImageWidget(source, url), inclusive: false }) });
+				}
+			}
+			const taskRegex = /^(\s*(?:[-*+]\s+|\d+[.)]\s+))(?:\[[ xX-]\]|【】)(?=\s|$)/gm;
+			let task: RegExpExecArray | null;
+			while ((task = taskRegex.exec(text)) !== null) {
+				const start = from + task.index;
+				const source = task[0];
+				const checked = /\[[xX]\]/.test(source);
+				ranges.push({ from: start, to: start + source.length, decoration: Decoration.replace({ widget: new TaskCheckboxWidget(source, checked), inclusive: false }) });
+			}
+			add(/^(\s*(?:[-*+]\s+|\d+[.)]\s+))(?!\[[ xX-]\]|【】)/gm, "plain-memo-cm-list-marker");
+		}
+		ranges.sort((a, b) => a.from - b.from || a.to - b.to);
+		let lastTo = -1;
+		for (const range of ranges) {
+			// A tag-like token inside an image destination/alt text must not
+			// overlap the image replacement range.
+			if (range.from < lastTo) continue;
+			builder.add(range.from, range.to, range.decoration);
+			lastTo = range.to;
+		}
+		return builder.finish();
+	}
+}
+
+class TaskCheckboxWidget extends WidgetType {
+	constructor(private readonly source: string, private readonly checked: boolean) { super(); }
+	toDOM(view: EditorView): HTMLElement {
+		const input = view.dom.ownerDocument.createElement("input");
+		input.type = "checkbox"; input.checked = this.checked; input.className = "plain-memo-cm-task-checkbox";
+		input.addEventListener("mousedown", (event) => event.stopPropagation());
+		input.addEventListener("change", () => {
+			const replacement = this.source.replace(/\[[ xX-]\]|【】/, input.checked ? "[x]" : "[ ]");
+			const position = view.posAtDOM(input);
+			view.dispatch({ changes: { from: position, to: position + this.source.length, insert: replacement } });
+		});
+		return input;
+	}
+	ignoreEvent(): boolean { return false; }
+}
+
+class ImageWidget extends WidgetType {
+	constructor(private readonly source: string, private readonly url: string) { super(); }
+	toDOM(view: EditorView): HTMLElement {
+		const document = view.dom.ownerDocument;
+		const wrapper = document.createElement("span"); wrapper.className = "plain-memo-rich-editor-image"; wrapper.dataset.source = this.source;
+		const image = document.createElement("img"); image.src = this.url; image.alt = this.source; image.loading = "lazy"; wrapper.appendChild(image); return wrapper;
+	}
+	ignoreEvent(): boolean { return true; }
+}
+
+/** Text-first PlainMemo editor backed by the official CodeMirror 6 state/view. */
+export class ComposerCodeMirror {
+	readonly view: EditorView;
+	readonly el: HTMLDivElement;
+	private lastSyncedMarkdown: string;
+	private savedSelection: ComposerRichEditorSelection | null = null;
+
+	constructor(container: HTMLElement, initialMarkdown: string, private readonly options: ComposerCodeMirrorOptions) {
+		this.lastSyncedMarkdown = initialMarkdown;
+		const state = EditorState.create({ doc: initialMarkdown, extensions: [
+			markdown(), EditorView.lineWrapping, history(),
+			keymap.of([{ key: "Enter", run: insertParagraphCommand }, ...defaultKeymap, ...historyKeymap, indentWithTab]),
+			ViewPlugin.define((view) => new ComposerMarkdownDecorations(view, options.resolveImageUrl), { decorations: (value) => value.decorations }),
+			EditorView.updateListener.of((update) => {
+				if (update.docChanged) { this.lastSyncedMarkdown = update.state.doc.toString(); this.options.onChange(this.lastSyncedMarkdown, this.getSelection()); }
+				if (update.selectionSet) this.notifySelectionChange();
+			}),
+		] });
+		this.view = new EditorView({ state, parent: container });
+		this.el = this.view.dom as HTMLDivElement;
+		this.el.classList.add("plain-memo-rich-editor", "plain-memo-code-mirror-editor");
+		this.el.setAttribute("contenteditable", "true"); this.el.setAttribute("role", "textbox"); this.el.setAttribute("aria-multiline", "true");
+		if (options.ariaLabelledBy !== undefined) this.el.setAttribute("aria-labelledby", options.ariaLabelledBy);
+		this.el.addEventListener("beforeinput", (event) => { if (options.onBeforeInput?.(event as InputEvent) === true) event.preventDefault(); });
+		this.el.addEventListener("keydown", (event) => { if (options.onKeydown?.(event) === true || options.onShortcut?.(event) === true) event.preventDefault(); });
+		this.el.addEventListener("focus", () => this.notifySelectionChange());
+		this.el.addEventListener("keyup", (event) => { if (options.shouldSkipSelectionChangeOnKeyup?.(event) !== true) this.notifySelectionChange(); });
+		this.el.addEventListener("compositionstart", () => options.onCompositionStart?.());
+		this.el.addEventListener("compositionend", (event) => options.onCompositionEnd?.(event as CompositionEvent, this.getMarkdown(), this.getSelection()));
+	}
+
+	getMarkdown(): string { return this.view.state.doc.toString(); }
+	setMarkdown(markdownText: string): void { if (markdownText !== this.getMarkdown()) this.view.dispatch({ changes: { from: 0, to: this.view.state.doc.length, insert: markdownText } }); this.lastSyncedMarkdown = markdownText; }
+	getLastSyncedMarkdown(): string { return this.lastSyncedMarkdown; }
+	getSelection(): ComposerRichEditorSelection { const range = this.view.state.selection.main; const selection = { start: range.from, end: range.to }; this.savedSelection = selection; return selection; }
+	setSelection(start: number, end = start): void { this.view.dispatch({ selection: EditorSelection.range(start, end), scrollIntoView: true }); }
+	applyListFormat(type: ListFormatType): void { const s = this.getSelection(); const p = applyListFormatToText(this.getMarkdown(), s.start, s.end, type); this.setMarkdownAndRestoreSelection(p.value, p.cursor); }
+	insertText(text: string): void { const s = this.getSelection(); const value = text === "#" ? getHashInsertionText(this.getMarkdown(), s.start) : text; this.view.dispatch({ changes: { from: s.start, to: s.end, insert: value }, selection: { anchor: s.start + value.length } }); }
+	insertParagraph(): void { const s = this.getSelection(); const p = getListEnterPatch(this.getMarkdown(), s.start, s.end); if (p !== null) this.setMarkdownAndRestoreSelection(p.value, p.cursor); else this.insertText("\n"); }
+	insertWikiLinkShell(): void { const s = this.getSelection(); const selected = this.getMarkdown().slice(s.start, s.end); const value = `[[${selected}]]`; this.view.dispatch({ changes: { from: s.start, to: s.end, insert: value }, selection: { anchor: s.start + 2 + selected.length } }); }
+	focus(_options?: FocusOptions): void { this.view.focus(); }
+	focusAndRestoreSelection(start: number, end = start): void { this.setSelection(start, end); this.view.focus(); }
+	setMarkdownAndRestoreSelection(markdownText: string, start: number, end = start): void { const current = this.getMarkdown(); if (current === markdownText) this.setSelection(start, end); else this.view.dispatch({ changes: { from: 0, to: current.length, insert: markdownText }, selection: EditorSelection.range(start, end), scrollIntoView: true }); this.lastSyncedMarkdown = markdownText; }
+	getCaretRectAt(offset: number): DOMRect | null { const c = this.view.coordsAtPos(Math.max(0, Math.min(offset, this.view.state.doc.length))); return c === null ? null : new DOMRect(c.left, c.top, c.right - c.left, c.bottom - c.top); }
+	rememberSelectionBeforeToolbarAction(): void { this.savedSelection = this.getSelection(); }
+	destroy(): void { this.view.destroy(); }
+	private notifySelectionChange(): void { this.options.onSelectionChange?.(this.getMarkdown(), this.getSelection()); }
+}
+
+function insertParagraphCommand(view: EditorView): boolean {
+	const range = view.state.selection.main;
+	const source = view.state.doc.toString();
+	const patch = getListEnterPatch(source, range.from, range.to);
+	if (patch !== null) {
+		view.dispatch({ changes: { from: range.from, to: range.to, insert: patch.value.slice(range.from, patch.value.length - (source.length - range.to)) }, selection: { anchor: patch.cursor }, scrollIntoView: true });
+		return true;
+	}
+	view.dispatch({ changes: { from: range.from, to: range.to, insert: "\n" }, selection: { anchor: range.from + 1 }, scrollIntoView: true });
+	return true;
+}

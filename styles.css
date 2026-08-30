@@ -2012,6 +2012,23 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-plugin.is-
 	object-fit: contain;
 }
 
+/* CodeMirror live-preview marks keep Markdown text authoritative while matching
+   the existing PlainMemo tag and list palette. */
+.plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-tag {
+	background: rgba(146, 178, 236, 0.21);
+	border-radius: 5px;
+	color: var(--plain-memo-tag-text, #577fc9);
+	padding: 0 2px;
+}
+.plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-list-marker,
+.plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-task-marker {
+	color: var(--plain-memo-tag-text, #577fc9);
+}
+.plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-task-checkbox {
+	margin: 0 0.35em 0 0;
+	vertical-align: middle;
+}
+
 /* 移动端长内容只在输入框内部滚动 */
 .plain-memo-plugin.is-layout-mobile .plain-memo-composer-input {
 	flex: 0 1 auto;
