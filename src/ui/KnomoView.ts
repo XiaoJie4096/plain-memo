@@ -3765,7 +3765,7 @@ export class KnomoView extends ItemView {
 		}
 		this.closeTimeBuoyPicker(false);
 
-		const input = this.inputEl.value;
+		const input = this.richEditor?.getMarkdown() ?? this.inputEl.value;
 		const preparedInput = prepareComposerSaveInput(input, this.editingMemo, {
 			sourceMemoId: this.quoteSourceMemoId,
 			referenceText: this.quoteReferenceText,
@@ -5712,8 +5712,9 @@ export class KnomoView extends ItemView {
 		if (this.inputEl === null || this.sendButtonEl === null) {
 			return;
 		}
+		const composerValue = this.richEditor?.getMarkdown() ?? this.inputEl.value;
 		this.sendButtonEl.disabled =
-			this.isSaving || this.inputEl.disabled || this.inputEl.value.trim().length === 0;
+			this.isSaving || this.inputEl.disabled || composerValue.trim().length === 0;
 		const label = this.isSaving ? t("composer.saving") : t("composer.send");
 		this.sendButtonEl.setAttr("aria-label", label);
 		if (this.timeBuoyButtonEl !== null) {
