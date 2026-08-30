@@ -48,7 +48,7 @@ import {
 import type { CardFlowRenderMode } from "./KnomoCardFlow";
 import { KnomoCardFlowCoordinator } from "./KnomoCardFlowCoordinator";
 import { renderComposerReferencePreview, renderKnomoComposer } from "./KnomoComposer";
-import { ComposerCodeMirror as ComposerRichEditor, type ComposerRichEditorSelection } from "./ComposerCodeMirror";
+import { ComposerRichEditor, type ComposerRichEditorSelection } from "./ComposerRichEditor";
 import {
 	getTimeBuoyPickerLeft,
 	renderTimeBuoyDatePicker,
