@@ -2,7 +2,7 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirro
 import { markdown } from "@codemirror/lang-markdown";
 import { EditorSelection, EditorState, RangeSetBuilder } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType, keymap, ViewPlugin, type ViewUpdate } from "@codemirror/view";
-import { applyListFormatToText, getHashInsertionText, getListEnterPatch, type ListFormatType } from "../utils/composerInput";
+import { applyListFormatToText, getHashInsertionText, getListBoundaryBackspacePatch, getListEnterPatch, type ListFormatType } from "../utils/composerInput";
 
 export interface ComposerEditorSelection { start: number; end: number; }
 /** DOM-compatible view of the CodeMirror surface used by legacy integrations. */
@@ -37,7 +37,10 @@ class ComposerMarkdownDecorations {
 		const ranges: Array<{ from: number; to: number; decoration: Decoration }> = [];
 		for (const { from, to } of view.visibleRanges) {
 			const text = view.state.doc.sliceString(from, to);
-			const tagRegex = /(^|\s)(#[^\s#]+)(?=\s|$)/gm;
+			// Keep decoration ranges inside one line. `\s` also matches newlines,
+			// which can make a replacement decoration span a line break and crash
+			// CodeMirror's plugin range validation during rapid editing.
+			const tagRegex = /(^|[ \t])(#[^\s#]+)(?=[ \t]|$)/gm;
 			let tag: RegExpExecArray | null;
 			while ((tag = tagRegex.exec(text)) !== null) {
 				const prefixLength = tag[1]?.length ?? 0;
@@ -56,7 +59,7 @@ class ComposerMarkdownDecorations {
 					if (url !== null) ranges.push({ from: from + image.index, to: from + image.index + source.length, decoration: Decoration.replace({ widget: new ImageWidget(source, url), inclusive: false }) });
 				}
 			}
-			const taskRegex = /^(\s*(?:[-*+]\s+|\d+[.)]\s+))(?:\[[ xX-]\]|【】)(?=\s|$)/gm;
+			const taskRegex = /^([ \t]*(?:[-*+][ \t]+|\d+[.)][ \t]+))(?:\[[ xX-]\]|【】)(?=[ \t]|$)/gm;
 			let task: RegExpExecArray | null;
 			while ((task = taskRegex.exec(text)) !== null) {
 				const start = from + task.index;
@@ -64,7 +67,7 @@ class ComposerMarkdownDecorations {
 				const checked = /\[[xX]\]/.test(source);
 				ranges.push({ from: start, to: start + source.length, decoration: Decoration.replace({ widget: new TaskCheckboxWidget(source, checked), inclusive: false }) });
 			}
-			const listRegex = /^(\s*)([-*+]\s+|\d+[.)]\s+)(?!\[[ xX-]\]|【】)/gm;
+			const listRegex = /^([ \t]*)([-*+][ \t]+|\d+[.)][ \t]+)(?!\[[ xX-]\]|【】)/gm;
 			let list: RegExpExecArray | null;
 			while ((list = listRegex.exec(text)) !== null) {
 				const marker = list[0];
@@ -145,18 +148,38 @@ export class ComposerCodeMirror {
 	constructor(container: HTMLElement, initialMarkdown: string, private readonly options: ComposerCodeMirrorOptions) {
 		this.lastSyncedMarkdown = initialMarkdown;
 		const state = EditorState.create({ doc: initialMarkdown, extensions: [
-			markdown(), EditorView.lineWrapping, history(),
-			keymap.of([{ key: "Enter", run: insertParagraphCommand }, ...defaultKeymap, ...historyKeymap, indentWithTab]),
+			// The Markdown language extension normally installs its own list
+			// Enter/Backspace handlers. PlainMemo owns those operations so it can
+			// keep the source, decorations, and caret mapping in sync; running both
+			// keymaps is what makes empty-task transitions nondeterministic.
+			markdown({ addKeymap: false }), EditorView.lineWrapping, history(),
+			keymap.of([
+				{ key: "Enter", run: insertParagraphCommand },
+				{ key: "Backspace", run: deleteListBoundaryCommand },
+				...defaultKeymap,
+				...historyKeymap,
+				indentWithTab,
+			]),
+			EditorState.transactionFilter.of((transaction) => {
+				if (!transaction.docChanged) return transaction;
+				const selection = transaction.newSelection.main;
+				const task = getBareTaskNormalization(transaction.newDoc.toString(), selection.head);
+				if (task === null) return transaction;
+				// Combine the typed marker and its canonical form in one dispatch.
+				// This avoids dispatching recursively from updateListener, which can
+				// race with the following Enter key on a freshly typed task marker.
+				return [transaction, {
+					changes: { from: task.from, to: task.to, insert: "- [ ] " },
+					selection: { anchor: task.cursor },
+					sequential: true,
+					filter: false,
+				}];
+			}),
 			ViewPlugin.define((view) => new ComposerMarkdownDecorations(view, options.resolveImageUrl), { decorations: (value) => value.decorations }),
 			EditorView.updateListener.of((update) => {
 				if (update.docChanged) {
 					const markdown = update.state.doc.toString();
 					const selection = this.getSelection();
-					const task = getBareTaskNormalization(markdown, selection.start);
-					if (task !== null) {
-						this.view.dispatch({ changes: { from: task.from, to: task.to, insert: "- [ ] " }, selection: { anchor: task.cursor } });
-						return;
-					}
 					this.lastSyncedMarkdown = markdown;
 					this.options.onChange(this.lastSyncedMarkdown, selection);
 				}
@@ -214,10 +237,26 @@ export class ComposerCodeMirror {
 		if (current.from === safeStart && current.to === safeEnd) return;
 		this.view.dispatch({ selection: EditorSelection.range(safeStart, safeEnd), scrollIntoView: true });
 	}
-	applyListFormat(type: ListFormatType): void { const s = this.getSelection(); const p = applyListFormatToText(this.getMarkdown(), s.start, s.end, type); this.setMarkdownAndRestoreSelection(p.value, p.cursor); }
-	insertText(text: string): void { const s = this.getSelection(); const value = text === "#" ? getHashInsertionText(this.getMarkdown(), s.start) : text; this.view.dispatch({ changes: { from: s.start, to: s.end, insert: value }, selection: { anchor: s.start + value.length } }); }
+	applyListFormat(type: ListFormatType): void {
+		const s = this.takeActionSelection();
+		const p = applyListFormatToText(this.getMarkdown(), s.start, s.end, type);
+		this.setMarkdownAndRestoreSelection(p.value, p.cursor);
+		this.view.focus();
+	}
+	insertText(text: string): void {
+		const s = this.takeActionSelection();
+		const value = text === "#" ? getHashInsertionText(this.getMarkdown(), s.start) : text;
+		this.view.dispatch({ changes: { from: s.start, to: s.end, insert: value }, selection: { anchor: s.start + value.length } });
+		this.view.focus();
+	}
 	insertParagraph(): void { const s = this.getSelection(); const p = getListEnterPatch(this.getMarkdown(), s.start, s.end); if (p !== null) this.setMarkdownAndRestoreSelection(p.value, p.cursor); else this.insertText("\n"); }
-	insertWikiLinkShell(): void { const s = this.getSelection(); const selected = this.getMarkdown().slice(s.start, s.end); const value = `[[${selected}]]`; this.view.dispatch({ changes: { from: s.start, to: s.end, insert: value }, selection: { anchor: s.start + 2 + selected.length } }); }
+	insertWikiLinkShell(): void {
+		const s = this.takeActionSelection();
+		const selected = this.getMarkdown().slice(s.start, s.end);
+		const value = `[[${selected}]]`;
+		this.view.dispatch({ changes: { from: s.start, to: s.end, insert: value }, selection: { anchor: s.start + 2 + selected.length } });
+		this.view.focus();
+	}
 	focus(_options?: FocusOptions): void { this.view.focus(); }
 	focusAndRestoreSelection(start: number, end = start): void { this.setSelection(start, end); this.view.focus(); }
 	setMarkdownAndRestoreSelection(markdownText: string, start: number, end = start): void {
@@ -232,6 +271,11 @@ export class ComposerCodeMirror {
 	rememberSelectionBeforeToolbarAction(): void { this.savedSelection = this.getSelection(); }
 	destroy(): void { this.view.destroy(); }
 	private notifySelectionChange(): void { this.options.onSelectionChange?.(this.getMarkdown(), this.getSelection()); }
+	private takeActionSelection(): ComposerEditorSelection {
+		const selection = this.savedSelection ?? this.getSelection();
+		this.savedSelection = null;
+		return selection;
+	}
 }
 
 function clampEditorPosition(position: number, length: number): number {
@@ -252,9 +296,22 @@ function insertParagraphCommand(view: EditorView): boolean {
 	const source = view.state.doc.toString();
 	const patch = getListEnterPatch(source, range.from, range.to);
 	if (patch !== null) {
-		view.dispatch({ changes: { from: range.from, to: range.to, insert: patch.value.slice(range.from, patch.value.length - (source.length - range.to)) }, selection: { anchor: patch.cursor }, scrollIntoView: true });
+		// List exit/continuation patches can rewrite text before the caret (for
+		// example, removing a rendered empty task marker). Apply the complete
+		// replacement so the source and selection stay aligned.
+		view.dispatch({ changes: { from: 0, to: source.length, insert: patch.value }, selection: { anchor: patch.cursor }, scrollIntoView: true });
 		return true;
 	}
 	view.dispatch({ changes: { from: range.from, to: range.to, insert: "\n" }, selection: { anchor: range.from + 1 }, scrollIntoView: true });
+	return true;
+}
+
+function deleteListBoundaryCommand(view: EditorView): boolean {
+	const range = view.state.selection.main;
+	if (!range.empty) return false;
+	const source = view.state.doc.toString();
+	const patch = getListBoundaryBackspacePatch(source, range.from);
+	if (patch === null) return false;
+	view.dispatch({ changes: { from: 0, to: source.length, insert: patch.value }, selection: { anchor: patch.cursor }, scrollIntoView: true });
 	return true;
 }

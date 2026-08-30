@@ -1,4 +1,4 @@
-import { getMarkdownTaskEnterPatch, getMarkdownTaskEnterPatchAfterNativeNewline } from "./markdownTasks";
+import { getMarkdownTaskEnterPatch } from "./markdownTasks";
 
 export interface TagQueryRange {
 	from: number;
@@ -9,11 +9,6 @@ export interface TagQueryRange {
 export interface TextReplacement {
 	value: string;
 	cursor: number;
-}
-
-export interface NativeListInputOptions {
-	allowTextChangeWithNewline?: boolean;
-	allowInsertedMarkerCorrection?: boolean;
 }
 
 export type ListFormatType = "bullet" | "ordered" | "task";
@@ -234,13 +229,14 @@ export function getListBoundaryBackspacePatch(value: string, cursor: number): Te
 	const fullLine = value.slice(lineStart, nextLineBreak === -1 ? value.length : nextLineBreak);
 	const marker = fullLine.match(/^(\s*)(?:[-*+]|\d+[.)])\s+(?:\[[ xX-]\]\s+)?$/);
 	const prefix = line.match(/^(\s*)(?:[-*+]|\d+[.)])\s+(?:\[[ xX-]\]\s+)?/);
-	if (marker === null && prefix === null) return null;
-	const markerLength = prefix?.[0].length ?? 0;
+	const fullPrefix = fullLine.match(/^(\s*)(?:[-*+]|\d+[.)])\s+(?:\[[ xX-]\]\s+)?/);
+	if (marker === null && prefix === null && fullPrefix === null) return null;
+	const markerLength = prefix?.[0].length ?? fullPrefix?.[0].length ?? 0;
 	// Native contenteditable can leave the caret inside the non-editable
 	// checkbox marker after a bare task marker is rendered. Treat any caret
 	// position within that empty marker as the list-boundary Backspace so the
 	// whole task row is removed consistently.
-	if (marker !== null && cursor >= lineStart + marker[1].length && cursor <= lineStart + fullLine.length) {
+	if (marker !== null && cursor >= lineStart && cursor <= lineStart + fullLine.length) {
 		const remainder = value.slice(lineStart + fullLine.length);
 		const preservedRemainder = remainder;
 		return {
@@ -248,66 +244,13 @@ export function getListBoundaryBackspacePatch(value: string, cursor: number): Te
 			cursor: lineStart,
 		};
 	}
-	if (cursor !== lineStart + markerLength) return null;
-	const remainder = value.slice(cursor);
+	if (cursor < lineStart || cursor > lineStart + markerLength) return null;
+	const remainder = value.slice(lineStart + markerLength);
 	const preservedRemainder = remainder;
 	return {
 		value: `${value.slice(0, lineStart)}${preservedRemainder}`,
 		cursor: lineStart,
 	};
-}
-
-export function getListEnterPatchAfterNativeNewline(value: string, start: number, end: number): TextReplacement | null {
-	if (start !== end || start <= 0 || value.charAt(start - 1) !== "\n") {
-		return null;
-	}
-	const task = getMarkdownTaskEnterPatchAfterNativeNewline(value, start, end);
-	if (task !== null) {
-		return task;
-	}
-	const newlineIndex = start - 1;
-	const lineStart = value.lastIndexOf("\n", Math.max(0, newlineIndex - 1)) + 1;
-	const line = value.slice(lineStart, newlineIndex);
-	const bullet = parseBulletListLine(line);
-	const ordered = parseOrderedListLine(line);
-	if (bullet === null && ordered === null) {
-		return null;
-	}
-	if (bullet !== null) {
-		const { indent, content } = bullet;
-		if (content.trim().length === 0) {
-			const valueAfterExit = `${value.slice(0, lineStart)}${indent}${preserveEmptyListRemainder(value, lineStart, start)}`;
-			return {
-				value: valueAfterExit,
-				cursor: getEmptyListExitCursor(valueAfterExit, lineStart, indent.length),
-			};
-		}
-		const insert = `${indent}- `;
-		const cursor = start + insert.length;
-		return {
-			value: `${value.slice(0, start)}${insert}${value.slice(start)}`,
-			cursor,
-		};
-	}
-	if (ordered === null) {
-		return null;
-	}
-	const { indent, number, content } = ordered;
-	if (content.trim().length === 0) {
-		const valueAfterExit = `${value.slice(0, lineStart)}${indent}${preserveEmptyListRemainder(value, lineStart, start)}`;
-		return {
-			value: valueAfterExit,
-			cursor: getEmptyListExitCursor(valueAfterExit, lineStart, indent.length),
-		};
-	}
-	const insert = `${indent}${number + 1}. `;
-	const cursor = start + insert.length;
-	return renumberFollowingOrderedList(
-		`${value.slice(0, start)}${insert}${value.slice(start)}`,
-		cursor,
-		indent,
-		number + 1,
-	);
 }
 
 /** Keeps the Markdown source aligned with the ordered list the user sees while editing. */
@@ -335,92 +278,14 @@ function renumberFollowingOrderedList(value: string, cursor: number, indent: str
 	return { value: lines.join("\n"), cursor };
 }
 
-export function getListEnterPatchForNativeInput(
-	previousValue: string,
-	value: string,
-	start: number,
-	end: number,
-	options: NativeListInputOptions = {},
-): TextReplacement | null {
-	if (options.allowInsertedMarkerCorrection === true) {
-		const markerPatch = getListEnterPatchForNativeInsertedMarker(previousValue, value, start, end, options);
-		if (markerPatch !== null) {
-			return markerPatch;
-		}
-	}
-	if (start !== end || start <= 0 || value.charAt(start - 1) !== "\n") {
-		return null;
-	}
-	const withoutInsertedNewline = `${value.slice(0, start - 1)}${value.slice(start)}`;
-	if (withoutInsertedNewline !== previousValue) {
-		if (!options.allowTextChangeWithNewline || countLineBreaks(value) !== countLineBreaks(previousValue) + 1) {
-			return null;
-		}
-	}
-	return getListEnterPatchAfterNativeNewline(value, start, end);
-}
-
-function getListEnterPatchForNativeInsertedMarker(
-	previousValue: string,
-	value: string,
-	start: number,
-	end: number,
-	options: NativeListInputOptions,
-): TextReplacement | null {
-	if (start !== end || start <= 0) {
-		return null;
-	}
-	const markerLineStart = value.lastIndexOf("\n", Math.max(0, start - 1)) + 1;
-	if (markerLineStart <= 0) {
-		return null;
-	}
-	const markerLine = value.slice(markerLineStart, start);
-	if (!isIncompleteListContinuationMarker(markerLine)) {
-		return null;
-	}
-	const newlineIndex = markerLineStart - 1;
-	const withoutInsertedMarker = `${value.slice(0, newlineIndex)}${value.slice(start)}`;
-	if (withoutInsertedMarker !== previousValue) {
-		if (!options.allowTextChangeWithNewline || countLineBreaks(value) !== countLineBreaks(previousValue) + 1) {
-			return null;
-		}
-	}
-	const expectedPatch = getListEnterPatch(withoutInsertedMarker, newlineIndex, newlineIndex);
-	if (expectedPatch === null) {
-		return null;
-	}
-	const correctedValue = `${value.slice(0, start)} ${value.slice(start)}`;
-	const correctedCursor = start + 1;
-	if (expectedPatch.value !== correctedValue || expectedPatch.cursor !== correctedCursor) {
-		return null;
-	}
-	return {
-		value: correctedValue,
-		cursor: correctedCursor,
-	};
-}
-
-function isIncompleteListContinuationMarker(line: string): boolean {
-	return /^([ \t]*)(?:[-*+]|\d+[.)])$/.test(line) || /^([ \t]*)(?:[-*+]|\d+[.)])([ \t]+)\[ \]$/.test(line);
-}
-
-function countLineBreaks(value: string): number {
-	let count = 0;
-	for (let index = 0; index < value.length; index += 1) {
-		if (value.charAt(index) === "\n") {
-			count += 1;
-		}
-	}
-	return count;
-}
-
 function preserveEmptyListRemainder(value: string, lineStart: number, lineEnd: number): string {
-	const remainder = value.slice(lineEnd);
-	return lineStart > 0 && remainder.length === 0 ? "\n" : remainder;
+	// The list row already has its preceding line break. Do not create a second
+	// trailing break when removing a marker from the final row.
+	return value.slice(lineEnd);
 }
 
 function getEmptyListExitCursor(value: string, lineStart: number, indentLength: number): number {
-	return value.endsWith("\n") ? value.length : lineStart + indentLength;
+	return lineStart + indentLength;
 }
 
 function parseBulletListLine(line: string): { indent: string; content: string } | null {

@@ -127,7 +127,9 @@ export function getMarkdownTaskEnterPatch(value: string, start: number, end: num
 	// inside the marker rather than after its trailing space. Use the complete
 	// line to recognize and remove an empty task in that case.
 	if (fullTask !== null && isEmptyTask(fullTask)
-		&& start >= lineStart + fullTask.markerStart && start <= fullLineEnd) {
+		// A replacement decoration may map the caret to the start of the
+		// hidden task marker. Any position on an empty task row means "exit".
+		&& start >= lineStart && start <= fullLineEnd) {
 		const remainder = preserveEmptyTaskRemainder(value, lineStart, fullLineEnd);
 		const nextValue = `${value.slice(0, lineStart)}${fullTask.indent}${remainder}`;
 		return {
@@ -156,36 +158,6 @@ export function getMarkdownTaskEnterPatch(value: string, start: number, end: num
 	};
 }
 
-export function getMarkdownTaskEnterPatchAfterNativeNewline(value: string, start: number, end: number): TextReplacement | null {
-	if (start !== end || start <= 0 || value.charAt(start - 1) !== "\n") {
-		return null;
-	}
-	const newlineIndex = start - 1;
-	const lineStart = value.lastIndexOf("\n", Math.max(0, newlineIndex - 1)) + 1;
-	if (isOffsetInsideFencedCode(value, lineStart)) {
-		return null;
-	}
-	const line = value.slice(lineStart, newlineIndex);
-	const task = parseMarkdownTaskLine(line);
-	if (task === null) {
-		return null;
-	}
-	if (isEmptyTask(task)) {
-		const remainder = preserveEmptyTaskRemainder(value, lineStart, start);
-		const nextValue = `${value.slice(0, lineStart)}${task.indent}${remainder}`;
-		return {
-			value: nextValue,
-			cursor: getEmptyTaskExitCursor(nextValue, lineStart, task.indent.length),
-		};
-	}
-	const insert = `${task.indent}${getNextTaskListMarker(task)} [ ] `;
-	const cursor = start + insert.length;
-	return {
-		value: `${value.slice(0, start)}${insert}${value.slice(start)}`,
-		cursor,
-	};
-}
-
 function replaceMarkdownTaskMarker(
 	content: string,
 	task: IndexedMarkdownTaskLine,
@@ -209,12 +181,14 @@ function isEmptyTask(task: ParsedMarkdownTaskLine): boolean {
 }
 
 function preserveEmptyTaskRemainder(value: string, lineStart: number, lineEnd: number): string {
-	const remainder = value.slice(lineEnd);
-	return lineStart > 0 && remainder.length === 0 ? "\n" : remainder;
+	// The task row already owns the newline before `lineStart`. When it is the
+	// final row, adding another newline would move the caret to a new row rather
+	// than leaving it where the task marker was cancelled.
+	return value.slice(lineEnd);
 }
 
 function getEmptyTaskExitCursor(value: string, lineStart: number, indentLength: number): number {
-	return value.endsWith("\n") ? value.length : lineStart + indentLength;
+	return lineStart + indentLength;
 }
 
 function getNextTaskListMarker(task: ParsedMarkdownTaskLine): string {
