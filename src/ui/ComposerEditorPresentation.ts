@@ -19,7 +19,7 @@ export function shouldRefreshInlinePresentation(
 	}
 	const lineStart = markdown.lastIndexOf("\n", Math.max(0, selectionStart - 1)) + 1;
 	const linePrefix = markdown.slice(lineStart, selectionStart);
-	return /^\s*(?:(?:[-*+]|\d+[.)])\s+|(?:\[[ xX-]\]|\[\]|【】)\s+)$/.test(linePrefix);
+	return /^\s*(?:(?:[-*+]|\d+[.)。])\s+|(?:\[[ xX-]\]|\[\]|【】)\s+)$/.test(linePrefix);
 }
 
 /** Maps a selection through a Markdown presentation rewrite such as `【】 ` -> `- [ ] `. */

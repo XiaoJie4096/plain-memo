@@ -22,9 +22,9 @@ export interface ComposerMarkdownDocument {
 	trailingNewline: boolean;
 }
 
-const TASK_ITEM_REGEX = /^(\s*)([-*+]|\d+[.)])\s+(?:\[([ xX-])\]|\[\]|【】)\s*(.*)$/;
+const TASK_ITEM_REGEX = /^(\s*)([-*+]|\d+[.)。])\s+(?:\[([ xX-])\]|\[\]|【】)\s*(.*)$/;
 const BARE_TASK_ITEM_REGEX = /^(\s*)(?:\[([ xX-])\]|\[\]|【】)\s+(.*)$/;
-const LIST_ITEM_REGEX = /^(\s*)([-*+]|\d+[.)])\s+(.*)$/;
+const LIST_ITEM_REGEX = /^(\s*)([-*+]|\d+[.)。])\s+(.*)$/;
 const INLINE_REGEX = /(!(?:\[([^\]]*)\]\([^)]*\)|\[\[([^\]]+)\]\]))|(^|[\s([{])#([^\s#\]]+)/g;
 
 export function parseComposerMarkdown(value: string): ComposerMarkdownDocument {

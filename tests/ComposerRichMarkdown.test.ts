@@ -31,6 +31,12 @@ test("preserves ordered task items as ordered Markdown", () => {
 	assert.equal(serializeComposerMarkdown(document), source);
 });
 
+test("accepts fullwidth ordered list punctuation", () => {
+	const document = parseComposerMarkdown("1。 第一项\n2。 第二项");
+	assert.equal(document.blocks[0]?.type, "list");
+	assert.equal(serializeComposerMarkdown(document), "1. 第一项\n2. 第二项");
+});
+
 test("preserves list indentation while parsing and serializing", () => {
 	const source = "  - [ ] nested task\n    - nested child";
 	const document = parseComposerMarkdown(source);

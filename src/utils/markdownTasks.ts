@@ -25,7 +25,7 @@ export interface IndexedMarkdownTaskLine extends ParsedMarkdownTaskLine {
 	line: string;
 }
 
-const TASK_LINE_REGEX = /^([ \t]*)([-*+]|\d+[.)])([ \t]+)\[([ xX-])\]([ \t]*)(.*)$/;
+const TASK_LINE_REGEX = /^([ \t]*)([-*+]|\d+[.)。])([ \t]+)\[([ xX-])\]([ \t]*)(.*)$/;
 
 export function parseMarkdownTaskLine(line: string): ParsedMarkdownTaskLine | null {
 	const match = line.match(TASK_LINE_REGEX);
@@ -192,7 +192,7 @@ function getEmptyTaskExitCursor(value: string, lineStart: number, indentLength: 
 }
 
 function getNextTaskListMarker(task: ParsedMarkdownTaskLine): string {
-	const ordered = task.listMarker.match(/^(\d+)[.)]$/);
+	const ordered = task.listMarker.match(/^(\d+)[.)。]$/);
 	if (ordered === null) {
 		return task.listMarker;
 	}

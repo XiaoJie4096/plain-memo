@@ -10,7 +10,8 @@ export function prepareMemoCardMarkdown(value: string): string {
 	const paragraphLines: boolean[] = [];
 	let fence: MarkdownFence | null = null;
 
-	for (const line of lines) {
+	for (let index = 0; index < lines.length; index += 1) {
+		const line = lines[index] ?? "";
 		if (fence !== null) {
 			paragraphLines.push(false);
 			if (isClosingFence(line, fence)) {
@@ -25,7 +26,9 @@ export function prepareMemoCardMarkdown(value: string): string {
 			paragraphLines.push(false);
 			continue;
 		}
-		paragraphLines.push(isPlainParagraphLine(line));
+		const normalizedLine = normalizeOrderedMarker(line);
+		lines[index] = normalizedLine;
+		paragraphLines.push(isPlainParagraphLine(normalizedLine));
 	}
 
 	for (let index = 0; index < lines.length - 1; index += 1) {
@@ -38,6 +41,10 @@ export function prepareMemoCardMarkdown(value: string): string {
 		}
 	}
 	return addTaskListBoundaries(lines).join("\n");
+}
+
+function normalizeOrderedMarker(line: string): string {
+	return line.replace(/^(\s*\d+)。(?=\s|$)/, "$1.");
 }
 
 /** Prevents CommonMark lazy continuation from absorbing the paragraph after a task list. */
@@ -61,11 +68,11 @@ function addTaskListBoundaries(lines: string[]): string[] {
 }
 
 function isTaskListLine(line: string): boolean {
-	return /^\s*(?:[-*+]|\d+[.)])\s+\[[ xX-]\](?:\s|$)/.test(line);
+	return /^\s*(?:[-*+]|\d+[.)。])\s+\[[ xX-]\](?:\s|$)/.test(line);
 }
 
 function isMarkdownListItemLine(line: string): boolean {
-	return /^\s*(?:[-*+]|\d+[.)])(?:\s|$)/.test(line);
+	return /^\s*(?:[-*+]|\d+[.)。])(?:\s|$)/.test(line);
 }
 
 function isPlainParagraphLine(line: string): boolean {
@@ -74,7 +81,7 @@ function isPlainParagraphLine(line: string): boolean {
 	}
 	const content = line.replace(/^ {0,3}/, "");
 	if (
-		/^(?:#{1,6}(?:\s|$)|>|(?:[-+*]|\d+[.)])(?:\s|$)|\$\$(?:\s|$)|%%|<)/.test(content)
+		/^(?:#{1,6}(?:\s|$)|>|(?:[-+*]|\d+[.)。])(?:\s|$)|\$\$(?:\s|$)|%%|<)/.test(content)
 		|| /^(?:\[[^\]]+\]|\[\^[^\]]+\]):/.test(content)
 		|| /^(?:\^[-A-Za-z0-9_]+)\s*$/.test(content)
 		|| /^(?:([-*_])(?:\s*\1){2,}|={3,})\s*$/.test(content)

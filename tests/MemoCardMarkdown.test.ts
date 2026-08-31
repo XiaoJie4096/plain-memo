@@ -39,6 +39,13 @@ test("does not add hard breaks across Markdown block structures", () => {
 	assert.equal(prepareMemoCardMarkdown(markdown), markdown);
 });
 
+test("normalizes fullwidth ordered markers for card rendering", () => {
+	assert.equal(
+		prepareMemoCardMarkdown("1。 第一项\n2。 第二项"),
+		"1. 第一项\n2. 第二项",
+	);
+});
+
 test("ends a task list before the following ordinary paragraph", () => {
 	assert.equal(
 		prepareMemoCardMarkdown("- [ ] task\n退出任务列表\n普通内容"),

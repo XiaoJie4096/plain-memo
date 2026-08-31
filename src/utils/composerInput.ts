@@ -98,11 +98,11 @@ export function applyListFormatToText(value: string, start: number, end: number,
 	const currentContentStart = getListContentStart(currentLine);
 	const currentContentOffset = Math.max(0, start - blockStart - currentContentStart);
 	const formatted = lines.map((line, index) => {
-		const match = line.match(/^(\s*)(?:[-*+]\s+|\d+[.)]\s+)?(.*)$/);
+		const match = line.match(/^(\s*)(?:[-*+]\s+|\d+[.)。]\s+)?(.*)$/);
 		const indent = match?.[1] ?? "";
 		const content = match?.[2] ?? line.replace(/^\s+/, "");
 		if (type === "task") {
-			const taskMatch = line.match(/^(\s*)(?:[-*+]|\d+[.)])\s+\[([ xX-])\]\s*(.*)$/);
+			const taskMatch = line.match(/^(\s*)(?:[-*+]|\d+[.)。])\s+\[([ xX-])\]\s*(.*)$/);
 			const taskIndent = taskMatch?.[1] ?? indent;
 			const marker = taskMatch?.[2] ?? " ";
 			const taskContent = taskMatch?.[3] ?? content;
@@ -124,9 +124,9 @@ export function applyListFormatToText(value: string, start: number, end: number,
 }
 
 function getListContentStart(line: string): number {
-	const task = line.match(/^(\s*)(?:[-*+]|\d+[.)])\s+\[[ xX-]\]\s*/);
+	const task = line.match(/^(\s*)(?:[-*+]|\d+[.)。])\s+\[[ xX-]\]\s*/);
 	if (task !== null) return task[0].length;
-	const list = line.match(/^(\s*)(?:[-*+]|\d+[.)])\s+/);
+	const list = line.match(/^(\s*)(?:[-*+]|\d+[.)。])\s+/);
 	return list?.[0].length ?? 0;
 }
 
@@ -227,9 +227,9 @@ export function getListBoundaryBackspacePatch(value: string, cursor: number): Te
 	const line = value.slice(lineStart, cursor);
 	const nextLineBreak = value.indexOf("\n", cursor);
 	const fullLine = value.slice(lineStart, nextLineBreak === -1 ? value.length : nextLineBreak);
-	const marker = fullLine.match(/^(\s*)(?:[-*+]|\d+[.)])\s+(?:\[[ xX-]\]\s+)?$/);
-	const prefix = line.match(/^(\s*)(?:[-*+]|\d+[.)])\s+(?:\[[ xX-]\]\s+)?/);
-	const fullPrefix = fullLine.match(/^(\s*)(?:[-*+]|\d+[.)])\s+(?:\[[ xX-]\]\s+)?/);
+	const marker = fullLine.match(/^(\s*)(?:[-*+]|\d+[.)。])\s+(?:\[[ xX-]\]\s+)?$/);
+	const prefix = line.match(/^(\s*)(?:[-*+]|\d+[.)。])\s+(?:\[[ xX-]\]\s+)?/);
+	const fullPrefix = fullLine.match(/^(\s*)(?:[-*+]|\d+[.)。])\s+(?:\[[ xX-]\]\s+)?/);
 	if (marker === null && prefix === null && fullPrefix === null) return null;
 	const markerLength = prefix?.[0].length ?? fullPrefix?.[0].length ?? 0;
 	// Native contenteditable can leave the caret inside the non-editable
@@ -268,7 +268,7 @@ function renumberFollowingOrderedList(value: string, cursor: number, indent: str
 	let nextNumber = currentNumber + 1;
 	for (let index = lineIndex + 1; index < lines.length; index += 1) {
 		const line = lines[index] ?? "";
-		const match = line.match(/^(\s*)(\d+)([.)])(\s+.*)?$/);
+		const match = line.match(/^(\s*)(\d+)([.)。])(\s+.*)?$/);
 		if (match === null || match[1] !== indent) {
 			break;
 		}
@@ -307,7 +307,7 @@ function parseBulletListLine(line: string): { indent: string; content: string } 
 }
 
 function parseOrderedListLine(line: string): { indent: string; number: number; content: string } | null {
-	const markedLine = line.match(/^(\s*)(\d+)[.)]\s+(.*)$/);
+	const markedLine = line.match(/^(\s*)(\d+)[.)。]\s+(.*)$/);
 	if (markedLine !== null) {
 		return {
 			indent: markedLine[1],
@@ -315,7 +315,7 @@ function parseOrderedListLine(line: string): { indent: string; number: number; c
 			content: markedLine[3],
 		};
 	}
-	const emptyMarkerLine = line.match(/^(\s*)(\d+)[.)]$/);
+	const emptyMarkerLine = line.match(/^(\s*)(\d+)[.)。]$/);
 	if (emptyMarkerLine === null) {
 		return null;
 	}

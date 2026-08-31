@@ -59,7 +59,7 @@ class ComposerMarkdownDecorations {
 					if (url !== null) ranges.push({ from: from + image.index, to: from + image.index + source.length, decoration: Decoration.replace({ widget: new ImageWidget(source, url), inclusive: false }) });
 				}
 			}
-			const taskRegex = /^([ \t]*(?:[-*+][ \t]+|\d+[.)][ \t]+))(?:\[[ xX-]\]|【】)(?=[ \t]|$)/gm;
+			const taskRegex = /^([ \t]*(?:[-*+][ \t]+|\d+[.)。][ \t]+))(?:\[[ xX-]\]|【】)(?=[ \t]|$)/gm;
 			let task: RegExpExecArray | null;
 			while ((task = taskRegex.exec(text)) !== null) {
 				const start = from + task.index;
@@ -67,7 +67,7 @@ class ComposerMarkdownDecorations {
 				const checked = /\[[xX]\]/.test(source);
 				ranges.push({ from: start, to: start + source.length, decoration: Decoration.replace({ widget: new TaskCheckboxWidget(source, checked), inclusive: false }) });
 			}
-			const listRegex = /^([ \t]*)([-*+][ \t]+|\d+[.)][ \t]+)(?!\[[ xX-]\]|【】)/gm;
+			const listRegex = /^([ \t]*)([-*+][ \t]+|\d+[.)。][ \t]+)(?!\[[ xX-]\]|【】)/gm;
 			let list: RegExpExecArray | null;
 			while ((list = listRegex.exec(text)) !== null) {
 				const marker = list[0];

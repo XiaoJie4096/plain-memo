@@ -239,6 +239,10 @@ test("continues and exits Markdown ordered lists", () => {
 	});
 	assert.equal(getListEnterPatch("plain", 5, 5), null);
 	assert.equal(getListEnterPatch("- hello", 0, 7), null);
+	assert.deepEqual(getListEnterPatch("1。 abc", 6, 6), {
+		value: "1。 abc\n2. ",
+		cursor: 10,
+	});
 });
 
 test("renumbers following ordered list items after inserting in the middle", () => {
