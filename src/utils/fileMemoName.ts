@@ -1,5 +1,7 @@
 export const MEMO_FILE_SUFFIX = /_(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(?: \(\d+\))?\.md$/i;
 export const MAX_MEMO_FILE_STEM_LENGTH = 100;
+/** Keep the complete generated filename well below common mobile filesystem limits. */
+export const MAX_MEMO_FILE_STEM_BYTES = 200;
 
 export function isPlainMemoFileName(name: string): boolean {
 	return MEMO_FILE_SUFFIX.test(name);
@@ -11,13 +13,28 @@ export function formatMemoFilenameTimestamp(date: Date): string {
 
 /** Keep the displayed Markdown untouched; this only makes a Windows-safe filename stem. */
 export function toSafeMemoFileStem(value: string, fallback = "Memo"): string {
-	return value
+	const sanitized = value
 		.replace(/[\\/:*?\"<>|]/g, "-")
 		.replace(/[\u0000-\u001f]/g, "")
 		.replace(/\s+/g, " ")
 		.replace(/[. ]+$/g, "")
 		.slice(0, MAX_MEMO_FILE_STEM_LENGTH)
-		.trim() || fallback;
+		.trim();
+	const stem = sanitized || fallback;
+	return truncateUtf8(stem, MAX_MEMO_FILE_STEM_BYTES).replace(/[. ]+$/g, "").trim() || "Memo";
+}
+
+function truncateUtf8(value: string, maxBytes: number): string {
+	const encoder = new TextEncoder();
+	let result = "";
+	let size = 0;
+	for (const character of value) {
+		const characterSize = encoder.encode(character).length;
+		if (size + characterSize > maxBytes) break;
+		result += character;
+		size += characterSize;
+	}
+	return result;
 }
 
 export function parseMemoFilenameTimestamp(name: string): Date | null {

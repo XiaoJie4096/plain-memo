@@ -23,3 +23,17 @@ test("memo filename stem stays within the safe limit without changing memo body 
 	assert.equal(/[\\/:*?"<>|]/.test(stem), false);
 	assert.equal(toSafeMemoFileStem("   ", "Flomo"), "Flomo");
 });
+
+test("memo filename stems stay within a mobile-safe UTF-8 byte budget", () => {
+	const stem = toSafeMemoFileStem("中文标题".repeat(100));
+	const filename = `${stem}_2607261430.md`;
+	assert.ok(new TextEncoder().encode(stem).length <= 200);
+	assert.ok(new TextEncoder().encode(filename).length < 255);
+});
+
+test("memo filename stems remove path separators and trailing dots after truncation", () => {
+	const stem = toSafeMemoFileStem("标题/带\\路径... ");
+	assert.equal(stem.includes("/"), false);
+	assert.equal(stem.includes("\\"), false);
+	assert.equal(/[. ]$/.test(stem), false);
+});
