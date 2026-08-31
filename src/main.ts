@@ -66,7 +66,13 @@ export default class KnomoPlugin extends Plugin {
 			new Notice(`PlainMemo could not prepare its Vault folders: ${error instanceof Error ? error.message : String(error)}`);
 			throw error;
 		}
-		this.pinnedMemoService = new PinnedMemoService(vaultDataStore, dataStore);
+		this.pinnedMemoService = new PinnedMemoService(
+			vaultDataStore,
+			dataStore,
+			() => new Date(),
+			async (path) => this.app.vault.getAbstractFileByPath(path) !== null
+				|| await this.app.vault.adapter.exists(path).catch(() => false),
+		);
 		this.settingsService = new SettingsService(vaultDataStore, dataStore);
 		try {
 			await this.settingsService.loadSettings();
@@ -152,7 +158,7 @@ export default class KnomoPlugin extends Plugin {
 		this.registerEvent(this.app.vault.on("delete", (file) => { this.handleMemoFileChange(file.path, true); }));
 		this.registerEvent(this.app.vault.on("rename", (file, oldPath) => {
 			if (!this.syncOrchestrator.isRelevantVaultPath(file.path) || file.path.includes("/_knomo-trash/")) {
-				void this.pinnedMemoService.removePath(oldPath);
+				void this.pinnedMemoService.markRemovalPending(oldPath);
 			} else {
 				void this.pinnedMemoService.replacePath(oldPath, file.path);
 			}
@@ -168,7 +174,8 @@ export default class KnomoPlugin extends Plugin {
 	}
 
 	private handleMemoFileChange(path: string, removePinned = false): void {
-		if (removePinned) void this.pinnedMemoService.removePath(path);
+		if (removePinned) void this.pinnedMemoService.markRemovalPending(path);
+		else void this.pinnedMemoService.restorePath(path);
 		if (!this.syncOrchestrator.isRelevantVaultPath(path)) return;
 		this.syncOrchestrator.invalidatePath(path);
 		void this.queueRefreshOpenViews();
