@@ -135,3 +135,5 @@ For local testing, copy `main.js`, `manifest.json`, and `styles.css` into the te
 ## Credits and license
 
 PlainMemo uses a one-Markdown-file-per-memo storage model: it does not depend on Daily Notes or monthly archives, recursively scans one or more configured folders, and names files as `<first body line>_YYMMDDHHmm.md`. PlainMemo retains the original copyright and license notices; see [LICENSE](LICENSE).
+
+PlainMemo includes CodeMirror 6, Lezer, and related packages, licensed under MIT. Copyright (C) 2016-2024 by Marijn Haverbeke and others. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for complete third-party copyright and license notices.

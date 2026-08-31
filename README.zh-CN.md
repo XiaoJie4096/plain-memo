@@ -135,3 +135,5 @@ npm run build
 ## 致谢与许可证
 
 PlainMemo 将存储模型改为“一条笔记一个 Markdown 文件”：不依赖 Daily Notes 或月度归档，递归扫描用户配置的一个或多个文件夹，并使用 `<正文首行>_YYMMDDHHmm.md` 作为文件名。PlainMemo 保留原有版权与许可证声明；详情见 [LICENSE](LICENSE)。
+
+PlainMemo 使用了 CodeMirror 6、Lezer 及其相关组件，采用 MIT 许可证。Copyright (C) 2016-2024 by Marijn Haverbeke and others。完整的第三方版权与许可证声明请见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
