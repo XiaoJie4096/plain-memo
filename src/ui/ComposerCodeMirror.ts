@@ -2,7 +2,7 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirro
 import { markdown } from "@codemirror/lang-markdown";
 import { EditorSelection, EditorState, RangeSetBuilder } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType, keymap, ViewPlugin, type ViewUpdate } from "@codemirror/view";
-import { applyListFormatToText, getHashInsertionText, getListBoundaryBackspacePatch, getListEnterPatch, type ListFormatType } from "../utils/composerInput";
+import { applyListFormatToText, getEmptyLineBackspacePatch, getHashInsertionText, getListBoundaryBackspacePatch, getListEnterPatch, type ListFormatType } from "../utils/composerInput";
 
 export interface ComposerEditorSelection { start: number; end: number; }
 /** DOM-compatible view of the CodeMirror surface used by legacy integrations. */
@@ -147,6 +147,8 @@ export class ComposerCodeMirror {
 
 	constructor(container: HTMLElement, initialMarkdown: string, private readonly options: ComposerCodeMirrorOptions) {
 		this.lastSyncedMarkdown = initialMarkdown;
+		let pendingBeforeInputType: string | null = null;
+		let handledBeforeInputType: string | null = null;
 		const state = EditorState.create({ doc: initialMarkdown, extensions: [
 			// The Markdown language extension normally installs its own list
 			// Enter/Backspace handlers. PlainMemo owns those operations so it can
@@ -154,12 +156,58 @@ export class ComposerCodeMirror {
 			// keymaps is what makes empty-task transitions nondeterministic.
 			markdown({ addKeymap: false }), EditorView.lineWrapping, history(),
 			keymap.of([
-				{ key: "Enter", run: insertParagraphCommand },
-				{ key: "Backspace", run: deleteListBoundaryCommand },
+				{ key: "Enter", run: (view) => insertParagraphCommand(view, () => {
+					if (pendingBeforeInputType === "insertParagraph" || pendingBeforeInputType === "insertLineBreak") {
+						handledBeforeInputType = pendingBeforeInputType;
+					}
+				}) },
+				{ key: "Backspace", run: (view) => deleteListBoundaryCommand(view, () => {
+					if (pendingBeforeInputType === "deleteContentBackward") handledBeforeInputType = pendingBeforeInputType;
+				}) },
 				...defaultKeymap,
 				...historyKeymap,
 				indentWithTab,
 			]),
+			EditorView.inputHandler.of((view, from, to, text) => {
+				const inputType = pendingBeforeInputType;
+				pendingBeforeInputType = null;
+				if (handledBeforeInputType !== null && handledBeforeInputType === inputType) {
+					handledBeforeInputType = null;
+					return true;
+				}
+				handledBeforeInputType = null;
+				if (inputType === "insertParagraph" || inputType === "insertLineBreak") {
+					const range = view.state.selection.main;
+					if (range.empty && text.includes("\n")) {
+						const patch = getListEnterPatch(view.state.doc.toString(), range.from, range.to);
+						if (patch !== null) {
+							view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: patch.value }, selection: { anchor: patch.cursor }, scrollIntoView: true });
+							return true;
+						}
+					}
+				}
+				if (inputType === "deleteContentBackward" && text.length === 0) {
+					const source = view.state.doc.toString();
+					const selection = view.state.selection.main;
+					if (selection.empty) {
+						for (const cursor of uniquePositions([selection.head, to, from])) {
+							const patch = getListBoundaryBackspacePatch(source, cursor);
+							if (patch !== null) {
+								view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: patch.value }, selection: { anchor: patch.cursor }, scrollIntoView: true });
+								return true;
+							}
+						}
+						for (const cursor of uniquePositions([selection.head, to, from])) {
+							const patch = getEmptyLineBackspacePatch(source, cursor);
+							if (patch !== null) {
+								view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: patch.value }, selection: { anchor: patch.cursor }, scrollIntoView: true });
+								return true;
+							}
+						}
+					}
+				}
+				return false;
+			}),
 			EditorState.transactionFilter.of((transaction) => {
 				if (!transaction.docChanged) return transaction;
 				const selection = transaction.newSelection.main;
@@ -195,7 +243,22 @@ export class ComposerCodeMirror {
 		this.el.spellcheck = true;
 		this.el.setAttribute("contenteditable", "true"); this.el.setAttribute("role", "textbox"); this.el.setAttribute("aria-multiline", "true");
 		if (options.ariaLabelledBy !== undefined) this.el.setAttribute("aria-labelledby", options.ariaLabelledBy);
-		this.el.addEventListener("beforeinput", (event) => { if (options.onBeforeInput?.(event as InputEvent) === true) event.preventDefault(); });
+		this.el.addEventListener("beforeinput", (event) => {
+			const boundaryInput = event.inputType === "insertParagraph"
+				|| event.inputType === "insertLineBreak"
+				|| event.inputType === "deleteContentBackward";
+			if (boundaryInput) {
+				pendingBeforeInputType = event.inputType;
+				handledBeforeInputType = null;
+			}
+			if (options.onBeforeInput?.(event as InputEvent) === true) {
+				event.preventDefault();
+				if (!boundaryInput) {
+					pendingBeforeInputType = null;
+					handledBeforeInputType = null;
+				}
+			}
+		});
 		this.el.addEventListener("input", (event) => options.onInput?.(event as InputEvent));
 		this.el.addEventListener("keydown", (event) => { if (options.onKeydown?.(event) === true || options.onShortcut?.(event) === true) event.preventDefault(); });
 		this.el.addEventListener("focus", () => this.notifySelectionChange());
@@ -291,11 +354,12 @@ function getBareTaskNormalization(markdown: string, cursor: number): { from: num
 	return { from: markerStart, to: cursor, cursor: markerStart + 6 };
 }
 
-function insertParagraphCommand(view: EditorView): boolean {
+function insertParagraphCommand(view: EditorView, onHandled?: () => void): boolean {
 	const range = view.state.selection.main;
 	const source = view.state.doc.toString();
 	const patch = getListEnterPatch(source, range.from, range.to);
 	if (patch !== null) {
+		onHandled?.();
 		// List exit/continuation patches can rewrite text before the caret (for
 		// example, removing a rendered empty task marker). Apply the complete
 		// replacement so the source and selection stay aligned.
@@ -306,12 +370,19 @@ function insertParagraphCommand(view: EditorView): boolean {
 	return true;
 }
 
-function deleteListBoundaryCommand(view: EditorView): boolean {
+function deleteListBoundaryCommand(view: EditorView, onHandled?: () => void): boolean {
 	const range = view.state.selection.main;
 	if (!range.empty) return false;
 	const source = view.state.doc.toString();
 	const patch = getListBoundaryBackspacePatch(source, range.from);
-	if (patch === null) return false;
-	view.dispatch({ changes: { from: 0, to: source.length, insert: patch.value }, selection: { anchor: patch.cursor }, scrollIntoView: true });
+	const emptyLinePatch = patch === null ? getEmptyLineBackspacePatch(source, range.from) : null;
+	if (patch === null && emptyLinePatch === null) return false;
+	onHandled?.();
+	const replacement = patch ?? emptyLinePatch!;
+	view.dispatch({ changes: { from: 0, to: source.length, insert: replacement.value }, selection: { anchor: replacement.cursor }, scrollIntoView: true });
 	return true;
+}
+
+function uniquePositions(values: number[]): number[] {
+	return values.filter((value, index) => Number.isInteger(value) && values.indexOf(value) === index);
 }

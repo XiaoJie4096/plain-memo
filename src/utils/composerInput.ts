@@ -253,6 +253,20 @@ export function getListBoundaryBackspacePatch(value: string, cursor: number): Te
 	};
 }
 
+/** Removes an empty paragraph when Backspace is pressed at its line start. */
+export function getEmptyLineBackspacePatch(value: string, cursor: number): TextReplacement | null {
+	if (cursor <= 0 || cursor > value.length) return null;
+	const lineStart = value.lastIndexOf("\n", Math.max(0, cursor - 1)) + 1;
+	if (cursor !== lineStart) return null;
+	const lineEnd = value.indexOf("\n", lineStart);
+	const fullLineEnd = lineEnd === -1 ? value.length : lineEnd;
+	if (fullLineEnd !== lineStart) return null;
+	return {
+		value: `${value.slice(0, lineStart - 1)}${value.slice(lineStart)}`,
+		cursor: lineStart - 1,
+	};
+}
+
 /** Keeps the Markdown source aligned with the ordered list the user sees while editing. */
 function renumberFollowingOrderedList(value: string, cursor: number, indent: string, currentNumber: number): TextReplacement {
 	const lines = value.split("\n");

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { applyListFormatToText, getHashInsertionText, getListBoundaryBackspacePatch, getListEnterPatch, getParagraphEnterPatch, getTagQueryAtCursor, isExactTagSuggestion, isTaskListShortcut, replaceTagQueryWithSuggestion } from "../src/utils/composerInput";
+import { applyListFormatToText, getEmptyLineBackspacePatch, getHashInsertionText, getListBoundaryBackspacePatch, getListEnterPatch, getParagraphEnterPatch, getTagQueryAtCursor, isExactTagSuggestion, isTaskListShortcut, replaceTagQueryWithSuggestion } from "../src/utils/composerInput";
 import { parseMemoTags } from "../src/utils/markdown";
 
 test("inserts a spaced hash after existing content", () => {
@@ -319,6 +319,18 @@ test("keeps the caret and line boundaries stable after cancelling an empty task"
 		cursor: contentCursor + 1,
 	});
 	assert.deepEqual(getListBoundaryBackspacePatch("上一行\n", 4), null);
+});
+
+test("removes an empty paragraph on Backspace at its line start", () => {
+	assert.deepEqual(getEmptyLineBackspacePatch("上一行\n\n", 4), {
+		value: "上一行\n",
+		cursor: 3,
+	});
+	assert.deepEqual(getEmptyLineBackspacePatch("上一行\n\n下一行", 4), {
+		value: "上一行\n下一行",
+		cursor: 3,
+	});
+	assert.equal(getEmptyLineBackspacePatch("上一行\n内容", 4), null);
 });
 
 test("continues nested and ordered Markdown task lists", () => {
