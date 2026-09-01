@@ -4,7 +4,7 @@ English | [简体中文](./README.zh-CN.md)
 
 > PlainMemo is an unofficial fork of [BanyanSo/knomo](https://github.com/BanyanSo/knomo), continued under the upstream MIT license. It is not affiliated with the upstream project. Thanks to the original author for creating Knomo and releasing it under the MIT license.
 
-Current stable release: [PlainMemo 2.2.4](https://github.com/XiaoJie4096/plain-memo/releases/tag/2.2.4)
+Current stable release: [PlainMemo 2.3.0](https://github.com/XiaoJie4096/plain-memo/releases/tag/2.3.0)
 
 PlainMemo is a card-based note-taking plugin for Obsidian that helps you capture and manage everyday thoughts. Every memo is stored in your Vault as an independent, ordinary Markdown file, while card browsing, tags, search, images, links, and review remain available. Capture freely without locking notes into a plugin-specific format.
 
