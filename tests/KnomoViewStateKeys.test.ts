@@ -51,6 +51,8 @@ test("keys record stats idle state as loading", async () => {
 			title: "Loading",
 			description: "",
 		},
+		pinnedSectionVisible: false,
+		pinnedMemos: [],
 	};
 
 	assert.equal(
@@ -62,6 +64,41 @@ test("keys record stats idle state as loading", async () => {
 			...base,
 			recordStatsSnapshot: { state: "loading", error: null },
 		}),
+	);
+});
+
+test("keys content changes in the separately rendered expanded pinned section", async () => {
+	await ensureObsidianStub();
+	const { getCardFlowStateKey, getVisibleCardFlowStateKey } = await import("../src/ui/KnomoViewStateKeys");
+	const ordinaryMemo = makeMemo("ordinary");
+	const pinnedMemo = makeMemo("pinned");
+	const updatedPinnedMemo = {
+		...pinnedMemo,
+		updatedAt: "2026-06-02T01:00:00+08:00",
+		contentSnapshot: "updated",
+		contentHash: "updated",
+	};
+	const base = {
+		activeNav: "all" as const,
+		recordStatsSnapshot: { state: "ready" as const, error: null },
+		recordStatsView: "week" as const,
+		recordStatsSelectedDate: new Date(2026, 5, 1),
+		today: new Date(2026, 5, 2),
+		presentation: { type: "items" as const, mode: "memo" as const, memos: [ordinaryMemo], headers: [] },
+		pinnedSectionVisible: true,
+	};
+
+	assert.notEqual(
+		getCardFlowStateKey({ ...base, pinnedMemos: [pinnedMemo] }),
+		getCardFlowStateKey({ ...base, pinnedMemos: [updatedPinnedMemo] }),
+	);
+	assert.notEqual(
+		getVisibleCardFlowStateKey({ ...base, pinnedMemos: [pinnedMemo], renderedCardCount: 1, initialBatchSize: 10 }),
+		getVisibleCardFlowStateKey({ ...base, pinnedMemos: [updatedPinnedMemo], renderedCardCount: 1, initialBatchSize: 10 }),
+	);
+	assert.equal(
+		getCardFlowStateKey({ ...base, pinnedSectionVisible: false, pinnedMemos: [pinnedMemo] }),
+		getCardFlowStateKey({ ...base, pinnedSectionVisible: false, pinnedMemos: [updatedPinnedMemo] }),
 	);
 });
 

@@ -5896,6 +5896,8 @@ export class KnomoView extends ItemView {
 
 	private getCardFlowStateKey(): string {
 		const recordStatsState = this.recordStatsViewStateController.getSnapshot();
+		const pinnedSnapshot = this.pinnedMemos.getSnapshot();
+		const pinnedSectionVisible = this.shouldExtractPinnedMemos() && !pinnedSnapshot.collapsed;
 		return getCardFlowStateKeyValue({
 			activeNav: this.activeNav,
 			recordStatsSnapshot: this.recordStatsService.getSnapshot(),
@@ -5903,11 +5905,15 @@ export class KnomoView extends ItemView {
 			recordStatsSelectedDate: recordStatsState.selectedDate,
 			today: new Date(),
 			presentation: this.getCurrentCardFlowPresentation(),
+			pinnedSectionVisible,
+			pinnedMemos: pinnedSectionVisible ? this.getPinnedMemos() : [],
 		});
 	}
 
 	private getVisibleCardFlowStateKey(renderedCardCount: number): string {
 		const recordStatsState = this.recordStatsViewStateController.getSnapshot();
+		const pinnedSnapshot = this.pinnedMemos.getSnapshot();
+		const pinnedSectionVisible = this.shouldExtractPinnedMemos() && !pinnedSnapshot.collapsed;
 		return getVisibleCardFlowStateKeyValue({
 			activeNav: this.activeNav,
 			recordStatsSnapshot: this.recordStatsService.getSnapshot(),
@@ -5917,6 +5923,8 @@ export class KnomoView extends ItemView {
 			presentation: this.getCurrentCardFlowPresentation(),
 			renderedCardCount,
 			initialBatchSize: this.getInitialCardBatchSize(),
+			pinnedSectionVisible,
+			pinnedMemos: pinnedSectionVisible ? this.getPinnedMemos() : [],
 		});
 	}
 

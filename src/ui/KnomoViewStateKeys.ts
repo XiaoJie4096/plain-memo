@@ -26,6 +26,8 @@ interface CardFlowStateKeyOptions {
 	recordStatsSelectedDate: Date;
 	today: Date;
 	presentation: CardFlowPresentation;
+	pinnedSectionVisible: boolean;
+	pinnedMemos: readonly MemoRecord[];
 }
 
 interface VisibleCardFlowStateKeyOptions extends CardFlowStateKeyOptions {
@@ -70,11 +72,12 @@ export function getCardFlowChangeIntent(
 }
 
 export function getCardFlowStateKey(options: CardFlowStateKeyOptions): string {
+	let baseKey: string;
 	if (options.activeNav === "record-stats") {
 		const renderState = options.recordStatsSnapshot.state === "idle"
 			? "loading"
 			: options.recordStatsSnapshot.state;
-		return getStateKey([
+		baseKey = getStateKey([
 			"record-stats",
 			renderState,
 			options.recordStatsSnapshot.error ?? "",
@@ -82,30 +85,42 @@ export function getCardFlowStateKey(options: CardFlowStateKeyOptions): string {
 			formatDatePart(options.recordStatsSelectedDate),
 			formatDatePart(options.today),
 		]);
+	} else if (options.presentation.type === "empty") {
+		baseKey = getStateKey(["empty", options.presentation.title, options.presentation.description]);
+	} else {
+		baseKey = getStateKey([
+			"items",
+			options.presentation.mode,
+			getCardFlowHeadersStateKey(options.presentation.headers),
+			getMemoListStateKey(options.presentation.memos),
+		]);
 	}
-	if (options.presentation.type === "empty") {
-		return getStateKey(["empty", options.presentation.title, options.presentation.description]);
-	}
-	return getStateKey([
-		"items",
-		options.presentation.mode,
-		getCardFlowHeadersStateKey(options.presentation.headers),
-		getMemoListStateKey(options.presentation.memos),
-	]);
+	return appendPinnedMemoSectionState(baseKey, options);
 }
 
 export function getVisibleCardFlowStateKey(options: VisibleCardFlowStateKeyOptions): string {
 	if (options.activeNav === "record-stats") {
 		return getCardFlowStateKey(options);
 	}
+	let baseKey: string;
 	if (options.presentation.type === "empty") {
-		return getStateKey(["empty", options.presentation.title, options.presentation.description]);
+		baseKey = getStateKey(["empty", options.presentation.title, options.presentation.description]);
+	} else {
+		baseKey = `${options.presentation.mode}:${getVisibleCardFlowMemoStateKey(
+			options.presentation.memos,
+			options.renderedCardCount,
+			options.initialBatchSize,
+		)}`;
 	}
-	return `${options.presentation.mode}:${getVisibleCardFlowMemoStateKey(
-		options.presentation.memos,
-		options.renderedCardCount,
-		options.initialBatchSize,
-	)}`;
+	return appendPinnedMemoSectionState(baseKey, options);
+}
+
+/** Includes memos rendered outside the ordinary feed in refresh comparisons. */
+function appendPinnedMemoSectionState(baseKey: string, options: CardFlowStateKeyOptions): string {
+	const pinnedKey = options.pinnedSectionVisible
+		? getMemoListStateKey(options.pinnedMemos)
+		: "hidden";
+	return getStateKey([baseKey, pinnedKey]);
 }
 
 export function getMobileSearchViewStateKey(options: MobileSearchViewStateKeyOptions): string {
