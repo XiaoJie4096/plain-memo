@@ -138,7 +138,13 @@ export function getMarkdownTaskEnterPatch(value: string, start: number, end: num
 		};
 	}
 	const line = value.slice(lineStart, start);
-	const task = parseMarkdownTaskLine(line);
+	// When the caret is immediately after the checkbox and before the first
+	// body character, the prefix ends at `- [ ] ` and looks like an empty task.
+	// Prefer the complete line whenever it is a real non-empty task so Enter
+	// splits at the actual caret instead of clearing the whole row.
+	const task = fullTask !== null && !isEmptyTask(fullTask)
+		? fullTask
+		: parseMarkdownTaskLine(line);
 	if (task === null) {
 		return null;
 	}

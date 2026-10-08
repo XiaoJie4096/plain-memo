@@ -152,6 +152,17 @@ test("splits task items at the actual text cursor", () => {
 	});
 });
 
+test("keeps task content when Enter is pressed immediately before the first character", () => {
+	assert.deepEqual(getListEnterPatch("- [ ] 任务列表测试123", 6, 6), {
+		value: "- [ ] \n- [ ] 任务列表测试123",
+		cursor: 13,
+	});
+	assert.deepEqual(getListEnterPatch("上一行\n- [ ] 任务列表", 10, 10), {
+		value: "上一行\n- [ ] \n- [ ] 任务列表",
+		cursor: 17,
+	});
+});
+
 test("backspace at a list marker removes only the marker and preserves the line break", () => {
 	assert.deepEqual(getListBoundaryBackspacePatch("- ", 2), {
 		value: "",
