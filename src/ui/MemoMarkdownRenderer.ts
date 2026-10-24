@@ -2,6 +2,7 @@ import { MarkdownRenderer } from "obsidian";
 import type { App, Component } from "obsidian";
 
 import type { MemoRecord } from "../types/memo";
+import { splitMarkdownLines } from "../utils/markdown";
 import {
 	getMarkdownTaskLines,
 	type MarkdownTaskMarker,
@@ -341,11 +342,13 @@ export function prepareInternalLinks(container: HTMLElement, sourcePath: string)
 	}
 }
 
+/** Maps rendered checkboxes to source tasks and preserves gaps only where blank rows exist. */
 export function prepareRenderedTaskCheckboxes(container: HTMLElement, memo: MemoRecord): void {
 	const tasks = getMarkdownTaskLines(memo.contentSnapshot);
 	if (tasks.length === 0) {
 		return;
 	}
+	const lines = splitMarkdownLines(memo.contentSnapshot);
 	let taskIndex = 0;
 	for (const checkboxEl of container.findAll("input[type='checkbox']")) {
 		if (taskIndex >= tasks.length) {
@@ -358,6 +361,12 @@ export function prepareRenderedTaskCheckboxes(container: HTMLElement, memo: Memo
 		const taskItem = input.closest("li");
 		if (taskItem?.instanceOf(HTMLElement)) {
 			taskItem.setAttr("data-plain-memo-task-index", String(taskIndex));
+			const previousTask = tasks[taskIndex - 1];
+			const currentTask = tasks[taskIndex];
+			if (previousTask !== undefined && currentTask.lineIndex > previousTask.lineIndex + 1
+				&& lines.slice(previousTask.lineIndex + 1, currentTask.lineIndex).every((line) => line.trim().length === 0)) {
+				taskItem.addClass("plain-memo-task-gap-before");
+			}
 		}
 		taskIndex += 1;
 	}

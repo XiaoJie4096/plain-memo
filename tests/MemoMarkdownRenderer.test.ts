@@ -38,6 +38,43 @@ test("post-processes memo markdown DOM metadata", async () => {
 	assert.equal(taskItem.getAttr("data-task"), "-");
 });
 
+test("keeps tight task spacing and adds a visual gap only at blank source rows", async () => {
+	await ensureObsidianStub();
+	const { prepareRenderedTaskCheckboxes } = await import("../src/ui/MemoMarkdownRenderer");
+	setDomGlobals();
+	const container = new TestElement("div");
+	const items = Array.from({ length: 5 }, () => {
+		const item = container.createEl("li");
+		item.createEl("input", { attr: { type: "checkbox" } });
+		return item;
+	});
+	prepareRenderedTaskCheckboxes(container.asHtml(), makeMemo({
+		contentSnapshot: "- [ ] first\n- [x] second\n\n  \n- [ ] third\n\nparagraph\n\n- [ ] fourth\n- [ ] fifth",
+	}));
+	assert.deepEqual(items.map((item) => item.hasClass("plain-memo-task-gap-before")), [false, false, true, false, false]);
+	assert.deepEqual(items.map((item) => item.getAttr("data-plain-memo-task-index")), ["0", "1", "2", "3", "4"]);
+});
+
+test("preserves gaps in nested tasks without counting task-like fenced code", async () => {
+	await ensureObsidianStub();
+	const { prepareRenderedTaskCheckboxes } = await import("../src/ui/MemoMarkdownRenderer");
+	setDomGlobals();
+	const container = new TestElement("div");
+	const parent = container.createEl("li");
+	parent.createEl("input", { attr: { type: "checkbox" } });
+	const nested = parent.createEl("ul");
+	const items = Array.from({ length: 2 }, () => {
+		const item = nested.createEl("li");
+		item.createEl("input", { attr: { type: "checkbox" } });
+		return item;
+	});
+	prepareRenderedTaskCheckboxes(container.asHtml(), makeMemo({
+		contentSnapshot: "```\n- [ ] code\n\n- [ ] code\n```\n- [ ] parent\n  - [ ] child\n\n  - [ ] child after gap",
+	}));
+	assert.equal(parent.hasClass("plain-memo-task-gap-before"), false);
+	assert.deepEqual(items.map((item) => item.hasClass("plain-memo-task-gap-before")), [false, true]);
+});
+
 test("recognizes delegated task checkbox inputs", async () => {
 	await ensureObsidianStub();
 	const { MemoMarkdownRenderer } = await import("../src/ui/MemoMarkdownRenderer");

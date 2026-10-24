@@ -3383,6 +3383,22 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-plugin.is-
 	margin-block-end: 0;
 }
 
+/* A blank source row makes every task use a <p> wrapper. Keep the leading
+   task paragraph tight while preserving additional paragraphs within a task. */
+.plain-memo-plugin .plain-memo-card-content .task-list-item > p:first-child {
+	margin-block-start: 0;
+	margin-block-end: 0;
+	line-height: inherit;
+}
+
+.plain-memo-plugin .plain-memo-card-content .task-list-item > p + p {
+	margin-block-start: 0.65em;
+}
+
+.plain-memo-plugin .plain-memo-card-content li.plain-memo-task-gap-before {
+	margin-block-start: 1.7em;
+}
+
 .plain-memo-plugin .plain-memo-card-content .task-list-item-checkbox,
 .plain-memo-plugin .plain-memo-card-content .plain-memo-task-checkbox {
 	vertical-align: middle;
