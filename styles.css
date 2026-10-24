@@ -3383,11 +3383,12 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-plugin.is-
 	margin-block-end: 0;
 }
 
-/* A blank source row makes every task use a <p> wrapper. Keep the leading
-   task paragraph tight while preserving additional paragraphs within a task. */
+/* A blank source row makes every task use a <p> wrapper. These structural
+   margins must also beat !important paragraph rules in spacing snippets;
+   ordinary list-item spacing and additional task paragraphs stay customizable. */
 .plain-memo-plugin .plain-memo-card-content .task-list-item > p:first-child {
-	margin-block-start: 0;
-	margin-block-end: 0;
+	margin-block-start: 0 !important;
+	margin-block-end: 0 !important;
 	line-height: inherit;
 }
 
@@ -3396,7 +3397,7 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-plugin.is-
 }
 
 .plain-memo-plugin .plain-memo-card-content li.plain-memo-task-gap-before {
-	margin-block-start: 1.7em;
+	margin-block-start: 1.7em !important;
 }
 
 .plain-memo-plugin .plain-memo-card-content .task-list-item-checkbox,
