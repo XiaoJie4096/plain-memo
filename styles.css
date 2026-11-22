@@ -2098,7 +2098,7 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-plugin.is-
 	vertical-align: middle;
 }
 
-/* Paint Android's active marker over the editable text without replacing it. */
+/* Paint Android's list markers over editable text with the same layout on every row. */
 .plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-editable-marker {
 	position: relative;
 	color: transparent;
@@ -2153,14 +2153,21 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-plugin.is-
 	overscroll-behavior: contain;
 }
 
-.plain-memo-plugin.is-layout-mobile .plain-memo-rich-editor {
+/* Let CodeMirror measure and anchor the element that actually scrolls. */
+.plain-memo-plugin.is-layout-mobile .plain-memo-rich-editor-host > .cm-editor > .cm-scroller {
 	min-height: 150px;
 	max-height: var(--plain-memo-composer-input-max-height, 40vh);
-	overflow-y: var(--plain-memo-composer-input-overflow-y, auto);
+	overflow-y: auto;
 	overscroll-behavior: contain;
 }
 
-.plain-memo-plugin.is-layout-mobile .plain-memo-code-mirror-editor .cm-content,
+.plain-memo-plugin.is-layout-mobile .plain-memo-code-mirror-editor.cm-content {
+	min-height: 150px;
+	max-height: none;
+	overflow: visible;
+}
+
+.plain-memo-plugin.is-layout-mobile .plain-memo-code-mirror-editor.cm-content,
 .plain-memo-plugin.is-layout-mobile .plain-memo-code-mirror-editor .cm-line {
 	font-size: 15px;
 	line-height: 1.7;

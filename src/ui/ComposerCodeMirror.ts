@@ -1,8 +1,8 @@
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { markdown } from "@codemirror/lang-markdown";
-import { EditorSelection, EditorState, RangeSetBuilder } from "@codemirror/state";
+import { EditorSelection, EditorState, RangeSetBuilder, type ChangeSpec } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType, keymap, ViewPlugin, type ViewUpdate } from "@codemirror/view";
-import { applyListFormatToText, getEmptyLineBackspacePatch, getHashInsertionText, getListBoundaryBackspacePatch, getListEnterPatch, type ListFormatType } from "../utils/composerInput";
+import { applyListFormatToText, getEmptyLineBackspacePatch, getHashInsertionText, getListBoundaryBackspacePatch, getListEnterPatch, type ListFormatType, type TextReplacement } from "../utils/composerInput";
 
 export interface ComposerEditorSelection { start: number; end: number; }
 /** DOM-compatible view of the CodeMirror surface used by legacy integrations. */
@@ -26,7 +26,7 @@ export interface ComposerCodeMirrorOptions {
 	onShortcut?: (event: KeyboardEvent) => boolean;
 	resolveImageUrl?: (source: string) => string | null;
 	ariaLabelledBy?: string;
-	keepActiveListMarkersEditable?: boolean;
+	keepListMarkersEditable?: boolean;
 }
 
 class ComposerMarkdownDecorations {
@@ -36,21 +36,16 @@ class ComposerMarkdownDecorations {
 		this.decorations = this.build(view);
 	}
 
-	// Only rebuild for caret movement when it changes which line uses editable list markers.
+	// Keep the marker DOM and its dimensions stable when only the caret moves.
 	update(update: ViewUpdate): void {
-		const activeLineChanged = this.options.keepActiveListMarkersEditable && update.selectionSet
-			&& update.startState.doc.lineAt(update.startState.selection.main.head).from
-				!== update.state.doc.lineAt(update.state.selection.main.head).from;
-		if (update.docChanged || update.viewportChanged || activeLineChanged) {
+		if (update.docChanged || update.viewportChanged) {
 			this.decorations = this.build(update.view);
 		}
 	}
 
-	// Keep Android's active list prefix in the editable text so the IME can place the caret after it.
+	// Keep Android list prefixes editable on every line so tapping never swaps the marker DOM.
 	private build(view: EditorView) {
-		const activeLineStart = this.options.keepActiveListMarkersEditable
-			? view.state.doc.lineAt(view.state.selection.main.head).from
-			: -1;
+		const editableMarkers = this.options.keepListMarkersEditable === true;
 		const builder = new RangeSetBuilder<Decoration>();
 		const ranges: Array<{ from: number; to: number; decoration: Decoration }> = [];
 		for (const { from, to } of view.visibleRanges) {
@@ -83,16 +78,15 @@ class ComposerMarkdownDecorations {
 				const start = from + task.index;
 				const source = task[0];
 				const checked = /\[[xX]\]/.test(source);
-				const editable = start === activeLineStart;
 				ranges.push({
-					from: editable ? start + source.search(/\S/) : start,
+					from: editableMarkers ? start + source.search(/\S/) : start,
 					to: start + source.length,
-					decoration: editable
+					decoration: editableMarkers
 						? Decoration.mark({ class: "plain-memo-cm-editable-marker is-task", attributes: { "data-checked": String(checked) } })
 						: Decoration.replace({ widget: new TaskCheckboxWidget(source, checked), inclusive: false }),
 				});
 			}
-			const listRegex = /^([ \t]*)([-*+][ \t]+|\d+[.)。][ \t]+)(?!\[[ xX-]\]|【】)/gm;
+			const listRegex = /^([ \t]*)([-*+]|\d+[.)。])(?![ \t]+(?:\[[ xX-]\]|【】)(?=[ \t]|$))[ \t]+/gm;
 			let list: RegExpExecArray | null;
 			while ((list = listRegex.exec(text)) !== null) {
 				const start = from + list.index;
@@ -100,11 +94,11 @@ class ComposerMarkdownDecorations {
 				const number = /^\d+/.test(list[2] ?? "")
 					? (list[2]?.match(/^\d+/)?.[0] ?? "1")
 					: null;
-				if (start === activeLineStart) {
+				if (editableMarkers) {
 					// Leave the separator and the typing position outside the styled marker.
 					ranges.push({
 						from: start + list[1].length,
-						to: start + marker.trimEnd().length,
+						to: start + list[1].length + list[2].length,
 						decoration: Decoration.mark({
 							class: "plain-memo-cm-editable-marker",
 							attributes: { "data-marker": number === null ? "•" : `${number}.` },
@@ -219,7 +213,7 @@ export class ComposerCodeMirror {
 					if (range.empty && text.includes("\n")) {
 						const patch = getListEnterPatch(view.state.doc.toString(), range.from, range.to);
 						if (patch !== null) {
-							view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: patch.value }, selection: { anchor: patch.cursor }, scrollIntoView: true });
+							dispatchListPatch(view, patch);
 							return true;
 						}
 					}
@@ -231,14 +225,14 @@ export class ComposerCodeMirror {
 						for (const cursor of uniquePositions([selection.head, to, from])) {
 							const patch = getListBoundaryBackspacePatch(source, cursor);
 							if (patch !== null) {
-								view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: patch.value }, selection: { anchor: patch.cursor }, scrollIntoView: true });
+								dispatchListPatch(view, patch);
 								return true;
 							}
 						}
 						for (const cursor of uniquePositions([selection.head, to, from])) {
 							const patch = getEmptyLineBackspacePatch(source, cursor);
 							if (patch !== null) {
-								view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: patch.value }, selection: { anchor: patch.cursor }, scrollIntoView: true });
+								dispatchListPatch(view, patch);
 								return true;
 							}
 						}
@@ -361,7 +355,13 @@ export class ComposerCodeMirror {
 		const safeStart = clampEditorPosition(start, markdownText.length);
 		const safeEnd = clampEditorPosition(Math.max(safeStart, end), markdownText.length);
 		if (current === markdownText) this.setSelection(safeStart, safeEnd);
-		else this.view.dispatch({ changes: { from: 0, to: current.length, insert: markdownText }, selection: EditorSelection.range(safeStart, safeEnd), scrollIntoView: true });
+		else {
+			this.view.dispatch({
+				changes: getComposerTextChange(current, markdownText, Math.min(this.view.state.selection.main.from, safeStart)),
+				selection: EditorSelection.range(safeStart, safeEnd),
+				scrollIntoView: true,
+			});
+		}
 		this.lastSyncedMarkdown = markdownText;
 	}
 	getCaretRectAt(offset: number): DOMRect | null { const c = this.view.coordsAtPos(Math.max(0, Math.min(offset, this.view.state.doc.length))); return c === null ? null : new DOMRect(c.left, c.top, c.right - c.left, c.bottom - c.top); }
@@ -408,10 +408,7 @@ function insertParagraphCommand(view: EditorView, onHandled?: () => void): boole
 	const patch = getListEnterPatch(source, range.from, range.to);
 	if (patch !== null) {
 		onHandled?.();
-		// List exit/continuation patches can rewrite text before the caret (for
-		// example, removing a rendered empty task marker). Apply the complete
-		// replacement so the source and selection stay aligned.
-		view.dispatch({ changes: { from: 0, to: source.length, insert: patch.value }, selection: { anchor: patch.cursor }, scrollIntoView: true });
+		dispatchListPatch(view, patch);
 		return true;
 	}
 	view.dispatch({ changes: { from: range.from, to: range.to, insert: "\n" }, selection: { anchor: range.from + 1 }, scrollIntoView: true });
@@ -426,9 +423,32 @@ function deleteListBoundaryCommand(view: EditorView, onHandled?: () => void): bo
 	const emptyLinePatch = patch === null ? getEmptyLineBackspacePatch(source, range.from) : null;
 	if (patch === null && emptyLinePatch === null) return false;
 	onHandled?.();
-	const replacement = patch ?? emptyLinePatch!;
-	view.dispatch({ changes: { from: 0, to: source.length, insert: replacement.value }, selection: { anchor: replacement.cursor }, scrollIntoView: true });
+	dispatchListPatch(view, patch ?? emptyLinePatch!);
 	return true;
+}
+
+// Keep the unchanged document above and below the list edit available for scroll anchoring.
+function dispatchListPatch(view: EditorView, patch: TextReplacement): void {
+	view.dispatch({
+		changes: getComposerTextChange(view.state.doc.toString(), patch.value, Math.min(view.state.selection.main.from, patch.cursor)),
+		selection: { anchor: patch.cursor },
+		scrollIntoView: true,
+	});
+}
+
+// Limit the shared prefix to the caret so repeated neighboring lines cannot move an edit past it.
+function getComposerTextChange(before: string, after: string, editStart: number): ChangeSpec {
+	let from = 0;
+	const prefixLimit = Math.min(before.length, after.length, editStart);
+	while (from < prefixLimit && before[from] === after[from]) from += 1;
+
+	let to = before.length;
+	let insertEnd = after.length;
+	while (to > from && insertEnd > from && before[to - 1] === after[insertEnd - 1]) {
+		to -= 1;
+		insertEnd -= 1;
+	}
+	return { from, to, insert: after.slice(from, insertEnd) };
 }
 
 function uniquePositions(values: number[]): number[] {
