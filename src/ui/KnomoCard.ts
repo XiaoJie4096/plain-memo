@@ -274,7 +274,7 @@ export function renderMemoCardBody(card: HTMLElement, memo: MemoRecord, options:
 	const preview = options.getMemoCardPreview(memo);
 	const body = card.createDiv({ cls: "plain-memo-card-body" });
 	if (preview.text.trim().length > 0) {
-		const content = body.createDiv({ cls: "plain-memo-card-content markdown-rendered" });
+		const content = body.createDiv({ cls: "plain-memo-card-content" });
 		options.queueMemoMarkdown(memo, content, options.generation, options.markdownPriority, preview.text);
 	}
 	options.renderMemoCardImages(body, memo, preview.images, options.generation, options.reusedImagesEl ?? null);

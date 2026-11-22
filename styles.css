@@ -146,6 +146,13 @@ body.theme-dark {
 	--plain-memo-header-offset-y: 6px;
 	--plain-memo-desktop-compact-edge-padding: 12px;
 	--plain-memo-card-time-font-size: 13px;
+	--plain-memo-body-font: system-ui, sans-serif;
+	--plain-memo-body-font-size: 15px;
+	--plain-memo-body-line-height: 1.5;
+	--plain-memo-body-text: #25272b;
+	--plain-memo-body-muted: #60656f;
+	--plain-memo-card-blank-gap: calc(0.8 * var(--plain-memo-body-font-size));
+	--plain-memo-card-paragraph-gap: calc(0.4 * var(--plain-memo-body-font-size));
 
 	/* Surfaces — derived from Obsidian theme */
 	--plain-memo-page-background: var(--plain-memo-app-background-secondary);
@@ -364,6 +371,8 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-view-host 
 }
 
 .theme-dark .plain-memo-plugin {
+	--plain-memo-body-text: #dadce0;
+	--plain-memo-body-muted: #a0a5af;
 	--plain-memo-card-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
 	--plain-memo-memo-chip-text: #588ff5;
 	--plain-memo-memo-chip-text-active: #92b2ec;
@@ -1943,33 +1952,32 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-plugin.is-
 	min-height: 44px;
 	max-height: 480px;
 	padding: 0;
-	font-family: var(--font-text);
-	color: var(--text-normal);
-	font-size: 15px;
-	font-weight: var(--font-normal);
-	line-height: 1.7;
+	font-family: var(--plain-memo-body-font);
+	color: var(--plain-memo-body-text);
+	font-size: var(--plain-memo-body-font-size);
+	font-weight: 400;
+	line-height: var(--plain-memo-body-line-height);
 	letter-spacing: normal;
-	caret-color: var(--text-normal);
+	caret-color: var(--plain-memo-body-text);
 	overflow-y: auto;
 	outline: 0;
 }
 
-.plain-memo-plugin .plain-memo-code-mirror-editor,
-.plain-memo-plugin .plain-memo-code-mirror-editor .cm-scroller,
-.plain-memo-plugin .plain-memo-code-mirror-editor .cm-content,
+.plain-memo-plugin .plain-memo-rich-editor-host > .cm-editor > .cm-scroller,
+.plain-memo-plugin .plain-memo-code-mirror-editor.cm-content,
 .plain-memo-plugin .plain-memo-code-mirror-editor .cm-line {
-	font-family: var(--font-text);
-	font-size: 15px;
-	font-weight: var(--font-normal);
-	line-height: 1.7;
+	font-family: var(--plain-memo-body-font);
+	font-size: var(--plain-memo-body-font-size);
+	font-weight: 400;
+	line-height: var(--plain-memo-body-line-height);
 	letter-spacing: normal;
 }
 
-.plain-memo-plugin .plain-memo-code-mirror-editor .cm-content {
+.plain-memo-plugin .plain-memo-code-mirror-editor.cm-content {
 	min-height: 44px;
 	padding: 0;
-	color: var(--text-normal);
-	caret-color: var(--text-normal);
+	color: var(--plain-memo-body-text);
+	caret-color: var(--plain-memo-body-text);
 	outline: none !important;
 	box-shadow: none !important;
 	-webkit-user-select: text;
@@ -1998,7 +2006,7 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-plugin.is-
 
 .plain-memo-plugin .plain-memo-code-mirror-editor .cm-cursor,
 .plain-memo-plugin .plain-memo-code-mirror-editor .cm-dropCursor {
-	border-left-color: var(--text-normal);
+	border-left-color: var(--plain-memo-body-text);
 }
 
 .plain-memo-plugin .plain-memo-code-mirror-editor .cm-selectionBackground,
@@ -2084,7 +2092,7 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-plugin.is-
 	display: inline-block;
 	min-width: 1.15em;
 	margin-right: 0.1em;
-	color: var(--list-marker-color, var(--text-muted));
+	color: var(--plain-memo-body-muted);
 	text-align: right;
 }
 .plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-list-marker-widget:not(.is-ordered) {
@@ -2108,7 +2116,7 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-plugin.is-
 	content: attr(data-marker);
 	position: absolute;
 	inset-inline-start: 0;
-	color: var(--list-marker-color, var(--text-muted));
+	color: var(--plain-memo-body-muted);
 	pointer-events: none;
 }
 .plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-editable-marker.is-task {
@@ -2165,12 +2173,6 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-plugin.is-
 	min-height: 150px;
 	max-height: none;
 	overflow: visible;
-}
-
-.plain-memo-plugin.is-layout-mobile .plain-memo-code-mirror-editor.cm-content,
-.plain-memo-plugin.is-layout-mobile .plain-memo-code-mirror-editor .cm-line {
-	font-size: 15px;
-	line-height: 1.7;
 }
 
 /* ---- Composer — desktop-narrow: compact height ---- */
@@ -3387,9 +3389,12 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-plugin.is-
 .plain-memo-plugin .plain-memo-card-content {
 	margin: 0;
 	overflow-wrap: anywhere;
-	color: var(--text-normal);
-	font-size: 15px;
-	line-height: 1.7;
+	color: var(--plain-memo-body-text);
+	font-family: var(--plain-memo-body-font);
+	font-size: var(--plain-memo-body-font-size);
+	font-weight: 400;
+	line-height: var(--plain-memo-body-line-height);
+	letter-spacing: normal;
 	text-align: start;
 	white-space: normal;
 	-webkit-user-select: text;
@@ -3413,55 +3418,103 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-plugin.is-
 	text-align: start;
 }
 
-.plain-memo-plugin .plain-memo-card-content p {
-	margin-top: 0;
-	margin-bottom: 0.65em;
-	line-height: 1.7;
+/* A loose Markdown list wraps its item text in <p>. Both forms share the same spacing. */
+.plain-memo-plugin .plain-memo-card-content :is(p, ul, ol, li, blockquote, pre, table, hr, h1, h2, h3, h4, h5, h6) {
+	margin-block: 0 !important;
+}
+
+.plain-memo-plugin .plain-memo-card-content :is(p, ul, ol, li) {
+	padding-block: 0 !important;
+	line-height: var(--plain-memo-body-line-height) !important;
+}
+
+.plain-memo-plugin .plain-memo-card-content :is(p, li) {
+	font-family: inherit;
+	font-size: inherit;
 }
 
 .plain-memo-plugin .plain-memo-card-content :is(ul, ol) {
-	margin-block-start: 0;
-	margin-block-end: 0;
-}
-
-.plain-memo-plugin .plain-memo-card-content :is(ul, ol) > li::marker {
-	color: var(--list-marker-color, var(--text-muted));
+	padding-inline-start: 1.55em;
 }
 
 .plain-memo-plugin .plain-memo-card-content li {
-	margin-block-start: 0;
-	margin-block-end: 0;
+	margin-inline: 0;
 }
 
-/* A blank source row makes every task use a <p> wrapper. These structural
-   margins must also beat !important paragraph rules in spacing snippets;
-   ordinary list-item spacing and additional task paragraphs stay customizable. */
-.plain-memo-plugin .plain-memo-card-content .task-list-item > p:first-child {
-	margin-block-start: 0 !important;
-	margin-block-end: 0 !important;
-	line-height: inherit;
+.plain-memo-plugin .plain-memo-card-content li::marker {
+	color: var(--plain-memo-body-muted);
 }
 
-.plain-memo-plugin .plain-memo-card-content .task-list-item > p + p {
-	margin-block-start: 0.65em;
+.plain-memo-plugin .plain-memo-card-content ul > li.task-list-item {
+	list-style-type: none;
 }
 
-.plain-memo-plugin .plain-memo-card-content li.plain-memo-task-gap-before {
-	margin-block-start: 1.7em !important;
+.plain-memo-plugin .plain-memo-card-content li > .list-bullet {
+	display: none;
 }
 
-.plain-memo-plugin .plain-memo-card-content .task-list-item-checkbox,
-.plain-memo-plugin .plain-memo-card-content .plain-memo-task-checkbox {
+.plain-memo-plugin .plain-memo-card-content .plain-memo-card-after-paragraph {
+	margin-block-start: var(--plain-memo-card-paragraph-gap) !important;
+}
+
+.plain-memo-plugin .plain-memo-card-content .plain-memo-card-blank-before {
+	margin-block-start: var(--plain-memo-card-blank-gap) !important;
+}
+
+.plain-memo-plugin .plain-memo-card-content :is(h1, h2, h3, h4, h5, h6) {
+	font-family: inherit;
+	font-weight: 650;
+	line-height: var(--plain-memo-body-line-height);
+}
+
+.plain-memo-plugin .plain-memo-card-content h1 { font-size: 1.4em; }
+.plain-memo-plugin .plain-memo-card-content h2 { font-size: 1.3em; }
+.plain-memo-plugin .plain-memo-card-content h3 { font-size: 1.2em; }
+.plain-memo-plugin .plain-memo-card-content :is(h4, h5, h6) { font-size: 1.1em; }
+
+.plain-memo-plugin .plain-memo-card-content blockquote {
+	padding-inline-start: 0.8em;
+	border-inline-start: 2px solid currentColor;
+	color: var(--plain-memo-body-muted);
+}
+
+.plain-memo-plugin .plain-memo-card-content :is(code, pre) {
+	font-family: ui-monospace, monospace;
+	font-size: 0.9em;
+	background: var(--plain-memo-memo-chip-background);
+	border-radius: 0.3em;
+}
+
+.plain-memo-plugin .plain-memo-card-content pre {
+	padding: 0.5em 0.8em;
+	overflow-x: auto;
+}
+
+.plain-memo-plugin .plain-memo-card-content pre code {
+	font-size: 1em;
+	background: transparent;
+}
+
+.plain-memo-plugin .plain-memo-card-content table {
+	border-collapse: collapse;
+}
+
+.plain-memo-plugin .plain-memo-card-content :is(th, td) {
+	padding: 0.2em 0.5em;
+	border: 1px solid var(--plain-memo-soft-border);
+}
+
+.plain-memo-plugin .plain-memo-card-content a:not(.tag) {
+	color: var(--plain-memo-accent-text);
+}
+
+.plain-memo-plugin .plain-memo-card-content input.task-list-item-checkbox {
 	vertical-align: middle;
+	margin-inline: 0 0.35em;
 }
 
-.plain-memo-plugin .plain-memo-card-content > :first-child {
-	margin-top: 0;
-}
-
-.plain-memo-plugin .plain-memo-card-content > :last-child,
-.plain-memo-plugin .plain-memo-card-content p:last-child {
-	margin-bottom: 0;
+.plain-memo-plugin .plain-memo-card-content ul > li.task-list-item input.task-list-item-checkbox {
+	margin-inline-start: -1.25em;
 }
 
 .plain-memo-plugin .plain-memo-card-content .tag {
@@ -4068,10 +4121,6 @@ body .plain-memo-mobile-create-fab.is-hidden {
 
 	.plain-memo-plugin.is-mobile-compact .plain-memo-card.has-time-buoy {
 		padding-block-end: 18px;
-	}
-
-	.plain-memo-plugin.is-mobile-compact .plain-memo-card-content {
-		font-size: 15px;
 	}
 
 	.plain-memo-plugin.is-mobile-compact .plain-memo-card-images--single,

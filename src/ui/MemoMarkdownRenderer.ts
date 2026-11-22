@@ -2,7 +2,6 @@ import { MarkdownRenderer } from "obsidian";
 import type { App, Component } from "obsidian";
 
 import type { MemoRecord } from "../types/memo";
-import { splitMarkdownLines } from "../utils/markdown";
 import {
 	getMarkdownTaskLines,
 	type MarkdownTaskMarker,
@@ -11,7 +10,7 @@ import {
 import { normalizeTagKey } from "../utils/tags";
 import { MarkdownRenderQueue } from "./MarkdownRenderQueue";
 import type { MarkdownRenderPriority } from "./MarkdownRenderQueue";
-import { prepareMemoCardMarkdown } from "./MemoCardMarkdown";
+import { applyMemoCardBlockSpacing, prepareMemoCardMarkdown } from "./MemoCardMarkdown";
 import { renderRecognizedNumericTags } from "./NumericTagRendering";
 
 export type MemoMarkdownSurface = "card-flow" | "mobile-search";
@@ -173,9 +172,10 @@ export class MemoMarkdownRenderer {
 		const component = this.createRenderComponent(surface);
 		let adopted = false;
 		try {
+			const source = prepareMemoCardMarkdown(previewText);
 			await MarkdownRenderer.render(
 				this.options.app,
-				prepareMemoCardMarkdown(previewText),
+				source.markdown,
 				renderTarget,
 				memo.dailyRef.path,
 				component,
@@ -188,6 +188,7 @@ export class MemoMarkdownRenderer {
 			while (renderTarget.firstChild !== null) {
 				container.appendChild(renderTarget.firstChild);
 			}
+			applyMemoCardBlockSpacing(container, source);
 			prepareRenderedMemoMarkdown(container, memo);
 			this.adoptRenderComponent(container, component, surface);
 			adopted = true;
@@ -342,13 +343,12 @@ export function prepareInternalLinks(container: HTMLElement, sourcePath: string)
 	}
 }
 
-/** Maps rendered checkboxes to source tasks and preserves gaps only where blank rows exist. */
+/** Maps rendered checkboxes to source tasks. */
 export function prepareRenderedTaskCheckboxes(container: HTMLElement, memo: MemoRecord): void {
 	const tasks = getMarkdownTaskLines(memo.contentSnapshot);
 	if (tasks.length === 0) {
 		return;
 	}
-	const lines = splitMarkdownLines(memo.contentSnapshot);
 	let taskIndex = 0;
 	for (const checkboxEl of container.findAll("input[type='checkbox']")) {
 		if (taskIndex >= tasks.length) {
@@ -361,12 +361,6 @@ export function prepareRenderedTaskCheckboxes(container: HTMLElement, memo: Memo
 		const taskItem = input.closest("li");
 		if (taskItem?.instanceOf(HTMLElement)) {
 			taskItem.setAttr("data-plain-memo-task-index", String(taskIndex));
-			const previousTask = tasks[taskIndex - 1];
-			const currentTask = tasks[taskIndex];
-			if (previousTask !== undefined && currentTask.lineIndex > previousTask.lineIndex + 1
-				&& lines.slice(previousTask.lineIndex + 1, currentTask.lineIndex).every((line) => line.trim().length === 0)) {
-				taskItem.addClass("plain-memo-task-gap-before");
-			}
 		}
 		taskIndex += 1;
 	}

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { applyMemoCardBlockSpacing, prepareMemoCardMarkdown } from "../src/ui/MemoCardMarkdown";
 import type { MemoRecord } from "../src/types/memo";
 import { ensureObsidianStub } from "./helpers/obsidianStub";
 
@@ -38,41 +39,91 @@ test("post-processes memo markdown DOM metadata", async () => {
 	assert.equal(taskItem.getAttr("data-task"), "-");
 });
 
-test("keeps tight task spacing and adds a visual gap only at blank source rows", async () => {
-	await ensureObsidianStub();
-	const { prepareRenderedTaskCheckboxes } = await import("../src/ui/MemoMarkdownRenderer");
-	setDomGlobals();
-	const container = new TestElement("div");
-	const items = Array.from({ length: 5 }, () => {
-		const item = container.createEl("li");
-		item.createEl("input", { attr: { type: "checkbox" } });
-		return item;
-	});
-	prepareRenderedTaskCheckboxes(container.asHtml(), makeMemo({
-		contentSnapshot: "- [ ] first\n- [x] second\n\n  \n- [ ] third\n\nparagraph\n\n- [ ] fourth\n- [ ] fifth",
-	}));
-	assert.deepEqual(items.map((item) => item.hasClass("plain-memo-task-gap-before")), [false, false, true, false, false]);
-	assert.deepEqual(items.map((item) => item.getAttr("data-plain-memo-task-index")), ["0", "1", "2", "3", "4"]);
+test("marks spacing from real blank lines between paragraphs and each kind of list", () => {
+	for (const [tag, markers] of [
+		["ol", ["1.", "2.", "3."]],
+		["ul", ["-", "-", "-"]],
+		["ul", ["- [ ]", "- [x]", "- [ ]"]],
+	] as const) {
+		const container = new TestElement("div");
+		const first = container.createEl("p");
+		const list = container.createEl(tag);
+		const items = markers.map(() => list.createEl("li"));
+		const afterList = container.createEl("p");
+		const afterParagraph = container.createEl("p");
+		const source = `\nHeader\n${markers[0]} first\n${markers[1]} second\n\n \n${markers[2]} third\n\nAfter list\n\nAfter paragraph\n`;
+		applyMemoCardBlockSpacing(container.asHtml(), prepareMemoCardMarkdown(source));
+
+		assert.equal(first.hasClass("plain-memo-card-blank-before"), false);
+		assert.equal(list.hasClass("plain-memo-card-after-paragraph"), true);
+		assert.equal(list.hasClass("plain-memo-card-blank-before"), false);
+		assert.deepEqual(items.map((item) => item.hasClass("plain-memo-card-blank-before")), [false, false, true]);
+		assert.equal(afterList.hasClass("plain-memo-card-blank-before"), true);
+		assert.equal(afterParagraph.hasClass("plain-memo-card-blank-before"), true);
+		assert.equal(afterParagraph.hasClass("plain-memo-card-after-paragraph"), false);
+	}
 });
 
-test("preserves gaps in nested tasks without counting task-like fenced code", async () => {
+test("uses the normal gap between prose paragraphs and caps extra blank rows", () => {
+	for (const [breaks, fullGap] of [["\n", false], ["\n\n", true], ["\n \n\n", true], ["\n\n\n\n", true]] as const) {
+		const container = new TestElement("div");
+		const first = container.createEl("p");
+		const second = container.createEl("p");
+		first.createEl("br");
+		const markdown = `Paragraph line one  \nParagraph line two${breaks}Next paragraph`;
+		applyMemoCardBlockSpacing(container.asHtml(), prepareMemoCardMarkdown(markdown));
+		assert.equal(first.hasClass("plain-memo-card-after-paragraph"), false);
+		assert.equal(first.hasClass("plain-memo-card-blank-before"), false);
+		assert.equal(second.hasClass("plain-memo-card-after-paragraph"), !fullGap);
+		assert.equal(second.hasClass("plain-memo-card-blank-before"), fullGap);
+	}
+});
+
+test("uses one spacing class for one or more blanks before a list", () => {
+	for (const blank of ["\n", "\n\n", "\n \n\n"]) {
+		const container = new TestElement("div");
+		container.createEl("p");
+		const list = container.createEl("ol");
+		list.createEl("li");
+		applyMemoCardBlockSpacing(container.asHtml(), prepareMemoCardMarkdown(`Paragraph\n${blank}1. item`));
+		assert.equal(list.hasClass("plain-memo-card-blank-before"), true);
+		assert.equal(list.hasClass("plain-memo-card-after-paragraph"), false);
+	}
+});
+
+test("does not add spacing at synthetic task-list boundaries", () => {
+	const container = new TestElement("div");
+	const list = container.createEl("ul");
+	list.createEl("li");
+	const paragraph = container.createEl("p");
+	const next = container.createEl("p");
+	applyMemoCardBlockSpacing(container.asHtml(), prepareMemoCardMarkdown("- [ ] task\nNext paragraph\nNormal line break"));
+	assert.equal(paragraph.hasClass("plain-memo-card-blank-before"), false);
+	assert.equal(paragraph.hasClass("plain-memo-card-after-paragraph"), false);
+	assert.equal(next.hasClass("plain-memo-card-after-paragraph"), true);
+});
+
+test("preserves nested task gaps and checkbox indices without counting fenced code", async () => {
 	await ensureObsidianStub();
 	const { prepareRenderedTaskCheckboxes } = await import("../src/ui/MemoMarkdownRenderer");
 	setDomGlobals();
 	const container = new TestElement("div");
-	const parent = container.createEl("li");
-	parent.createEl("input", { attr: { type: "checkbox" } });
+	container.createEl("pre");
+	const list = container.createEl("ul");
+	const parent = list.createEl("li");
+	parent.createEl("p").createEl("input", { attr: { type: "checkbox" } });
 	const nested = parent.createEl("ul");
 	const items = Array.from({ length: 2 }, () => {
 		const item = nested.createEl("li");
-		item.createEl("input", { attr: { type: "checkbox" } });
+		item.createEl("p").createEl("input", { attr: { type: "checkbox" } });
 		return item;
 	});
-	prepareRenderedTaskCheckboxes(container.asHtml(), makeMemo({
-		contentSnapshot: "```\n- [ ] code\n\n- [ ] code\n```\n- [ ] parent\n  - [ ] child\n\n  - [ ] child after gap",
-	}));
-	assert.equal(parent.hasClass("plain-memo-task-gap-before"), false);
-	assert.deepEqual(items.map((item) => item.hasClass("plain-memo-task-gap-before")), [false, true]);
+	const contentSnapshot = "```\n- [ ] code\n\n- [ ] code\n```\n- [ ] parent\n  - [ ] child\n\n  - [ ] child after gap";
+	applyMemoCardBlockSpacing(container.asHtml(), prepareMemoCardMarkdown(contentSnapshot));
+	prepareRenderedTaskCheckboxes(container.asHtml(), makeMemo({ contentSnapshot }));
+	assert.equal(parent.hasClass("plain-memo-card-blank-before"), false);
+	assert.deepEqual(items.map((item) => item.hasClass("plain-memo-card-blank-before")), [false, true]);
+	assert.deepEqual([parent, ...items].map((item) => item.getAttr("data-plain-memo-task-index")), ["0", "1", "2"]);
 });
 
 test("recognizes delegated task checkbox inputs", async () => {
@@ -211,7 +262,8 @@ interface CreateElementOptions {
 }
 
 class TestElement {
-	private children: TestElement[] = [];
+	readonly classList = { add: (cls: string): void => this.addClass(cls) };
+	readonly children: TestElement[] = [];
 	private readonly classes = new Set<string>();
 	private readonly attrs = new Map<string, string>();
 	private text = "";
@@ -281,7 +333,7 @@ class TestElement {
 		for (const child of this.children) {
 			child.parent = null;
 		}
-		this.children = [];
+		this.children.length = 0;
 		this.text = "";
 	}
 
@@ -349,7 +401,10 @@ class TestElement {
 	}
 
 	private removeChild(child: TestElement): void {
-		this.children = this.children.filter((candidate) => candidate !== child);
+		const index = this.children.indexOf(child);
+		if (index >= 0) {
+			this.children.splice(index, 1);
+		}
 	}
 
 	private matches(selector: string): boolean {
