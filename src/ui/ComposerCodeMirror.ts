@@ -26,13 +26,31 @@ export interface ComposerCodeMirrorOptions {
 	onShortcut?: (event: KeyboardEvent) => boolean;
 	resolveImageUrl?: (source: string) => string | null;
 	ariaLabelledBy?: string;
+	keepActiveListMarkersEditable?: boolean;
 }
 
 class ComposerMarkdownDecorations {
 	decorations = Decoration.none;
-	constructor(view: EditorView, private readonly resolveImageUrl?: (source: string) => string | null) { this.decorations = this.build(view); }
-	update(update: ViewUpdate): void { if (update.docChanged || update.viewportChanged) this.decorations = this.build(update.view); }
+	// Build the initial decorations with the same policy used for selection changes.
+	constructor(view: EditorView, private readonly options: ComposerCodeMirrorOptions) {
+		this.decorations = this.build(view);
+	}
+
+	// Only rebuild for caret movement when it changes which line uses editable list markers.
+	update(update: ViewUpdate): void {
+		const activeLineChanged = this.options.keepActiveListMarkersEditable && update.selectionSet
+			&& update.startState.doc.lineAt(update.startState.selection.main.head).from
+				!== update.state.doc.lineAt(update.state.selection.main.head).from;
+		if (update.docChanged || update.viewportChanged || activeLineChanged) {
+			this.decorations = this.build(update.view);
+		}
+	}
+
+	// Keep Android's active list prefix in the editable text so the IME can place the caret after it.
 	private build(view: EditorView) {
+		const activeLineStart = this.options.keepActiveListMarkersEditable
+			? view.state.doc.lineAt(view.state.selection.main.head).from
+			: -1;
 		const builder = new RangeSetBuilder<Decoration>();
 		const ranges: Array<{ from: number; to: number; decoration: Decoration }> = [];
 		for (const { from, to } of view.visibleRanges) {
@@ -50,12 +68,12 @@ class ComposerMarkdownDecorations {
 					decoration: Decoration.mark({ class: "plain-memo-cm-tag" }),
 				});
 			}
-			if (this.resolveImageUrl !== undefined) {
+			if (this.options.resolveImageUrl !== undefined) {
 				const imageRegex = /!\[\[[^\]]+\]\]|!\[[^\]]*\]\([^)]*\)/g;
 				let image: RegExpExecArray | null;
 				while ((image = imageRegex.exec(text)) !== null) {
 					const source = image[0];
-					const url = this.resolveImageUrl(source);
+					const url = this.options.resolveImageUrl(source);
 					if (url !== null) ranges.push({ from: from + image.index, to: from + image.index + source.length, decoration: Decoration.replace({ widget: new ImageWidget(source, url), inclusive: false }) });
 				}
 			}
@@ -65,18 +83,38 @@ class ComposerMarkdownDecorations {
 				const start = from + task.index;
 				const source = task[0];
 				const checked = /\[[xX]\]/.test(source);
-				ranges.push({ from: start, to: start + source.length, decoration: Decoration.replace({ widget: new TaskCheckboxWidget(source, checked), inclusive: false }) });
+				const editable = start === activeLineStart;
+				ranges.push({
+					from: editable ? start + source.search(/\S/) : start,
+					to: start + source.length,
+					decoration: editable
+						? Decoration.mark({ class: "plain-memo-cm-editable-marker is-task", attributes: { "data-checked": String(checked) } })
+						: Decoration.replace({ widget: new TaskCheckboxWidget(source, checked), inclusive: false }),
+				});
 			}
 			const listRegex = /^([ \t]*)([-*+][ \t]+|\d+[.)。][ \t]+)(?!\[[ xX-]\]|【】)/gm;
 			let list: RegExpExecArray | null;
 			while ((list = listRegex.exec(text)) !== null) {
+				const start = from + list.index;
 				const marker = list[0];
 				const number = /^\d+/.test(list[2] ?? "")
 					? (list[2]?.match(/^\d+/)?.[0] ?? "1")
 					: null;
+				if (start === activeLineStart) {
+					// Leave the separator and the typing position outside the styled marker.
+					ranges.push({
+						from: start + list[1].length,
+						to: start + marker.trimEnd().length,
+						decoration: Decoration.mark({
+							class: "plain-memo-cm-editable-marker",
+							attributes: { "data-marker": number === null ? "•" : `${number}.` },
+						}),
+					});
+					continue;
+				}
 				ranges.push({
-					from: from + list.index,
-					to: from + list.index + marker.length,
+					from: start,
+					to: start + marker.length,
 					decoration: Decoration.replace({
 						widget: new ListMarkerWidget(number),
 						inclusive: false,
@@ -171,11 +209,11 @@ export class ComposerCodeMirror {
 			EditorView.inputHandler.of((view, from, to, text) => {
 				const inputType = pendingBeforeInputType;
 				pendingBeforeInputType = null;
-				if (handledBeforeInputType !== null && handledBeforeInputType === inputType) {
-					handledBeforeInputType = null;
-					return true;
-				}
+				// Some IMEs skip beforeinput. A stale key marker must never cancel typed text.
+				const duplicateBoundary = handledBeforeInputType !== null && handledBeforeInputType === inputType
+					&& (inputType === "deleteContentBackward" ? text.length === 0 && from < to : text === "\n");
 				handledBeforeInputType = null;
+				if (duplicateBoundary) return true;
 				if (inputType === "insertParagraph" || inputType === "insertLineBreak") {
 					const range = view.state.selection.main;
 					if (range.empty && text.includes("\n")) {
@@ -223,7 +261,8 @@ export class ComposerCodeMirror {
 					filter: false,
 				}];
 			}),
-			ViewPlugin.define((view) => new ComposerMarkdownDecorations(view, options.resolveImageUrl), { decorations: (value) => value.decorations }),
+			ViewPlugin.define((view) => new ComposerMarkdownDecorations(view, options), { decorations: (value) => value.decorations }),
+			EditorView.domEventHandlers({ click: toggleEditableTaskMarker }),
 			EditorView.updateListener.of((update) => {
 				if (update.docChanged) {
 					const markdown = update.state.doc.toString();
@@ -247,16 +286,11 @@ export class ComposerCodeMirror {
 			const boundaryInput = event.inputType === "insertParagraph"
 				|| event.inputType === "insertLineBreak"
 				|| event.inputType === "deleteContentBackward";
-			if (boundaryInput) {
-				pendingBeforeInputType = event.inputType;
-				handledBeforeInputType = null;
-			}
+			// A new input supersedes any boundary input that never reached CodeMirror's input handler.
+			pendingBeforeInputType = boundaryInput ? event.inputType : null;
+			handledBeforeInputType = null;
 			if (options.onBeforeInput?.(event as InputEvent) === true) {
 				event.preventDefault();
-				if (!boundaryInput) {
-					pendingBeforeInputType = null;
-					handledBeforeInputType = null;
-				}
 			}
 		});
 		this.el.addEventListener("input", (event) => options.onInput?.(event as InputEvent));
@@ -339,6 +373,20 @@ export class ComposerCodeMirror {
 		this.savedSelection = null;
 		return selection;
 	}
+}
+
+// Toggle the painted task checkbox while keeping its Markdown in CodeMirror's editable DOM.
+function toggleEditableTaskMarker(event: MouseEvent, view: EditorView): boolean {
+	const marker = (event.target as HTMLElement | null)?.closest?.(".plain-memo-cm-editable-marker.is-task");
+	if (!marker || !view.contentDOM.contains(marker)) return false;
+	const from = view.posAtDOM(marker);
+	const source = marker.textContent ?? "";
+	const to = from + source.length;
+	if (to > view.state.doc.length || view.state.sliceDoc(from, to) !== source) return false;
+	const insert = source.replace(/\[[ xX-]\]|【】/, marker.getAttribute("data-checked") === "true" ? "[ ]" : "[x]");
+	if (insert === source) return false;
+	view.dispatch({ changes: { from, to, insert }, userEvent: "input" });
+	return true;
 }
 
 function clampEditorPosition(position: number, length: number): number {

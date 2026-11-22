@@ -1468,6 +1468,7 @@ export class KnomoView extends ItemView {
 		this.composerEl = composer.composerEl;
 		this.richEditor = new ComposerCodeMirror(composer.richEditorHostEl, this.draftContent, {
 			ariaLabelledBy: composer.composerInputLabelId,
+			keepActiveListMarkersEditable: Platform.isAndroidApp,
 			resolveImageUrl: (source) => {
 				const rawPath = getComposerImagePath(source);
 				if (rawPath === null) return null;

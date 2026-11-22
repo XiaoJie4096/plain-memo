@@ -2098,6 +2098,49 @@ body .workspace-leaf-content[data-type="plain-memo-view"] .plain-memo-plugin.is-
 	vertical-align: middle;
 }
 
+/* Paint Android's active marker over the editable text without replacing it. */
+.plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-editable-marker {
+	position: relative;
+	color: transparent;
+	white-space: nowrap;
+}
+.plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-editable-marker::before {
+	content: attr(data-marker);
+	position: absolute;
+	inset-inline-start: 0;
+	color: var(--list-marker-color, var(--text-muted));
+	pointer-events: none;
+}
+.plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-editable-marker.is-task {
+	cursor: pointer;
+}
+.plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-editable-marker.is-task::before {
+	content: "";
+	box-sizing: border-box;
+	inset-block-start: 50%;
+	transform: translateY(-50%);
+	inline-size: var(--checkbox-size, 15px);
+	block-size: var(--checkbox-size, 15px);
+	border: 1px solid var(--checkbox-border-color, var(--text-muted));
+	border-radius: var(--checkbox-radius, 4px);
+}
+.plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-editable-marker.is-task[data-checked="true"]::before {
+	border-color: var(--checkbox-color, var(--interactive-accent));
+	background-color: var(--checkbox-color, var(--interactive-accent));
+}
+.plain-memo-plugin .plain-memo-code-mirror-editor .plain-memo-cm-editable-marker.is-task[data-checked="true"]::after {
+	content: "";
+	position: absolute;
+	inset-inline-start: calc(var(--checkbox-size, 15px) * 0.35);
+	inset-block-start: 50%;
+	inline-size: 0.29em;
+	block-size: 0.5em;
+	border: solid var(--checkbox-marker-color, var(--text-on-accent));
+	border-width: 0 2px 2px 0;
+	transform: translateY(-62%) rotate(45deg);
+	pointer-events: none;
+}
+
 /* 移动端长内容只在输入框内部滚动 */
 .plain-memo-plugin.is-layout-mobile .plain-memo-composer-input {
 	flex: 0 1 auto;
